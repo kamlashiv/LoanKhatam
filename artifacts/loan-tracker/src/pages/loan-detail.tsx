@@ -52,8 +52,8 @@ export function LoanDetail() {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
   const [paymentNotes, setPaymentNotes] = useState("");
 
-  const { data: loan, isLoading } = useGetLoan(id, { query: { enabled: !!id } });
-  const { data: payments } = useListPayments(id, { query: { enabled: !!id } });
+  const { data: loan, isLoading } = useGetLoan(id, { query: { enabled: !!id, queryKey: getGetLoanQueryKey(id) } });
+  const { data: payments } = useListPayments(id, { query: { enabled: !!id, queryKey: getListPaymentsQueryKey(id) } });
 
   const addPayment = useAddPayment({
     mutation: {

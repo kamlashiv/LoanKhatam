@@ -1,7 +1,7 @@
 import { useSignUp } from "@clerk/clerk-expo";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,13 +17,51 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 
-function getClerkErrorMessage(err: unknown, fallback: string): string {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_PASSWORD_LENGTH = 8;
+const STRENGTH_AMBER = "#E0A106";
+
+interface ClerkFieldError {
+  code?: string;
+  message?: string;
+  meta?: { paramName?: string };
+}
+
+function getClerkErrors(err: unknown): ClerkFieldError[] {
   if (err && typeof err === "object" && "errors" in err) {
-    const message = (err as { errors: Array<{ message: string }> }).errors[0]
-      ?.message;
-    if (message) return message;
+    const errors = (err as { errors: unknown }).errors;
+    if (Array.isArray(errors)) return errors as ClerkFieldError[];
   }
-  return fallback;
+  return [];
+}
+
+interface PasswordStrength {
+  level: 0 | 1 | 2 | 3;
+  label: string;
+  color: string;
+}
+
+function getPasswordStrength(
+  pw: string,
+  colors: ReturnType<typeof useColors>,
+): PasswordStrength {
+  if (!pw) return { level: 0, label: "", color: colors.border };
+
+  let bits = 0;
+  if (pw.length >= MIN_PASSWORD_LENGTH) bits++;
+  if (pw.length >= 12) bits++;
+  if (/[A-Z]/.test(pw)) bits++;
+  if (/[a-z]/.test(pw)) bits++;
+  if (/\d/.test(pw)) bits++;
+  if (/[^A-Za-z0-9]/.test(pw)) bits++;
+
+  if (pw.length < MIN_PASSWORD_LENGTH || bits <= 2) {
+    return { level: 1, label: "Weak", color: colors.destructive };
+  }
+  if (bits <= 4) {
+    return { level: 2, label: "Medium", color: STRENGTH_AMBER };
+  }
+  return { level: 3, label: "Strong", color: colors.success };
 }
 
 export default function SignUpScreen() {
@@ -39,12 +77,85 @@ export default function SignUpScreen() {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [codeError, setCodeError] = useState<string | null>(null);
+
+  const strength = useMemo(
+    () => getPasswordStrength(password, colors),
+    [password, colors],
+  );
+
+  const validateForm = (): boolean => {
+    let ok = true;
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      setEmailError("Email zaroori hai.");
+      ok = false;
+    } else if (!EMAIL_RE.test(trimmedEmail)) {
+      setEmailError("Sahi email address daalein.");
+      ok = false;
+    } else {
+      setEmailError(null);
+    }
+
+    if (!password) {
+      setPasswordError("Password zaroori hai.");
+      ok = false;
+    } else if (password.length < MIN_PASSWORD_LENGTH) {
+      setPasswordError(
+        `Kam se kam ${MIN_PASSWORD_LENGTH} characters ka password rakhein.`,
+      );
+      ok = false;
+    } else {
+      setPasswordError(null);
+    }
+
+    return ok;
+  };
+
+  // Maps known Clerk errors to friendly, field-level copy.
+  // Returns true if at least one error was surfaced inline.
+  const applyClerkFieldErrors = (err: unknown): boolean => {
+    const errors = getClerkErrors(err);
+    let handled = false;
+
+    for (const e of errors) {
+      const codeName = e.code ?? "";
+      const param = e.meta?.paramName ?? "";
+
+      if (codeName === "form_identifier_exists") {
+        setEmailError("Ye email pehle se registered hai. Sign in karein.");
+        handled = true;
+      } else if (codeName === "form_password_pwned") {
+        setPasswordError(
+          "Ye password ek data breach mein mila hai. Koi aur chunein.",
+        );
+        handled = true;
+      } else if (codeName === "form_password_length_too_short") {
+        setPasswordError(
+          `Kam se kam ${MIN_PASSWORD_LENGTH} characters ka password rakhein.`,
+        );
+        handled = true;
+      } else if (codeName === "form_password_not_strong_enough") {
+        setPasswordError("Password thoda aur mazboot banayein.");
+        handled = true;
+      } else if (param === "email_address") {
+        setEmailError(e.message ?? "Sahi email address daalein.");
+        handled = true;
+      } else if (param === "password") {
+        setPasswordError(e.message ?? "Password sahi nahi hai.");
+        handled = true;
+      }
+    }
+
+    return handled;
+  };
+
   const handleSignUp = async () => {
     if (!isLoaded) return;
-    if (!email.trim() || !password.trim()) {
-      Alert.alert("Required", "Please enter your email and password.");
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     try {
@@ -55,10 +166,14 @@ export default function SignUpScreen() {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setPendingVerification(true);
     } catch (err: unknown) {
-      Alert.alert(
-        "Sign-up Failed",
-        getClerkErrorMessage(err, "Sign-up failed. Please try again."),
-      );
+      const handled = applyClerkFieldErrors(err);
+      if (!handled) {
+        const fallback = getClerkErrors(err)[0]?.message;
+        Alert.alert(
+          "Sign-up Failed",
+          fallback ?? "Sign-up failed. Please try again.",
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -67,7 +182,7 @@ export default function SignUpScreen() {
   const handleVerify = async () => {
     if (!isLoaded) return;
     if (!code.trim()) {
-      Alert.alert("Required", "Please enter the verification code.");
+      setCodeError("Verification code daalein.");
       return;
     }
 
@@ -80,16 +195,11 @@ export default function SignUpScreen() {
         await setActive({ session: result.createdSessionId });
         router.replace("/(tabs)");
       } else {
-        Alert.alert(
-          "Verification Incomplete",
-          "Could not complete sign-up. Please try again.",
-        );
+        setCodeError("Sign-up complete nahi ho paaya. Dobara try karein.");
       }
     } catch (err: unknown) {
-      Alert.alert(
-        "Verification Failed",
-        getClerkErrorMessage(err, "Invalid code. Please try again."),
-      );
+      const fallback = getClerkErrors(err)[0]?.message;
+      setCodeError(fallback ?? "Galat code. Dobara try karein.");
     } finally {
       setLoading(false);
     }
@@ -97,13 +207,15 @@ export default function SignUpScreen() {
 
   const handleResend = async () => {
     if (!isLoaded) return;
+    setCodeError(null);
     try {
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       Alert.alert("Code Sent", "A new verification code has been sent.");
     } catch (err: unknown) {
+      const fallback = getClerkErrors(err)[0]?.message;
       Alert.alert(
         "Could Not Resend",
-        getClerkErrorMessage(err, "Failed to resend code. Please try again."),
+        fallback ?? "Failed to resend code. Please try again.",
       );
     }
   };
@@ -160,8 +272,13 @@ export default function SignUpScreen() {
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: colors.radius,
-      marginBottom: 16,
       paddingHorizontal: 14,
+    },
+    inputWrapperError: {
+      borderColor: colors.destructive,
+    },
+    fieldSpacer: {
+      marginBottom: 16,
     },
     input: {
       flex: 1,
@@ -172,6 +289,36 @@ export default function SignUpScreen() {
     },
     eyeBtn: {
       padding: 4,
+    },
+    errorText: {
+      fontSize: 12,
+      color: colors.destructive,
+      marginTop: 6,
+      fontFamily: "Inter_400Regular",
+    },
+    strengthRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 10,
+    },
+    strengthBars: {
+      flex: 1,
+      flexDirection: "row",
+      gap: 6,
+    },
+    strengthBar: {
+      flex: 1,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: colors.border,
+    },
+    strengthLabel: {
+      fontSize: 12,
+      fontWeight: "600" as const,
+      fontFamily: "Inter_600SemiBold",
+      minWidth: 54,
+      textAlign: "right",
     },
     primaryBtn: {
       backgroundColor: colors.primary,
@@ -244,11 +391,19 @@ export default function SignUpScreen() {
           </Text>
 
           <Text style={styles.label}>Verification Code</Text>
-          <View style={styles.inputWrapper}>
+          <View
+            style={[
+              styles.inputWrapper,
+              codeError ? styles.inputWrapperError : null,
+            ]}
+          >
             <TextInput
               style={styles.input}
               value={code}
-              onChangeText={setCode}
+              onChangeText={(t) => {
+                setCode(t);
+                if (codeError) setCodeError(null);
+              }}
               keyboardType="number-pad"
               autoCapitalize="none"
               placeholder="123456"
@@ -256,9 +411,18 @@ export default function SignUpScreen() {
               testID="code-input"
             />
           </View>
+          {codeError ? (
+            <Text style={styles.errorText} testID="code-error">
+              {codeError}
+            </Text>
+          ) : null}
 
           <TouchableOpacity
-            style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
+            style={[
+              styles.primaryBtn,
+              { marginTop: 24 },
+              loading && styles.primaryBtnDisabled,
+            ]}
             onPress={handleVerify}
             disabled={loading}
             testID="verify-btn"
@@ -298,11 +462,19 @@ export default function SignUpScreen() {
         </View>
 
         <Text style={styles.label}>Email</Text>
-        <View style={styles.inputWrapper}>
+        <View
+          style={[
+            styles.inputWrapper,
+            emailError ? styles.inputWrapperError : null,
+          ]}
+        >
           <TextInput
             style={styles.input}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(t) => {
+              setEmail(t);
+              if (emailError) setEmailError(null);
+            }}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -311,13 +483,26 @@ export default function SignUpScreen() {
             testID="email-input"
           />
         </View>
+        {emailError ? (
+          <Text style={styles.errorText} testID="email-error">
+            {emailError}
+          </Text>
+        ) : null}
 
-        <Text style={styles.label}>Password</Text>
-        <View style={styles.inputWrapper}>
+        <Text style={[styles.label, { marginTop: 16 }]}>Password</Text>
+        <View
+          style={[
+            styles.inputWrapper,
+            passwordError ? styles.inputWrapperError : null,
+          ]}
+        >
           <TextInput
             style={styles.input}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(t) => {
+              setPassword(t);
+              if (passwordError) setPasswordError(null);
+            }}
             secureTextEntry={!showPassword}
             autoCapitalize="none"
             placeholder="••••••••"
@@ -336,8 +521,39 @@ export default function SignUpScreen() {
           </TouchableOpacity>
         </View>
 
+        {password.length > 0 ? (
+          <View style={styles.strengthRow} testID="password-strength">
+            <View style={styles.strengthBars}>
+              {[1, 2, 3].map((seg) => (
+                <View
+                  key={seg}
+                  style={[
+                    styles.strengthBar,
+                    strength.level >= seg
+                      ? { backgroundColor: strength.color }
+                      : null,
+                  ]}
+                />
+              ))}
+            </View>
+            <Text style={[styles.strengthLabel, { color: strength.color }]}>
+              {strength.label}
+            </Text>
+          </View>
+        ) : null}
+
+        {passwordError ? (
+          <Text style={styles.errorText} testID="password-error">
+            {passwordError}
+          </Text>
+        ) : null}
+
         <TouchableOpacity
-          style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
+          style={[
+            styles.primaryBtn,
+            { marginTop: 24 },
+            loading && styles.primaryBtnDisabled,
+          ]}
           onPress={handleSignUp}
           disabled={loading}
           testID="sign-up-btn"

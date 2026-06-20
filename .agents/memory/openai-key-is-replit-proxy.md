@@ -3,9 +3,9 @@ name: OPENAI_API_KEY is a Replit AI Integrations key
 description: Why raw OpenAI SDK calls 401 in this repo and how to wire the proxy
 ---
 
-The `OPENAI_API_KEY` secret in this repo is a **Replit-managed AI Integrations key** (prefix `AQ.Ab8RN...`), NOT a raw platform key from platform.openai.com.
+The `OPENAI_API_KEY` secret in this repo is a **Replit-managed AI Integrations key** (prefix ``), NOT a raw platform key from platform.openai.com.
 
-**Symptom:** `new OpenAI({ apiKey: process.env.OPENAI_API_KEY })` against `api.openai.com` returns `401 Incorrect API key provided: AQ.Ab8RN...`.
+**Symptom:** `new OpenAI({ apiKey: process.env.OPENAI_API_KEY })` against `api.openai.com` returns `401 Incorrect API key provided: `.
 
 **Fix:** Provision proxy env vars once via the JS sandbox:
 `setupReplitAIIntegrations({ providerSlug:"openai", providerUrlEnvVarName:"AI_INTEGRATIONS_OPENAI_BASE_URL", providerApiKeyEnvVarName:"AI_INTEGRATIONS_OPENAI_API_KEY" })`

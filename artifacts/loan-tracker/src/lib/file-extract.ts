@@ -21,6 +21,16 @@ export interface ExtractedData {
 
 export type ExtractProgress = (info: { stage: string; percent?: number }) => void;
 
+// Guardrails to keep on-device OCR/parsing from freezing the browser tab.
+// Images run through Tesseract OCR (CPU-heavy), so cap them tightly; PDFs are
+// parsed page-by-page, so cap by page count.
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024; // 8 MB
+const MAX_PDF_PAGES = 30;
+
+function mb(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 const EMPTY: Omit<ExtractedData, "confidence" | "notes"> = {
   borrowerName: null,
   principalAmount: null,
@@ -270,6 +280,12 @@ function score(
 async function pdfToText(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  if (pdf.numPages > MAX_PDF_PAGES) {
+    await pdf.cleanup();
+    throw new Error(
+      `This PDF has ${pdf.numPages} pages, which is too many to process in the browser (limit is ${MAX_PDF_PAGES}). Please upload a shorter PDF or just the relevant page, or fill the form manually.`
+    );
+  }
   let text = "";
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
@@ -284,6 +300,11 @@ async function pdfToText(file: File): Promise<string> {
 }
 
 async function imageToText(file: File, onProgress?: ExtractProgress): Promise<string> {
+  if (file.size > MAX_IMAGE_BYTES) {
+    throw new Error(
+      `This image is ${mb(file.size)}, which is too large to read in the browser (limit is ${mb(MAX_IMAGE_BYTES)}). Please upload a smaller or clearer screenshot, or fill the form manually.`
+    );
+  }
   const Tesseract = (await import("tesseract.js")).default;
   const { data } = await Tesseract.recognize(file, "eng", {
     logger: (m: { status: string; progress: number }) => {

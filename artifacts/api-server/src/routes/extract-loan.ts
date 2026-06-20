@@ -8,7 +8,8 @@ const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
 });
 
 function requireAuth(req: any, res: any, next: any) {
@@ -43,69 +44,81 @@ Rules:
 
 router.post("/", requireAuth, upload.single("file"), async (req: any, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
+    let buffer: Buffer;
+    let mimetype: string;
+    let originalname: string;
+
+    if (req.file) {
+      // Web: multipart/form-data upload
+      buffer = req.file.buffer;
+      mimetype = req.file.mimetype;
+      originalname = req.file.originalname || "";
+    } else if (req.body?.imageBase64) {
+      // Mobile: JSON body { imageBase64, mimeType }
+      buffer = Buffer.from(req.body.imageBase64, "base64");
+      mimetype = req.body.mimeType || "image/jpeg";
+      originalname = "";
+    } else {
+      res.status(400).json({ error: "No file uploaded" });
+      return;
     }
 
-    const { mimetype, buffer, originalname } = req.file;
     const ext = (originalname || "").toLowerCase().split(".").pop();
 
-    let extractedText = "";
-    let useVision = false;
+    const isImage =
+      mimetype.startsWith("image/") || ["png", "jpg", "jpeg", "webp"].includes(ext ?? "");
+    const isPdf = mimetype === "application/pdf" || ext === "pdf";
+    const isText =
+      mimetype === "application/json" ||
+      mimetype === "text/csv" ||
+      mimetype.startsWith("text/") ||
+      ["json", "csv", "txt"].includes(ext ?? "");
 
-    if (mimetype === "application/json" || ext === "json") {
-      extractedText = buffer.toString("utf-8");
-    } else if (mimetype === "text/csv" || ext === "csv") {
-      extractedText = buffer.toString("utf-8");
-    } else if (mimetype.startsWith("image/") || ext === "png" || ext === "jpg" || ext === "jpeg" || ext === "webp") {
-      useVision = true;
-    } else if (mimetype === "application/pdf" || ext === "pdf") {
-      useVision = true;
-    } else {
-      extractedText = buffer.toString("utf-8");
-    }
+    const b64 = buffer.toString("base64");
+    let userContent: OpenAI.Chat.Completions.ChatCompletionContentPart[];
 
-    let result: string;
-
-    if (useVision) {
-      const b64 = buffer.toString("base64");
+    if (isImage) {
       const imageMediaType = mimetype.startsWith("image/") ? mimetype : "image/png";
-
-      const response = await openai.chat.completions.create({
-        model: "gpt-5-mini",
-        max_completion_tokens: 1024,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: [
-              {
-                type: "image_url",
-                image_url: { url: `data:${imageMediaType};base64,${b64}`, detail: "high" },
-              },
-              {
-                type: "text",
-                text: "Extract loan details from this document. Return only JSON.",
-              },
-            ],
-          },
-        ],
-      });
-      result = response.choices[0]?.message?.content ?? "{}";
+      userContent = [
+        {
+          type: "image_url",
+          image_url: { url: `data:${imageMediaType};base64,${b64}`, detail: "high" },
+        },
+        { type: "text", text: "Extract loan details from this document. Return only JSON." },
+      ];
+    } else if (isPdf) {
+      // Chat completions accepts PDFs via the `file` content part (not image_url)
+      userContent = [
+        {
+          type: "file",
+          file: { filename: originalname || "document.pdf", file_data: `data:application/pdf;base64,${b64}` },
+        },
+        { type: "text", text: "Extract loan details from this document. Return only JSON." },
+      ];
+    } else if (isText) {
+      const extractedText = buffer.toString("utf-8");
+      userContent = [
+        {
+          type: "text",
+          text: `Extract loan details from this document content:\n\n${extractedText.slice(0, 12000)}`,
+        },
+      ];
     } else {
-      const response = await openai.chat.completions.create({
-        model: "gpt-5-mini",
-        max_completion_tokens: 1024,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          {
-            role: "user",
-            content: `Extract loan details from this document content:\n\n${extractedText.slice(0, 12000)}`,
-          },
-        ],
+      res.status(415).json({
+        error: "Unsupported file type. Upload an image (PNG/JPG/WEBP), PDF, CSV, or JSON file.",
       });
-      result = response.choices[0]?.message?.content ?? "{}";
+      return;
     }
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-5-mini",
+      max_completion_tokens: 1024,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userContent },
+      ],
+    });
+    const result = response.choices[0]?.message?.content ?? "{}";
 
     const cleaned = result.trim().replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
     const parsed = JSON.parse(cleaned);
@@ -115,7 +128,8 @@ router.post("/", requireAuth, upload.single("file"), async (req: any, res) => {
   } catch (err: any) {
     req.log.error({ err }, "loan extraction failed");
     if (err instanceof SyntaxError) {
-      return res.status(422).json({ error: "AI returned invalid JSON — try a clearer document" });
+      res.status(422).json({ error: "AI returned invalid JSON — try a clearer document" });
+      return;
     }
     res.status(500).json({ error: err.message ?? "Extraction failed" });
   }

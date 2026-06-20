@@ -9,6 +9,7 @@ import {
   HandCoins, Wallet, Activity, ArrowUpRight, ArrowDownRight,
   PieChart, List, BellRing,
 } from "lucide-react";
+import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { formatRupees, formatDate } from "@/lib/loan-utils";
 import { extractFromFile } from "@/lib/file-extract";
 
@@ -264,6 +265,55 @@ export function Dashboard() {
   const today = new Date().toLocaleDateString("en-GB");
   const overdue = summary?.overdueLoans ?? 0;
 
+  const statusData = [
+    { label: "Active", value: summary?.activeLoans ?? 0, color: "#3b82f6" },
+    { label: "Paid", value: summary?.paidLoans ?? 0, color: "#10b981" },
+    { label: "Overdue", value: summary?.overdueLoans ?? 0, color: "#f43f5e" },
+  ];
+  const statusTotal = statusData.reduce((sum, d) => sum + d.value, 0);
+  const pieData =
+    statusTotal > 0
+      ? statusData.filter((d) => d.value > 0)
+      : [{ label: "None", value: 1, color: "#e2e8f0" }];
+
+  const insight = summaryLoading
+    ? null
+    : overdue > 0
+      ? {
+          icon: AlertCircle,
+          title: "Needs your attention",
+          text: `${overdue} ${overdue === 1 ? "loan is" : "loans are"} overdue. Follow up soon to keep your collections on track.`,
+          bg: "bg-rose-50",
+          border: "border-rose-100",
+          iconBg: "bg-rose-100",
+          iconText: "text-rose-600",
+          titleColor: "text-rose-900",
+          bodyColor: "text-rose-700/80",
+        }
+      : (summary?.totalLoans ?? 0) === 0
+        ? {
+            icon: Wallet,
+            title: "Welcome to Ledger",
+            text: "Add your first loan to start tracking repayments, balances, and due dates.",
+            bg: "bg-indigo-50",
+            border: "border-indigo-100",
+            iconBg: "bg-indigo-100",
+            iconText: "text-indigo-600",
+            titleColor: "text-indigo-900",
+            bodyColor: "text-indigo-700/80",
+          }
+        : {
+            icon: CheckCircle,
+            title: "You're on track",
+            text: `No overdue loans. ${formatRupees(summary?.totalOutstanding ?? 0)} still to be collected across ${summary?.activeLoans ?? 0} active ${(summary?.activeLoans ?? 0) === 1 ? "loan" : "loans"}.`,
+            bg: "bg-emerald-50",
+            border: "border-emerald-100",
+            iconBg: "bg-emerald-100",
+            iconText: "text-emerald-600",
+            titleColor: "text-emerald-900",
+            bodyColor: "text-emerald-700/80",
+          };
+
   return (
     <>
       {showImport && <ImportModal onClose={() => setShowImport(false)} />}
@@ -296,6 +346,23 @@ export function Dashboard() {
           </Button>
         </div>
       </header>
+
+      {/* Insight message */}
+      {insight && (
+        <div
+          className={`mb-6 flex items-start gap-4 rounded-[1.5rem] border p-5 ${insight.bg} ${insight.border}`}
+        >
+          <div
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${insight.iconBg}`}
+          >
+            <insight.icon className={`h-5 w-5 ${insight.iconText}`} />
+          </div>
+          <div>
+            <p className={`font-bold ${insight.titleColor}`}>{insight.title}</p>
+            <p className={`mt-0.5 text-sm font-medium ${insight.bodyColor}`}>{insight.text}</p>
+          </div>
+        </div>
+      )}
 
       {/* Bento Grid */}
       <div className="grid auto-rows-[minmax(160px,auto)] grid-cols-1 gap-5 md:grid-cols-4">
@@ -369,23 +436,66 @@ export function Dashboard() {
         </div>
 
         {/* Loan status mix */}
-        <div className="flex flex-col justify-between rounded-[2rem] border border-slate-100 bg-white p-6 bento-shadow bento-hover">
+        <div className="flex flex-col gap-4 rounded-[2rem] border border-slate-100 bg-white p-6 bento-shadow bento-hover">
           <div className="flex items-center gap-2 font-bold text-slate-500">
             <PieChart className="h-4 w-4" /> Loan Status Mix
           </div>
-          <div className="space-y-3">
-            {[
-              { dot: "bg-blue-500", label: "Active", value: summary?.activeLoans ?? 0 },
-              { dot: "bg-emerald-500", label: "Paid", value: summary?.paidLoans ?? 0 },
-              { dot: "bg-rose-500", label: "Overdue", value: summary?.overdueLoans ?? 0 },
-            ].map((row) => (
-              <div key={row.label} className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                  <span className={`h-3 w-3 rounded-full ${row.dot}`} /> {row.label}
+          <div className="flex items-center gap-4">
+            {summaryLoading ? (
+              <Skeleton className="h-24 w-24 shrink-0 rounded-full" />
+            ) : (
+              <div
+                className="relative h-24 w-24 shrink-0"
+                role="img"
+                aria-label={`Loan status mix: ${statusData
+                  .map((d) => `${d.value} ${d.label.toLowerCase()}`)
+                  .join(", ")}`}
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <RePieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      innerRadius={32}
+                      outerRadius={46}
+                      paddingAngle={statusTotal > 0 ? 3 : 0}
+                      stroke="none"
+                      startAngle={90}
+                      endAngle={-270}
+                      isAnimationActive={false}
+                    >
+                      {pieData.map((d) => (
+                        <Cell key={d.label} fill={d.color} />
+                      ))}
+                    </Pie>
+                  </RePieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-xl font-extrabold leading-none text-slate-900">
+                    {statusTotal}
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Loans
+                  </span>
                 </div>
-                <span className="font-bold text-slate-900">{row.value}</span>
               </div>
-            ))}
+            )}
+            <div className="flex-1 space-y-2">
+              {statusData.map((row) => (
+                <div key={row.label} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                    <span
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: row.color }}
+                    />{" "}
+                    {row.label}
+                  </div>
+                  <span className="font-bold text-slate-900">
+                    {summaryLoading ? "—" : row.value}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

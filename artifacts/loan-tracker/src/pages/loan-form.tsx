@@ -59,9 +59,10 @@ export function LoanForm() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Read pre-filled values from URL query params (set by AI file import)
+  // Read pre-filled values from URL query params. The "Auto-filled by AI" banner
+  // only shows when source=ai; other prefills (planner, quick-add) still fill fields.
   const urlParams = new URLSearchParams(search);
-  const fromImport = urlParams.has("borrowerName") || urlParams.has("principalAmount");
+  const fromImport = urlParams.get("source") === "ai";
 
   const [form, setForm] = useState({
     borrowerName: urlParams.get("borrowerName") ?? "",

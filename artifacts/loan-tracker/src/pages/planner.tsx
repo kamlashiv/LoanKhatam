@@ -555,6 +555,26 @@ export function Planner() {
     setExportOpen(false);
   };
 
+  const buildLoanFormHref = () => {
+    const qs = new URLSearchParams();
+    if (params.principal > 0) qs.set("principalAmount", String(params.principal));
+    if (!Number.isNaN(params.rate)) qs.set("interestRate", String(params.rate));
+    if (params.tenureMonths > 0) qs.set("tenureMonths", String(params.tenureMonths));
+    if (params.startMonth) {
+      qs.set("startDate", `${params.startMonth}-01`);
+      if (params.tenureMonths > 0) {
+        const [y, m] = params.startMonth.split("-").map(Number);
+        const total = m - 1 + params.tenureMonths;
+        const dueYear = y + Math.floor(total / 12);
+        const dueMonth = (total % 12) + 1;
+        qs.set("dueDate", `${dueYear}-${String(dueMonth).padStart(2, "0")}-01`);
+      }
+    }
+    if (profileName) qs.set("description", profileName);
+    const query = qs.toString();
+    return query ? `/loans/new?${query}` : "/loans/new";
+  };
+
   const exportMeta = {
     borrowerName: profileName,
     principal: params.principal,
@@ -1002,7 +1022,12 @@ export function Planner() {
                 )}
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex-col gap-2">
+              <Button asChild className="w-full gap-2">
+                <Link href={buildLoanFormHref()}>
+                  <CheckCircle2 className="h-4 w-4" /> Submit
+                </Link>
+              </Button>
               <Button variant="ghost" className="w-full gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" onClick={resetAll}>
                 <RefreshCw className="h-4 w-4" /> Reset All
               </Button>

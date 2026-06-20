@@ -1,5 +1,13 @@
 import { useState, useRef, useMemo, useCallback } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useCreateLoan,
+  getListLoansQueryKey,
+  getGetDashboardSummaryQueryKey,
+  getGetRecentLoansQueryKey,
+} from "@workspace/api-client-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -331,6 +339,9 @@ const STRAT_VISUAL = [
 // ─── Main page ───────────────────────────────────────────────────────────────
 export function Planner() {
   const { isDark } = useTheme();
+  const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { profile } = useProfile();
   const derived = useDerivedLoans();
   const surplus = monthlySurplus(profile, derived.aggregateEmi);
@@ -555,24 +566,46 @@ export function Planner() {
     setExportOpen(false);
   };
 
-  const buildLoanFormHref = () => {
-    const qs = new URLSearchParams();
-    if (params.principal > 0) qs.set("principalAmount", String(params.principal));
-    if (!Number.isNaN(params.rate)) qs.set("interestRate", String(params.rate));
-    if (params.tenureMonths > 0) qs.set("tenureMonths", String(params.tenureMonths));
-    if (params.startMonth) {
-      qs.set("startDate", `${params.startMonth}-01`);
-      if (params.tenureMonths > 0) {
-        const [y, m] = params.startMonth.split("-").map(Number);
-        const total = m - 1 + params.tenureMonths;
-        const dueYear = y + Math.floor(total / 12);
-        const dueMonth = (total % 12) + 1;
-        qs.set("dueDate", `${dueYear}-${String(dueMonth).padStart(2, "0")}-01`);
-      }
+  const createLoan = useCreateLoan({
+    mutation: {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries({ queryKey: getListLoansQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetRecentLoansQueryKey() });
+        toast({ title: "Loan created successfully" });
+        setLocation(`/loans/${data.id}`);
+      },
+      onError: () => {
+        toast({ title: "Could not create loan", description: "Please try again.", variant: "destructive" });
+      },
+    },
+  });
+
+  const handleCreateLoan = () => {
+    if (!(params.principal > 0)) {
+      toast({ title: "Enter a principal amount before submitting", variant: "destructive" });
+      return;
     }
-    if (profileName) qs.set("description", profileName);
-    const query = qs.toString();
-    return query ? `/loans/new?${query}` : "/loans/new";
+    const startDate = params.startMonth ? `${params.startMonth}-01` : undefined;
+    let dueDate: string | undefined;
+    if (params.startMonth && params.tenureMonths > 0) {
+      const [y, m] = params.startMonth.split("-").map(Number);
+      const total = m - 1 + params.tenureMonths;
+      const dueYear = y + Math.floor(total / 12);
+      const dueMonth = (total % 12) + 1;
+      dueDate = `${dueYear}-${String(dueMonth).padStart(2, "0")}-01`;
+    }
+    createLoan.mutate({
+      data: {
+        borrowerName: profileName.trim() || "My Loan",
+        principalAmount: params.principal,
+        interestRate: Number.isNaN(params.rate) ? 0 : params.rate,
+        tenureMonths: params.tenureMonths > 0 ? params.tenureMonths : undefined,
+        startDate,
+        dueDate,
+        description: profileName.trim() || undefined,
+      },
+    });
   };
 
   const exportMeta = {
@@ -1023,10 +1056,12 @@ export function Planner() {
               </div>
             </CardContent>
             <CardFooter className="flex-col gap-2">
-              <Button asChild className="w-full gap-2">
-                <Link href={buildLoanFormHref()}>
-                  <CheckCircle2 className="h-4 w-4" /> Submit
-                </Link>
+              <Button className="w-full gap-2" onClick={handleCreateLoan} disabled={createLoan.isPending}>
+                {createLoan.isPending ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</>
+                ) : (
+                  <><CheckCircle2 className="h-4 w-4" /> Submit</>
+                )}
               </Button>
               <Button variant="ghost" className="w-full gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" onClick={resetAll}>
                 <RefreshCw className="h-4 w-4" /> Reset All

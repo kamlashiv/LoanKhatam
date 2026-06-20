@@ -9,3 +9,4 @@
 - [Bento planner artifact](bento-planner-artifact.md) — standalone frontend-only "Smart Loan Saver" reuses copied planner engine libs; second consumer of the engine, keep math/exports consistent with loan-tracker.
 - [Loans list status query param](loans-status-query-param.md) — /loans seeds its filter tab from ?status=; sidebar overdue CTA depends on it. Keep param names in sync.
 - [Loan-tracker link/icon button a11y](loan-tracker-a11y-buttons.md) — use Button asChild+Link (not Link>Button); icon-only buttons need aria-label. Both were review rejections.
+- [localStorage persisted index validation](localstorage-index-validation.md) — persisted array-index values (e.g. a selected-option index) need Number.isInteger + bounds checks in loader AND usage; finite-number + try/catch alone crashes on -1/0.5.

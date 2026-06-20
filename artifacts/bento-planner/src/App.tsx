@@ -107,6 +107,95 @@ function loadSettings(): PlannerSettings {
   }
 }
 
+/* Loan inputs + chosen goal/strategy (persisted to localStorage so a returning
+   user picks up where they left off). Kept separate from preferences. */
+const LOAN_STATE_KEY = "rinmukti-planner-loan";
+
+function defaultParams(): LoanParams {
+  return {
+    principal: 2500000,
+    rate: 8.5,
+    tenureMonths: 240,
+    startMonth: new Date().toISOString().slice(0, 7),
+    extraEMI: 0,
+  };
+}
+
+interface PlannerLoanState {
+  params: LoanParams;
+  yearLumps: Record<number, number>;
+  activeStrategy: string | null;
+  goalMode: "date" | "budget";
+  targetSel: number | null;
+}
+
+function defaultLoanState(): PlannerLoanState {
+  return {
+    params: defaultParams(),
+    yearLumps: {},
+    activeStrategy: null,
+    goalMode: "budget",
+    targetSel: null,
+  };
+}
+
+function loadLoanState(): PlannerLoanState {
+  const fallback = defaultLoanState();
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(LOAN_STATE_KEY);
+    if (!raw) return fallback;
+    const p = JSON.parse(raw);
+    const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+
+    // params
+    const rp = p?.params ?? {};
+    const principal = num(rp.principal);
+    const rate = num(rp.rate);
+    const tenureMonths = num(rp.tenureMonths);
+    const extraEMI = num(rp.extraEMI);
+    const startMonth =
+      typeof rp.startMonth === "string" && /^\d{4}-\d{2}$/.test(rp.startMonth)
+        ? rp.startMonth
+        : null;
+    const params: LoanParams =
+      principal != null && rate != null && tenureMonths != null && startMonth != null
+        ? {
+            principal: Math.max(0, principal),
+            rate: Math.max(0, rate),
+            tenureMonths: Math.max(1, Math.round(tenureMonths)),
+            startMonth,
+            extraEMI: Math.max(0, extraEMI ?? 0),
+          }
+        : fallback.params;
+
+    // yearLumps: { [year]: amount } with positive finite numbers only
+    const yearLumps: Record<number, number> = {};
+    if (rp && typeof p?.yearLumps === "object" && p.yearLumps !== null) {
+      for (const [k, v] of Object.entries(p.yearLumps)) {
+        const yr = Number(k);
+        const amt = num(v);
+        if (Number.isInteger(yr) && yr > 0 && amt != null && amt > 0) yearLumps[yr] = amt;
+      }
+    }
+
+    const activeStrategy =
+      p?.activeStrategy === null || (typeof p?.activeStrategy === "string" && p.activeStrategy in STRAT_META)
+        ? (p.activeStrategy as string | null)
+        : fallback.activeStrategy;
+
+    const goalMode = p?.goalMode === "date" || p?.goalMode === "budget" ? p.goalMode : fallback.goalMode;
+    const targetSel =
+      typeof p?.targetSel === "number" && Number.isInteger(p.targetSel) && p.targetSel >= 0
+        ? p.targetSel
+        : null;
+
+    return { params, yearLumps, activeStrategy, goalMode, targetSel };
+  } catch {
+    return fallback;
+  }
+}
+
 function savedTimeLabel(months: number) {
   const y = Math.floor(months / 12);
   const mo = months % 12;
@@ -925,13 +1014,8 @@ function AccountBox({
 /* Main                                                                */
 /* ------------------------------------------------------------------ */
 export default function App() {
-  const [params, setParams] = useState<LoanParams>({
-    principal: 2500000,
-    rate: 8.5,
-    tenureMonths: 240,
-    startMonth: new Date().toISOString().slice(0, 7),
-    extraEMI: 0,
-  });
+  const initialLoan = useMemo(loadLoanState, []);
+  const [params, setParams] = useState<LoanParams>(initialLoan.params);
   const initialSettings = useMemo(loadSettings, []);
   const [profileName, setProfileName] = useState(initialSettings.profileName);
   const [currency, setCurrency] = useState<Currency>(initialSettings.currency);
@@ -953,11 +1037,25 @@ export default function App() {
 
   // Yearly lump prepayments are driven by strategy selection (no per-row editor
   // in this guided flow), so the advertised strategy savings stay accurate.
-  const [yearLumps, setYearLumps] = useState<Record<number, number>>({});
-  const [activeStrategy, setActiveStrategy] = useState<string | null>(null);
+  const [yearLumps, setYearLumps] = useState<Record<number, number>>(initialLoan.yearLumps);
+  const [activeStrategy, setActiveStrategy] = useState<string | null>(initialLoan.activeStrategy);
 
-  const [goalMode, setGoalMode] = useState<"date" | "budget">("budget");
-  const [targetSel, setTargetSel] = useState<number | null>(null);
+  const [goalMode, setGoalMode] = useState<"date" | "budget">(initialLoan.goalMode);
+  const [targetSel, setTargetSel] = useState<number | null>(initialLoan.targetSel);
+
+  // Persist loan inputs + chosen goal/strategy so a returning user picks up
+  // right where they left off. resetAll() puts state back to defaults, which
+  // this effect then writes out (clearing the saved plan).
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        LOAN_STATE_KEY,
+        JSON.stringify({ params, yearLumps, activeStrategy, goalMode, targetSel }),
+      );
+    } catch {
+      /* ignore storage failures (private mode, quota) */
+    }
+  }, [params, yearLumps, activeStrategy, goalMode, targetSel]);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -1069,7 +1167,9 @@ export default function App() {
 
   // Guard against a stale selection when targetOptions shrinks (e.g. tenure edited).
   const safeTargetSel =
-    targetSel != null && targetSel < targetOptions.length ? targetSel : 0;
+    targetSel != null && Number.isInteger(targetSel) && targetSel >= 0 && targetSel < targetOptions.length
+      ? targetSel
+      : 0;
 
   const selectTarget = (i: number) => {
     setTargetSel(i);
@@ -1104,17 +1204,12 @@ export default function App() {
   }, [draft]);
 
   const resetAll = () => {
-    setParams({
-      principal: 2500000,
-      rate: 8.5,
-      tenureMonths: 240,
-      startMonth: new Date().toISOString().slice(0, 7),
-      extraEMI: 0,
-    });
+    setParams(defaultParams());
     setYearLumps({});
     setProfileName("");
     setActiveStrategy(null);
     setTargetSel(null);
+    setGoalMode("budget");
   };
 
   const exportMeta = {

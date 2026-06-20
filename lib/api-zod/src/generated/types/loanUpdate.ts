@@ -12,6 +12,8 @@ export interface LoanUpdate {
   borrowerName?: string;
   principalAmount?: number;
   interestRate?: number;
+  /** @minimum 1 */
+  tenureMonths?: number;
   startDate?: string;
   dueDate?: string;
   description?: string;

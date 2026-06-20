@@ -14,6 +14,8 @@ export interface Loan {
   borrowerName: string;
   principalAmount: number;
   interestRate: number;
+  /** @nullable */
+  tenureMonths?: number | null;
   startDate: string;
   dueDate: string;
   /** @nullable */

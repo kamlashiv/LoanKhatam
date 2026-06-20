@@ -33,6 +33,7 @@ export const ListLoansResponseItem = zod.object({
   "borrowerName": zod.string(),
   "principalAmount": zod.number(),
   "interestRate": zod.number(),
+  "tenureMonths": zod.number().nullish(),
   "startDate": zod.string(),
   "dueDate": zod.string(),
   "description": zod.string().nullish(),
@@ -56,6 +57,7 @@ export const createLoanBodyPrincipalAmountMin = 0;
 
 export const createLoanBodyInterestRateMin = 0;
 
+
 export const createLoanBodyRateChangesItemNewRateMin = 0;
 
 
@@ -64,6 +66,7 @@ export const CreateLoanBody = zod.object({
   "borrowerName": zod.string().min(1),
   "principalAmount": zod.number().min(createLoanBodyPrincipalAmountMin),
   "interestRate": zod.number().min(createLoanBodyInterestRateMin),
+  "tenureMonths": zod.number().min(1).optional(),
   "startDate": zod.string(),
   "dueDate": zod.string(),
   "description": zod.string().optional(),
@@ -91,6 +94,7 @@ export const GetLoanResponse = zod.object({
   "borrowerName": zod.string(),
   "principalAmount": zod.number(),
   "interestRate": zod.number(),
+  "tenureMonths": zod.number().nullish(),
   "startDate": zod.string(),
   "dueDate": zod.string(),
   "description": zod.string().nullish(),
@@ -112,6 +116,7 @@ export const UpdateLoanParams = zod.object({
   "id": zod.coerce.number()
 })
 
+
 export const updateLoanBodyRateChangesItemNewRateMin = 0;
 
 
@@ -120,6 +125,7 @@ export const UpdateLoanBody = zod.object({
   "borrowerName": zod.string().optional(),
   "principalAmount": zod.number().optional(),
   "interestRate": zod.number().optional(),
+  "tenureMonths": zod.number().min(1).optional(),
   "startDate": zod.string().optional(),
   "dueDate": zod.string().optional(),
   "description": zod.string().optional(),
@@ -140,6 +146,7 @@ export const UpdateLoanResponse = zod.object({
   "borrowerName": zod.string(),
   "principalAmount": zod.number(),
   "interestRate": zod.number(),
+  "tenureMonths": zod.number().nullish(),
   "startDate": zod.string(),
   "dueDate": zod.string(),
   "description": zod.string().nullish(),
@@ -234,6 +241,7 @@ export const GetRecentLoansResponseItem = zod.object({
   "borrowerName": zod.string(),
   "principalAmount": zod.number(),
   "interestRate": zod.number(),
+  "tenureMonths": zod.number().nullish(),
   "startDate": zod.string(),
   "dueDate": zod.string(),
   "description": zod.string().nullish(),

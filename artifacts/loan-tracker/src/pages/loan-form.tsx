@@ -15,8 +15,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Calculator, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatRupees } from "@/lib/loan-utils";
 
 interface RateChangeEntry {
   effectiveDate: string;
@@ -40,6 +41,7 @@ export function LoanForm() {
     borrowerName: urlParams.get("borrowerName") ?? "",
     principalAmount: urlParams.get("principalAmount") ?? "",
     interestRate: urlParams.get("interestRate") ?? "",
+    tenureMonths: urlParams.get("tenureMonths") ?? "",
     startDate: urlParams.get("startDate") ?? new Date().toISOString().split("T")[0],
     dueDate: urlParams.get("dueDate") ?? "",
     description: urlParams.get("description") ?? "",
@@ -57,6 +59,7 @@ export function LoanForm() {
         borrowerName: existingLoan.borrowerName,
         principalAmount: existingLoan.principalAmount.toString(),
         interestRate: existingLoan.interestRate.toString(),
+        tenureMonths: existingLoan.tenureMonths?.toString() ?? "",
         startDate: existingLoan.startDate,
         dueDate: existingLoan.dueDate,
         description: existingLoan.description ?? "",
@@ -134,6 +137,7 @@ export function LoanForm() {
       borrowerName: form.borrowerName,
       principalAmount: parseFloat(form.principalAmount),
       interestRate: parseFloat(form.interestRate),
+      tenureMonths: form.tenureMonths ? parseInt(form.tenureMonths) : undefined,
       startDate: form.startDate,
       dueDate: form.dueDate,
       description: form.description || undefined,
@@ -148,6 +152,24 @@ export function LoanForm() {
   };
 
   const isPending = createLoan.isPending || updateLoan.isPending;
+
+  // Calculated EMI (Equated Monthly Installment) from principal, rate and tenure
+  const principalNum = parseFloat(form.principalAmount);
+  const rateNum = parseFloat(form.interestRate);
+  const tenureNum = parseInt(form.tenureMonths);
+  const emiInputsValid =
+    principalNum > 0 && tenureNum > 0 && !isNaN(rateNum) && rateNum >= 0;
+  let emi = 0;
+  if (emiInputsValid) {
+    const r = rateNum / 12 / 100;
+    emi =
+      r === 0
+        ? principalNum / tenureNum
+        : (principalNum * r * Math.pow(1 + r, tenureNum)) /
+          (Math.pow(1 + r, tenureNum) - 1);
+  }
+  const totalPayable = emi * tenureNum;
+  const totalInterest = totalPayable - principalNum;
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
@@ -228,6 +250,60 @@ export function LoanForm() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="tenureMonths">Tenure (months)</Label>
+              <Input
+                id="tenureMonths"
+                name="tenureMonths"
+                type="number"
+                placeholder="e.g. 24"
+                min="1"
+                step="1"
+                value={form.tenureMonths}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Calculated EMI box */}
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <div className="flex items-center gap-2">
+                <Calculator className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-primary">
+                  Calculated EMI
+                </span>
+              </div>
+              {emiInputsValid ? (
+                <>
+                  <p className="mt-2 text-2xl font-bold tracking-tight">
+                    {formatRupees(emi)}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      {" "}
+                      / month
+                    </span>
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Total interest</p>
+                      <p className="font-semibold text-foreground">
+                        {formatRupees(totalInterest)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Total payable</p>
+                      <p className="font-semibold text-foreground">
+                        {formatRupees(totalPayable)}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Enter principal, interest rate and tenure to see the monthly
+                  installment.
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

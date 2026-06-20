@@ -296,6 +296,8 @@ components:
           type: number
         interestRate:
           type: number
+        tenureMonths:
+          type: ["integer", "null"]
         startDate:
           type: string
         dueDate:
@@ -334,6 +336,9 @@ components:
         interestRate:
           type: number
           minimum: 0
+        tenureMonths:
+          type: integer
+          minimum: 1
         startDate:
           type: string
         dueDate:
@@ -354,6 +359,9 @@ components:
           type: number
         interestRate:
           type: number
+        tenureMonths:
+          type: integer
+          minimum: 1
         startDate:
           type: string
         dueDate:

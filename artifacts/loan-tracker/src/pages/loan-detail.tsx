@@ -32,11 +32,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Edit, Trash2, Plus, Calendar, ChevronDown, TrendingUp } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Plus, Calendar, Clock, Calculator, ChevronDown, TrendingUp } from "lucide-react";
 import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils";
 import { useToast } from "@/hooks/use-toast";
 import { AmortizationSection } from "@/components/amortization-section";
 import { currentEffectiveRate } from "@/lib/amortization";
+
+function computeEmi(principal: number, annualRate: number, months: number): number {
+  if (!(principal > 0) || !(months > 0)) return 0;
+  const r = annualRate / 12 / 100;
+  if (r === 0) return principal / months;
+  return (principal * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
+}
 
 type Tab = "payments" | "amortization";
 
@@ -285,6 +292,18 @@ export function LoanDetail() {
               <Calendar className="h-4 w-4" />
               <span>Due: <span className="font-medium text-foreground">{formatDate(loan.dueDate)}</span></span>
             </div>
+            {loan.tenureMonths != null && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                <span>Tenure: <span className="font-medium text-foreground">{loan.tenureMonths} months</span></span>
+              </div>
+            )}
+            {loan.tenureMonths != null && loan.tenureMonths > 0 && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Calculator className="h-4 w-4" />
+                <span>EMI: <span className="font-medium text-foreground">{formatRupees(computeEmi(loan.principalAmount, loan.interestRate, loan.tenureMonths))}/mo</span></span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

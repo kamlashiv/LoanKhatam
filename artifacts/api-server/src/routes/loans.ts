@@ -41,6 +41,7 @@ function computeLoanFields(loan: any, payments: any[]) {
     borrowerName: loan.borrowerName,
     principalAmount: parseFloat(loan.principalAmount),
     interestRate: parseFloat(loan.interestRate),
+    tenureMonths: loan.tenureMonths ?? null,
     startDate: loan.startDate,
     dueDate: loan.dueDate,
     description: loan.description ?? null,
@@ -103,7 +104,7 @@ router.post("/", requireAuth, async (req: any, res) => {
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid input" });
     }
-    const { borrowerName, principalAmount, interestRate, startDate, dueDate, description, rateChanges } =
+    const { borrowerName, principalAmount, interestRate, tenureMonths, startDate, dueDate, description, rateChanges } =
       parsed.data;
     const [loan] = await db
       .insert(loansTable)
@@ -112,6 +113,7 @@ router.post("/", requireAuth, async (req: any, res) => {
         borrowerName,
         principalAmount: principalAmount.toString(),
         interestRate: interestRate.toString(),
+        tenureMonths: tenureMonths ?? null,
         startDate,
         dueDate,
         description: description ?? null,
@@ -201,6 +203,7 @@ router.patch("/:id", requireAuth, async (req: any, res) => {
       updates.principalAmount = d.principalAmount.toString();
     if (d.interestRate !== undefined)
       updates.interestRate = d.interestRate.toString();
+    if (d.tenureMonths !== undefined) updates.tenureMonths = d.tenureMonths;
     if (d.startDate !== undefined) updates.startDate = d.startDate;
     if (d.dueDate !== undefined) updates.dueDate = d.dueDate;
     if (d.description !== undefined) updates.description = d.description;

@@ -8,3 +8,4 @@
 - [Canvas reserved frames](canvas-reserved-frames.md) — pending_canvas_frames shape_ids aren't guaranteed to all exist; check update results, backfill missing ones with a new id at the intended rect.
 - [Bento planner artifact](bento-planner-artifact.md) — standalone frontend-only "Smart Loan Saver" reuses copied planner engine libs; second consumer of the engine, keep math/exports consistent with loan-tracker.
 - [Loans list status query param](loans-status-query-param.md) — /loans seeds its filter tab from ?status=; sidebar overdue CTA depends on it. Keep param names in sync.
+- [Loan-tracker link/icon button a11y](loan-tracker-a11y-buttons.md) — use Button asChild+Link (not Link>Button); icon-only buttons need aria-label. Both were review rejections.

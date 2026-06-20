@@ -92,7 +92,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Brand />
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-slate-700">
+            <Button variant="ghost" size="icon" aria-label="Open menu" className="text-slate-700">
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>

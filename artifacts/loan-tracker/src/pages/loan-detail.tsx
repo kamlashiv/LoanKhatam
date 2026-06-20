@@ -143,11 +143,11 @@ export function LoanDetail() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <Link href="/loans">
-            <Button variant="ghost" size="icon" className="shrink-0">
+          <Button asChild variant="ghost" size="icon" aria-label="Back to all loans" className="shrink-0">
+            <Link href="/loans">
               <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           <div>
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold tracking-tight">{loan.borrowerName}</h1>
@@ -390,6 +390,7 @@ export function LoanDetail() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label="Delete payment"
                           className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />

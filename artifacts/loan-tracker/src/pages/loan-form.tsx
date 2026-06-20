@@ -153,11 +153,11 @@ export function LoanForm() {
     <div className="max-w-xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link href={isEditing ? `/loans/${id}` : "/loans"}>
-          <Button variant="ghost" size="icon">
+        <Button asChild variant="ghost" size="icon" aria-label="Go back">
+          <Link href={isEditing ? `/loans/${id}` : "/loans"}>
             <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
             {isEditing ? "Edit Loan" : "Add New Loan"}
@@ -331,6 +331,7 @@ export function LoanForm() {
                         type="button"
                         variant="ghost"
                         size="icon"
+                        aria-label="Remove rate change"
                         className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
                         onClick={() => removeRateChange(index)}
                       >

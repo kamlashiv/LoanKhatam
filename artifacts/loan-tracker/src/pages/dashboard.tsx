@@ -98,6 +98,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
           </div>
           <button
             onClick={onClose}
+            aria-label="Close import dialog"
             className="text-muted-foreground hover:text-foreground transition-colors rounded-lg p-1 hover:bg-muted"
           >
             <X className="h-5 w-5" />

@@ -7,6 +7,9 @@ import { listLoans } from "@workspace/api-client-react";
 
 const NOTIFIED_KEY = "overdue_notified_loan_ids";
 const NOTIF_ENABLED_KEY = "overdue_notifications_enabled";
+const DAILY_REMINDER_TYPE = "daily_loan_reminder";
+const DAILY_REMINDER_HOUR = 9;
+const DAILY_REMINDER_MINUTE = 0;
 
 export async function getNotificationsEnabled(): Promise<boolean> {
   try {
@@ -21,6 +24,41 @@ export async function setNotificationsEnabled(enabled: boolean): Promise<void> {
   try {
     await AsyncStorage.setItem(NOTIF_ENABLED_KEY, enabled ? "true" : "false");
   } catch {
+  }
+}
+
+async function scheduleDailyReminder(): Promise<void> {
+  if (Platform.OS === "web") return;
+  const Notifications = await import("expo-notifications");
+
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const alreadyScheduled = scheduled.some(
+    (req) => req.content.data?.type === DAILY_REMINDER_TYPE,
+  );
+  if (alreadyScheduled) return;
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "Check your loans",
+      body: "Open Ledger to review outstanding loans and any overdue payments.",
+      data: { type: DAILY_REMINDER_TYPE },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DAILY,
+      hour: DAILY_REMINDER_HOUR,
+      minute: DAILY_REMINDER_MINUTE,
+    },
+  });
+}
+
+async function cancelDailyReminder(): Promise<void> {
+  if (Platform.OS === "web") return;
+  const Notifications = await import("expo-notifications");
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  for (const req of scheduled) {
+    if (req.content.data?.type === DAILY_REMINDER_TYPE) {
+      await Notifications.cancelScheduledNotificationAsync(req.identifier);
+    }
   }
 }
 
@@ -73,7 +111,11 @@ export function useOverdueNotifications(isSignedIn: boolean) {
 
   useEffect(() => {
     if (Platform.OS === "web") return;
-    if (!isSignedIn) return;
+
+    if (!isSignedIn) {
+      cancelDailyReminder().catch(() => {});
+      return;
+    }
 
     let cancelled = false;
 
@@ -95,6 +137,9 @@ export function useOverdueNotifications(isSignedIn: boolean) {
 
       const granted = await requestPermissions();
       if (!granted || cancelled) return;
+
+      await scheduleDailyReminder();
+      if (cancelled) return;
 
       let overdueLoans: Awaited<ReturnType<typeof listLoans>> = [];
       try {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -21,78 +21,41 @@ import { formatRupees } from "@/lib/loan-utils";
 import { exportStrategyPDF } from "@/lib/export";
 import { EmiInvestmentAnalyzer } from "@/components/emi-investment-analyzer";
 import {
-  computeStrategy, monthsToLabel, compactRupees, GOAL_OPTIONS, EMPTY_INPUTS,
+  computeStrategy, monthsToLabel, compactRupees, GOAL_OPTIONS,
   type StrategyInputs, type DebtItem, type RiskProfile, type HealthCategory,
 } from "@/lib/strategy-engine";
+import {
+  useProfile, EMPTY_PROFILE, type ProfileData,
+} from "@/lib/profile";
+import { SaveIndicator } from "@/components/save-indicator";
 
-const STORAGE_KEY = "loan-tracker:strategy-inputs";
-
-const RISK_PROFILES: StrategyInputs["riskProfile"][] = ["conservative", "moderate", "aggressive"];
-
-function sanitizeInputs(parsed: unknown): StrategyInputs {
-  if (typeof parsed !== "object" || parsed === null) return { ...EMPTY_INPUTS };
-  const raw = parsed as Record<string, unknown>;
-  const num = (key: keyof StrategyInputs): number => {
-    const v = raw[key];
-    return typeof v === "number" && Number.isFinite(v) ? v : (EMPTY_INPUTS[key] as number);
-  };
-  const loans: DebtItem[] = Array.isArray(raw.loans)
-    ? (raw.loans as unknown[]).flatMap((item) => {
-        if (typeof item !== "object" || item === null) return [];
-        const d = item as Record<string, unknown>;
-        return [
-          {
-            id: typeof d.id === "string" && d.id ? d.id : crypto.randomUUID(),
-            name: typeof d.name === "string" ? d.name : "",
-            balance: typeof d.balance === "number" && Number.isFinite(d.balance) ? d.balance : 0,
-            rate: typeof d.rate === "number" && Number.isFinite(d.rate) ? d.rate : 0,
-            minPayment:
-              typeof d.minPayment === "number" && Number.isFinite(d.minPayment) ? d.minPayment : 0,
-          },
-        ];
-      })
-    : [];
-  const goals = Array.isArray(raw.goals)
-    ? (raw.goals as unknown[]).filter((g): g is string => typeof g === "string")
-    : [];
-  const riskProfile = RISK_PROFILES.includes(raw.riskProfile as StrategyInputs["riskProfile"])
-    ? (raw.riskProfile as StrategyInputs["riskProfile"])
-    : EMPTY_INPUTS.riskProfile;
+/** Map the shared financial profile onto the strategy engine's input shape. */
+function profileToStrategyInputs(p: ProfileData): StrategyInputs {
   return {
-    age: num("age"),
-    monthlyIncome: num("monthlyIncome"),
-    additionalIncome: num("additionalIncome"),
-    rent: num("rent"),
-    emi: num("emi"),
-    insurance: num("insurance"),
-    utilities: num("utilities"),
-    schoolFees: num("schoolFees"),
-    internet: num("internet"),
-    otherFixed: num("otherFixed"),
-    food: num("food"),
-    fuel: num("fuel"),
-    travel: num("travel"),
-    entertainment: num("entertainment"),
-    shopping: num("shopping"),
-    medical: num("medical"),
-    miscellaneous: num("miscellaneous"),
-    currentSavings: num("currentSavings"),
-    existingInvestments: num("existingInvestments"),
-    creditCardDebt: num("creditCardDebt"),
-    loans,
-    goals,
-    riskProfile,
+    age: p.age,
+    monthlyIncome: p.monthlyIncome,
+    additionalIncome: p.additionalIncome,
+    rent: p.rent,
+    emi: p.emi,
+    insurance: p.insurance,
+    utilities: p.utilities,
+    schoolFees: p.schoolFees,
+    internet: p.internet,
+    otherFixed: p.otherFixed,
+    food: p.food,
+    fuel: p.fuel,
+    travel: p.travel,
+    entertainment: p.entertainment,
+    shopping: p.shopping,
+    medical: p.medical,
+    miscellaneous: p.miscellaneous,
+    currentSavings: p.currentSavings,
+    existingInvestments: p.existingInvestments,
+    creditCardDebt: p.creditCardDebt,
+    loans: p.debts,
+    goals: p.goals,
+    riskProfile: p.riskProfile,
   };
-}
-
-function loadInputs(): StrategyInputs {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return sanitizeInputs(JSON.parse(raw));
-  } catch {
-    /* ignore corrupt storage */
-  }
-  return { ...EMPTY_INPUTS };
 }
 
 const CATEGORY_STYLE: Record<HealthCategory, { text: string; bar: string; ring: string }> = {
@@ -134,20 +97,25 @@ function SectionTitle({ icon: Icon, children }: { icon: React.ElementType; child
 
 export default function Strategy() {
   const { isDark } = useTheme();
-  const [inputs, setInputs] = useState<StrategyInputs>(loadInputs);
+  const { profile, update, replace, saveStatus, updatedAt } = useProfile();
   const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(inputs));
-    } catch {
-      /* ignore quota errors */
-    }
-  }, [inputs]);
+  const inputs = useMemo(() => profileToStrategyInputs(profile), [profile]);
 
-  const set = useCallback(<K extends keyof StrategyInputs>(key: K, val: StrategyInputs[K]) => {
-    setInputs((prev) => ({ ...prev, [key]: val }));
-  }, []);
+  const set = useCallback(
+    <K extends keyof StrategyInputs>(key: K, val: StrategyInputs[K]) => {
+      if (key === "loans") {
+        update({ debts: val as DebtItem[] });
+      } else {
+        update({ [key]: val } as Partial<ProfileData>);
+      }
+    },
+    [update],
+  );
+
+  const resetInputs = useCallback(() => {
+    replace({ ...EMPTY_PROFILE, name: profile.name, occupation: profile.occupation });
+  }, [replace, profile.name, profile.occupation]);
 
   const result = useMemo(() => computeStrategy(inputs), [inputs]);
   const hasData = result.totalIncome > 0 || result.totalExpenses > 0;
@@ -208,9 +176,12 @@ export default function Strategy() {
             </p>
           </div>
         </div>
-        <Button onClick={handleExport} disabled={!hasData || exporting} className="gap-2 shrink-0">
-          <Download className="h-4 w-4" /> {exporting ? "Preparing…" : "Download Report"}
-        </Button>
+        <div className="flex items-center gap-3 shrink-0">
+          <SaveIndicator status={saveStatus} updatedAt={updatedAt} />
+          <Button onClick={handleExport} disabled={!hasData || exporting} className="gap-2">
+            <Download className="h-4 w-4" /> {exporting ? "Preparing…" : "Download Report"}
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -377,7 +348,7 @@ export default function Strategy() {
               <Button
                 variant="ghost"
                 className="w-full gap-2 text-slate-500 dark:text-slate-400"
-                onClick={() => setInputs(EMPTY_INPUTS)}
+                onClick={resetInputs}
               >
                 <RefreshCw className="h-4 w-4" /> Reset
               </Button>

@@ -18,6 +18,8 @@ import { LoanForm } from "@/pages/loan-form";
 import { AllAmortization } from "@/pages/all-amortization";
 import { Planner } from "@/pages/planner";
 import Strategy from "@/pages/strategy";
+import { ProfilePage } from "@/pages/profile";
+import { ProfileProvider } from "@/lib/profile";
 
 const queryClient = new QueryClient();
 
@@ -183,6 +185,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <ProfileProvider>
         <Switch>
           <Route path="/" component={HomeRedirect} />
           <Route path="/sign-in/*?" component={SignInPage} />
@@ -196,9 +199,11 @@ function ClerkProviderWithRoutes() {
           <Route path="/amortization" component={() => <ProtectedRoute component={AllAmortization} />} />
           <Route path="/planner" component={() => <ProtectedRoute component={Planner} />} />
           <Route path="/strategy" component={() => <ProtectedRoute component={Strategy} />} />
+          <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} />} />
           
           <Route component={NotFound} />
         </Switch>
+        </ProfileProvider>
       </QueryClientProvider>
     </ClerkProvider>
   );

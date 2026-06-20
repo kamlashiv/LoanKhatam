@@ -13,6 +13,9 @@ import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer } from "recharts
 import { formatRupees, formatDate } from "@/lib/loan-utils";
 import { STATUS_COLORS, CHART_COLORS } from "@/lib/chart-theme";
 import { extractFromFile } from "@/lib/file-extract";
+import {
+  useProfile, totalIncome, totalExpenses, monthlySurplus, profileCompleteness,
+} from "@/lib/profile";
 
 interface ExtractedLoan {
   borrowerName: string | null;
@@ -261,7 +264,17 @@ const statusLabel: Record<string, string> = {
 export function Dashboard() {
   const { data: summary, isLoading: summaryLoading } = useGetDashboardSummary();
   const { data: recentLoans, isLoading: loansLoading } = useGetRecentLoans();
+  const { profile } = useProfile();
   const [showImport, setShowImport] = useState(false);
+
+  const profIncome = totalIncome(profile);
+  const profSurplus = monthlySurplus(profile);
+  const profNetWorth =
+    profile.currentSavings + profile.existingInvestments -
+    profile.creditCardDebt -
+    profile.debts.reduce((s, d) => s + d.balance, 0);
+  const profileSet = profIncome > 0 || totalExpenses(profile) > 0;
+  const completeness = Math.round(profileCompleteness(profile) * 100);
 
   const today = new Date().toLocaleDateString("en-GB");
   const overdue = summary?.overdueLoans ?? 0;
@@ -364,6 +377,41 @@ export function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Financial Profile snapshot */}
+      <div className="mb-6 rounded-[1.5rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
+              <Wallet className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+              Your Financial Profile
+            </div>
+            <p className="mt-0.5 text-sm font-medium text-slate-500 dark:text-slate-400">
+              {profileSet
+                ? `${completeness}% complete — powering your planners`
+                : "Set up your profile once and every planner auto-fills"}
+            </p>
+          </div>
+          <Button
+            asChild
+            variant="outline"
+            className="gap-2 rounded-2xl border-slate-200 dark:border-slate-700 font-bold text-slate-700 dark:text-slate-200"
+          >
+            <Link href="/profile">
+              {profileSet ? "Edit Profile" : "Set Up Profile"}
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+        {profileSet && (
+          <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <ProfileStat label="Monthly Income" value={formatRupees(profIncome)} tone="text-emerald-600 dark:text-emerald-400" />
+            <ProfileStat label="Monthly Surplus" value={formatRupees(profSurplus)} tone={profSurplus >= 0 ? "text-indigo-600 dark:text-indigo-400" : "text-rose-600 dark:text-rose-400"} />
+            <ProfileStat label="Net Worth" value={formatRupees(profNetWorth)} tone={profNetWorth >= 0 ? "text-slate-900 dark:text-slate-50" : "text-rose-600 dark:text-rose-400"} />
+            <ProfileStat label="Risk Profile" value={profile.riskProfile} tone="text-slate-900 dark:text-slate-50 capitalize" />
+          </div>
+        )}
+      </div>
 
       {/* Bento Grid */}
       <div className="grid auto-rows-[minmax(160px,auto)] grid-cols-1 gap-5 md:grid-cols-4">
@@ -595,5 +643,14 @@ export function Dashboard() {
         </button>
       </div>
     </>
+  );
+}
+
+function ProfileStat({ label, value, tone }: { label: string; value: string; tone: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+      <p className={`mt-1 text-lg font-extrabold tracking-tight ${tone}`}>{value}</p>
+    </div>
   );
 }

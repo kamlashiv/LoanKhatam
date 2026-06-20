@@ -15,8 +15,46 @@ tags:
     description: Payment tracking
   - name: dashboard
     description: Dashboard summaries
+  - name: profile
+    description: Global financial profile
 
 paths:
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get the current user's global financial profile
+      responses:
+        "200":
+          description: Financial profile (defaults when none saved yet)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialProfile"
+        "401":
+          description: Unauthorized
+    put:
+      operationId: updateProfile
+      tags: [profile]
+      summary: Create or replace the current user's global financial profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialProfileData"
+      responses:
+        "200":
+          description: Saved financial profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialProfile"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+
   /healthz:
     get:
       operationId: healthCheck
@@ -415,6 +453,122 @@ components:
           type: string
         notes:
           type: string
+
+    ProfileDebtItem:
+      type: object
+      required:
+        - id
+        - name
+        - balance
+        - rate
+        - minPayment
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        balance:
+          type: number
+        rate:
+          type: number
+        minPayment:
+          type: number
+
+    FinancialProfileData:
+      type: object
+      required:
+        - name
+        - age
+        - occupation
+        - monthlyIncome
+        - additionalIncome
+        - rent
+        - emi
+        - insurance
+        - utilities
+        - schoolFees
+        - internet
+        - otherFixed
+        - food
+        - fuel
+        - travel
+        - entertainment
+        - shopping
+        - medical
+        - miscellaneous
+        - currentSavings
+        - existingInvestments
+        - creditCardDebt
+        - debts
+        - goals
+        - riskProfile
+      properties:
+        name:
+          type: string
+        age:
+          type: number
+        occupation:
+          type: string
+        monthlyIncome:
+          type: number
+        additionalIncome:
+          type: number
+        rent:
+          type: number
+        emi:
+          type: number
+        insurance:
+          type: number
+        utilities:
+          type: number
+        schoolFees:
+          type: number
+        internet:
+          type: number
+        otherFixed:
+          type: number
+        food:
+          type: number
+        fuel:
+          type: number
+        travel:
+          type: number
+        entertainment:
+          type: number
+        shopping:
+          type: number
+        medical:
+          type: number
+        miscellaneous:
+          type: number
+        currentSavings:
+          type: number
+        existingInvestments:
+          type: number
+        creditCardDebt:
+          type: number
+        debts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProfileDebtItem"
+        goals:
+          type: array
+          items:
+            type: string
+        riskProfile:
+          type: string
+          enum: [conservative, moderate, aggressive]
+
+    FinancialProfile:
+      type: object
+      required:
+        - data
+        - updatedAt
+      properties:
+        data:
+          $ref: "#/components/schemas/FinancialProfileData"
+        updatedAt:
+          type: ["string", "null"]
 
     DashboardSummary:
       type: object

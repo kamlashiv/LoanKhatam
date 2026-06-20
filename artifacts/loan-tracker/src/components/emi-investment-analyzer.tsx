@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   ResponsiveContainer, AreaChart, Area, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -21,6 +21,7 @@ import {
   EMI_PCT_OPTIONS, EMPTY_EMI_INVEST,
   type EmiInvestInputs,
 } from "@/lib/strategy-engine";
+import { useProfile, totalIncome, totalExpenses } from "@/lib/profile";
 
 const STORAGE_KEY = "loan-tracker:emi-invest";
 
@@ -92,7 +93,9 @@ function StatTile({
 
 export function EmiInvestmentAnalyzer() {
   const { isDark } = useTheme();
+  const { profile } = useProfile();
   const [inputs, setInputs] = useState<EmiInvestInputs>(loadInputs);
+  const seededRef = useRef(false);
 
   useEffect(() => {
     try {
@@ -101,6 +104,21 @@ export function EmiInvestmentAnalyzer() {
       /* ignore quota errors */
     }
   }, [inputs]);
+
+  // One-time seed of income/expenses from the global financial profile so the
+  // analyzer starts from the same numbers the user already entered elsewhere.
+  useEffect(() => {
+    if (seededRef.current) return;
+    const profIncome = totalIncome(profile);
+    const profExpenses = totalExpenses(profile);
+    if (profIncome <= 0 && profExpenses <= 0) return;
+    seededRef.current = true;
+    setInputs((prev) => ({
+      ...prev,
+      monthlyIncome: prev.monthlyIncome === 0 ? profIncome : prev.monthlyIncome,
+      monthlyExpenses: prev.monthlyExpenses === 0 ? profExpenses : prev.monthlyExpenses,
+    }));
+  }, [profile]);
 
   const set = useCallback(<K extends keyof EmiInvestInputs>(key: K, val: EmiInvestInputs[K]) => {
     setInputs((prev) => ({ ...prev, [key]: val }));

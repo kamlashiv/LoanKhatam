@@ -101,6 +101,57 @@ export interface PaymentInput {
   notes?: string;
 }
 
+export interface ProfileDebtItem {
+  id: string;
+  name: string;
+  balance: number;
+  rate: number;
+  minPayment: number;
+}
+
+export type FinancialProfileDataRiskProfile = typeof FinancialProfileDataRiskProfile[keyof typeof FinancialProfileDataRiskProfile];
+
+
+export const FinancialProfileDataRiskProfile = {
+  conservative: 'conservative',
+  moderate: 'moderate',
+  aggressive: 'aggressive',
+} as const;
+
+export interface FinancialProfileData {
+  name: string;
+  age: number;
+  occupation: string;
+  monthlyIncome: number;
+  additionalIncome: number;
+  rent: number;
+  emi: number;
+  insurance: number;
+  utilities: number;
+  schoolFees: number;
+  internet: number;
+  otherFixed: number;
+  food: number;
+  fuel: number;
+  travel: number;
+  entertainment: number;
+  shopping: number;
+  medical: number;
+  miscellaneous: number;
+  currentSavings: number;
+  existingInvestments: number;
+  creditCardDebt: number;
+  debts: ProfileDebtItem[];
+  goals: string[];
+  riskProfile: FinancialProfileDataRiskProfile;
+}
+
+export interface FinancialProfile {
+  data: FinancialProfileData;
+  /** @nullable */
+  updatedAt: string | null;
+}
+
 export interface DashboardSummary {
   totalLoans: number;
   activeLoans: number;

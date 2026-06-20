@@ -9,6 +9,122 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Get the current user's global financial profile
+ */
+export const GetProfileResponse = zod.object({
+  "data": zod.object({
+  "name": zod.string(),
+  "age": zod.number(),
+  "occupation": zod.string(),
+  "monthlyIncome": zod.number(),
+  "additionalIncome": zod.number(),
+  "rent": zod.number(),
+  "emi": zod.number(),
+  "insurance": zod.number(),
+  "utilities": zod.number(),
+  "schoolFees": zod.number(),
+  "internet": zod.number(),
+  "otherFixed": zod.number(),
+  "food": zod.number(),
+  "fuel": zod.number(),
+  "travel": zod.number(),
+  "entertainment": zod.number(),
+  "shopping": zod.number(),
+  "medical": zod.number(),
+  "miscellaneous": zod.number(),
+  "currentSavings": zod.number(),
+  "existingInvestments": zod.number(),
+  "creditCardDebt": zod.number(),
+  "debts": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "balance": zod.number(),
+  "rate": zod.number(),
+  "minPayment": zod.number()
+})),
+  "goals": zod.array(zod.string()),
+  "riskProfile": zod.enum(['conservative', 'moderate', 'aggressive'])
+}),
+  "updatedAt": zod.string().nullable()
+})
+
+
+/**
+ * @summary Create or replace the current user's global financial profile
+ */
+export const UpdateProfileBody = zod.object({
+  "name": zod.string(),
+  "age": zod.number(),
+  "occupation": zod.string(),
+  "monthlyIncome": zod.number(),
+  "additionalIncome": zod.number(),
+  "rent": zod.number(),
+  "emi": zod.number(),
+  "insurance": zod.number(),
+  "utilities": zod.number(),
+  "schoolFees": zod.number(),
+  "internet": zod.number(),
+  "otherFixed": zod.number(),
+  "food": zod.number(),
+  "fuel": zod.number(),
+  "travel": zod.number(),
+  "entertainment": zod.number(),
+  "shopping": zod.number(),
+  "medical": zod.number(),
+  "miscellaneous": zod.number(),
+  "currentSavings": zod.number(),
+  "existingInvestments": zod.number(),
+  "creditCardDebt": zod.number(),
+  "debts": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "balance": zod.number(),
+  "rate": zod.number(),
+  "minPayment": zod.number()
+})),
+  "goals": zod.array(zod.string()),
+  "riskProfile": zod.enum(['conservative', 'moderate', 'aggressive'])
+})
+
+export const UpdateProfileResponse = zod.object({
+  "data": zod.object({
+  "name": zod.string(),
+  "age": zod.number(),
+  "occupation": zod.string(),
+  "monthlyIncome": zod.number(),
+  "additionalIncome": zod.number(),
+  "rent": zod.number(),
+  "emi": zod.number(),
+  "insurance": zod.number(),
+  "utilities": zod.number(),
+  "schoolFees": zod.number(),
+  "internet": zod.number(),
+  "otherFixed": zod.number(),
+  "food": zod.number(),
+  "fuel": zod.number(),
+  "travel": zod.number(),
+  "entertainment": zod.number(),
+  "shopping": zod.number(),
+  "medical": zod.number(),
+  "miscellaneous": zod.number(),
+  "currentSavings": zod.number(),
+  "existingInvestments": zod.number(),
+  "creditCardDebt": zod.number(),
+  "debts": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "balance": zod.number(),
+  "rate": zod.number(),
+  "minPayment": zod.number()
+})),
+  "goals": zod.array(zod.string()),
+  "riskProfile": zod.enum(['conservative', 'moderate', 'aggressive'])
+}),
+  "updatedAt": zod.string().nullable()
+})
+
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({

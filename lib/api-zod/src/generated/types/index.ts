@@ -7,6 +7,9 @@
  */
 
 export * from './dashboardSummary';
+export * from './financialProfile';
+export * from './financialProfileData';
+export * from './financialProfileDataRiskProfile';
 export * from './healthStatus';
 export * from './listLoansParams';
 export * from './listLoansStatus';
@@ -17,4 +20,5 @@ export * from './loanUpdate';
 export * from './loanUpdateStatus';
 export * from './payment';
 export * from './paymentInput';
+export * from './profileDebtItem';
 export * from './rateChange';

@@ -28,6 +28,7 @@ import {
 } from "@/lib/planner-engine";
 import { exportPlannerCSV, exportPlannerPDF } from "@/lib/export";
 import { extractFromFile, type ExtractedData } from "@/lib/file-extract";
+import { useProfile, monthlySurplus } from "@/lib/profile";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface LoanParams {
@@ -328,6 +329,8 @@ const STRAT_VISUAL = [
 // ─── Main page ───────────────────────────────────────────────────────────────
 export function Planner() {
   const { isDark } = useTheme();
+  const { profile } = useProfile();
+  const surplus = monthlySurplus(profile);
   // Theme-aware chart styling so grids, axes, and slice borders stay legible.
   const gridStroke = isDark ? "#1e293b" : "#f1f5f9";
   const axisTick = { fontSize: 11, fill: isDark ? "#94a3b8" : "#64748b" };
@@ -879,6 +882,15 @@ export function Planner() {
                   onValueChange={([v]) => { set("extraEMI", v); setActiveStrategy(null); }}
                 />
                 <p className="text-xs text-slate-500 dark:text-slate-400">Base EMI is {compactRupees(plan.baseEMI)}/month before extras.</p>
+                {surplus > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => { set("extraEMI", Math.round(surplus)); setActiveStrategy(null); }}
+                    className="mt-1 w-full rounded-md bg-emerald-100 dark:bg-emerald-900/40 px-3 py-2 text-left text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-colors"
+                  >
+                    Your profile shows a monthly surplus of {formatRupees(Math.round(surplus))}. Tap to apply it as extra EMI.
+                  </button>
+                )}
               </div>
 
               <div className="space-y-1.5">

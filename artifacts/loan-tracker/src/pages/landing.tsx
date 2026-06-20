@@ -39,9 +39,11 @@ export function LandingPage() {
       {/* Header */}
       <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
-            <Wallet className="h-6 w-6 text-primary" />
-            <span>Ledger</span>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/20">
+              <Wallet className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-2xl font-extrabold tracking-tight text-foreground">Ledger</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/sign-in">
@@ -221,9 +223,11 @@ export function LandingPage() {
       {/* Footer */}
       <footer className="bg-background border-t border-border py-12 px-6">
         <div className="max-w-7xl mx-auto flex flex-col items-center justify-center gap-2 text-center">
-          <div className="flex items-center gap-2 font-bold text-lg text-foreground">
-            <Wallet className="h-5 w-5 text-primary" />
-            Ledger
+          <div className="flex items-center gap-3 text-foreground">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/20">
+              <Wallet className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-2xl font-extrabold tracking-tight">Ledger</span>
           </div>
           <p className="text-sm text-muted-foreground">
             Your trusted personal loan register.

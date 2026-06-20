@@ -9,10 +9,10 @@ When a user turn includes a `pending_canvas_frames` block, the listed `shape_id`
 client-placed Building iframes you should `update` (not recreate). But they are NOT
 guaranteed to all exist when your run starts.
 
-**Observed:** of 3 reserved frames, 2 existed and the 3rd returned `SHAPE_NOT_FOUND`
-on `applyCanvasActions` update. The canvas also already held unrelated leftover frames
-from a prior session (e.g. a stale `planner-cockpit` iframe), so reusing a guessed id
-can collide (`VALIDATION_FAILED: already exists`).
+A reserved id can be absent and return `SHAPE_NOT_FOUND` on an `applyCanvasActions`
+update. The canvas may also hold unrelated leftover frames from prior sessions, so a
+guessed id can collide (`VALIDATION_FAILED: already exists`). Never assume all reserved
+ids resolve; never reuse a guessed id.
 
 **How to apply:**
 - After issuing the `update` batch, check the per-action `results`/`errors`. If a

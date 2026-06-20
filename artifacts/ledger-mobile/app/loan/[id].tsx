@@ -138,6 +138,19 @@ export default function LoanDetailScreen() {
       alignItems: "center",
       justifyContent: "center",
     },
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    editBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.muted,
+      alignItems: "center",
+      justifyContent: "center",
+    },
     deleteBtn: {
       width: 36,
       height: 36,
@@ -418,14 +431,23 @@ export default function LoanDetailScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Feather name="arrow-left" size={18} color={colors.foreground} />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.deleteBtn}
-          onPress={handleDeleteLoan}
-          disabled={deletingLoan}
-          testID="delete-loan-btn"
-        >
-          <Feather name="trash-2" size={16} color={colors.destructive} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.editBtn}
+            onPress={() => router.push(`/loan/${loanId}/edit` as never)}
+            testID="edit-loan-btn"
+          >
+            <Feather name="edit-2" size={16} color={colors.foreground} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={handleDeleteLoan}
+            disabled={deletingLoan}
+            testID="delete-loan-btn"
+          >
+            <Feather name="trash-2" size={16} color={colors.destructive} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView

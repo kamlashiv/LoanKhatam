@@ -54,7 +54,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
       setData(extracted);
       setStatus("success");
     } catch (e: any) {
-      setErrorMsg(e.message ?? "File पढ़ नहीं पाए");
+      setErrorMsg(e.message ?? "Couldn't read the file");
       setStatus("error");
     }
   }, []);
@@ -92,7 +92,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
               <FileText className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-bold text-base">File से Loan Import करें</h2>
+              <h2 className="font-bold text-base">Import Loan from File</h2>
               <p className="text-xs text-muted-foreground">Amortization schedule, bank statement, CSV</p>
             </div>
           </div>
@@ -131,9 +131,9 @@ function ImportModal({ onClose }: { onClose: () => void }) {
                     <Upload className="h-7 w-7 text-primary" />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm">File upload करें या खींचें</p>
+                    <p className="font-semibold text-sm">Upload or drag a file</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Loan data अपने आप पढ़कर भर जाएगा
+                      Loan data is read and filled in automatically
                     </p>
                   </div>
                   <div className="flex gap-2 flex-wrap justify-center">
@@ -146,7 +146,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
               <p className="text-center text-xs text-muted-foreground">
-                🔒 Data आपके device पर ही पढ़ा जाता है — Add Loan form में auto-fill होगा
+                🔒 Data is read on your device only — it auto-fills the Add Loan form
               </p>
             </>
           )}
@@ -158,10 +158,10 @@ function ImportModal({ onClose }: { onClose: () => void }) {
                 <Loader2 className="h-10 w-10 text-primary animate-spin" />
                 <div>
                   <p className="font-semibold text-sm text-primary">
-                    {progress != null ? `File पढ़ रहे हैं… ${progress}%` : "File पढ़ रहे हैं…"}
+                    {progress != null ? `Reading file… ${progress}%` : "Reading file…"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">{fileName}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Loan data document से निकाल रहे हैं</p>
+                  <p className="text-xs text-muted-foreground mt-1">Extracting loan data from the document</p>
                 </div>
                 <div className="w-full bg-primary/20 rounded-full h-1.5 overflow-hidden">
                   <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: "65%" }} />
@@ -175,7 +175,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
             <div className="border-2 border-red-300 border-dashed rounded-xl p-6 bg-red-50 text-center space-y-3">
               <AlertTriangle className="h-8 w-8 text-red-500 mx-auto" />
               <div>
-                <p className="font-semibold text-red-800 text-sm">Extract नहीं हो पाया</p>
+                <p className="font-semibold text-red-800 text-sm">Extraction failed</p>
                 <p className="text-xs text-red-600 mt-1">{errorMsg}</p>
               </div>
               <Button
@@ -184,7 +184,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
                 className="border-red-300 text-red-700 hover:bg-red-100"
                 onClick={() => setStatus("idle")}
               >
-                फिर कोशिश करें
+                Try again
               </Button>
             </div>
           )}
@@ -222,19 +222,19 @@ function ImportModal({ onClose }: { onClose: () => void }) {
               {data.confidence === "low" && (
                 <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-                  <p className="text-xs text-amber-800">Confidence low है — form में manually verify करें</p>
+                  <p className="text-xs text-amber-800">Confidence is low — please verify the details manually in the form</p>
                 </div>
               )}
 
               <Button className="w-full gap-2" onClick={handleUseData}>
                 <CheckCircle2 className="h-4 w-4" />
-                Add Loan Form में Fill करें
+                Fill the Add Loan Form
               </Button>
               <button
                 className="text-xs text-muted-foreground hover:text-foreground font-medium text-center w-full transition-colors"
                 onClick={() => { setStatus("idle"); setData(null); setFileName(""); }}
               >
-                दूसरी file upload करें
+                Upload another file
               </button>
             </div>
           )}
@@ -335,7 +335,7 @@ export function Dashboard() {
               className="bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-lg px-4 py-3 flex items-center gap-2 transition-colors"
             >
               <Upload className="h-4 w-4 text-primary" />
-              <span className="text-sm text-primary font-medium">File से Import</span>
+              <span className="text-sm text-primary font-medium">Import from File</span>
             </button>
           </div>
         )}

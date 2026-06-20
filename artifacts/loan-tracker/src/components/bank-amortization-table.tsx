@@ -46,7 +46,7 @@ export function BankAmortizationTable({
   if (rows.length === 0) {
     return (
       <div className="py-10 text-center text-muted-foreground text-sm">
-        Amortization schedule उपलब्ध नहीं — start और due date जांचें।
+        Amortization schedule unavailable — check the start and due dates.
       </div>
     );
   }
@@ -112,7 +112,7 @@ export function BankAmortizationTable({
             }}
           >
             <FileText className="h-3.5 w-3.5 text-red-600" />
-            {pdfLoading ? "बन रहा है…" : "PDF"}
+            {pdfLoading ? "Generating…" : "PDF"}
           </Button>
         </div>
 
@@ -245,7 +245,7 @@ export function BankAmortizationTable({
               onClick={() => setShowAll(!showAll)}
               className="text-xs text-primary font-medium hover:underline"
             >
-              {showAll ? "कम दिखाएं ▲" : `सभी ${rows.length} rows देखें ▼`}
+              {showAll ? "Show less ▲" : `View all ${rows.length} rows ▼`}
             </button>
           </div>
         )}

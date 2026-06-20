@@ -73,6 +73,9 @@ function parseRate(raw: string | number | null | undefined): number | null {
   return n;
 }
 
+// Detects whether the matched rate is expressed per month so we can annualise it.
+const MONTHLY_RE = /per\s*month|per\s*mensem|monthly|\/\s*mo(?:nth)?\b|\bp\.?\s*m\.?\b/i;
+
 function pad(n: number): string {
   return n.toString().padStart(2, "0");
 }
@@ -146,7 +149,7 @@ function mapRecord(rec: Record<string, unknown>): Omit<ExtractedData, "confidenc
 function fromJSON(text: string): Omit<ExtractedData, "confidence" | "notes"> {
   const data = JSON.parse(text);
   const rec = Array.isArray(data) ? data[0] : data;
-  if (!rec || typeof rec !== "object") throw new Error("JSON में loan object नहीं मिला");
+  if (!rec || typeof rec !== "object") throw new Error("No loan object found in the JSON file.");
   return mapRecord(rec as Record<string, unknown>);
 }
 
@@ -172,7 +175,7 @@ function splitCSVLine(line: string): string[] {
 
 function fromCSV(text: string): Omit<ExtractedData, "confidence" | "notes"> {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length < 2) throw new Error("CSV में header और एक data row चाहिए");
+  if (lines.length < 2) throw new Error("CSV needs a header row and at least one data row.");
   const headers = splitCSVLine(lines[0]);
   const values = splitCSVLine(lines[1]);
   const rec: Record<string, unknown> = {};
@@ -198,9 +201,19 @@ function fromText(text: string): Omit<ExtractedData, "confidence" | "notes"> {
     if (anyAmt) out.principalAmount = parseAmount(`${anyAmt[2]} ${anyAmt[3] ?? ""}`);
   }
 
-  // Interest rate.
-  const rate = flat.match(/([\d.]+)\s*%/) || flat.match(/(?:interest|rate|roi)\D{0,10}([\d.]+)/i);
-  if (rate) out.interestRate = parseRate(rate[1]);
+  // Interest rate. Capture a little trailing context so we can tell apart
+  // monthly rates ("2% per month") from annual ones and annualise correctly.
+  const rate =
+    flat.match(/([\d.]+)\s*%\s*([^.,;\n]{0,18})/i) ||
+    flat.match(/(?:interest|rate|roi)\D{0,10}([\d.]+)\s*%?\s*([^.,;\n]{0,18})/i);
+  if (rate) {
+    let parsed = parseRate(rate[1]);
+    if (parsed != null && MONTHLY_RE.test(rate[2] ?? "")) {
+      const annual = Math.round(parsed * 12 * 100) / 100;
+      parsed = annual <= 100 ? annual : parsed;
+    }
+    out.interestRate = parsed;
+  }
 
   // Dates — collect all, then assign by label proximity.
   const dateRe = /(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}\s*[a-z]{3,}\s*\d{4})/gi;
@@ -246,8 +259,8 @@ function score(
 
   const notes =
     got.length === 0
-      ? `${source} से कोई loan detail नहीं मिली — नीचे manually भरें।`
-      : `${source} से निकाला: ${got.join(", ")}. बाकी fields manually check करें।`;
+      ? `No loan details found in ${source} — please fill the fields below manually.`
+      : `Extracted from ${source}: ${got.join(", ")}. Please verify the remaining fields manually.`;
 
   return { ...d, confidence, notes };
 }
@@ -304,7 +317,7 @@ export async function extractFromFile(
       onProgress?.({ stage: "pdf" });
       const text = await pdfToText(file);
       if (!text.trim()) {
-        throw new Error("PDF में text नहीं मिला (शायद scanned image है) — screenshot upload करें या manually भरें।");
+        throw new Error("No text found in this PDF (it may be a scanned image) — upload a screenshot instead, or fill the form manually.");
       }
       return score(fromText(text), "PDF");
     }
@@ -314,6 +327,6 @@ export async function extractFromFile(
       return score(fromText(text), "Image (OCR)");
     }
     default:
-      throw new Error("Unsupported file. JSON, CSV, PDF, या image (PNG/JPG) upload करें।");
+      throw new Error("Unsupported file. Please upload a JSON, CSV, PDF, or image (PNG/JPG) file.");
   }
 }

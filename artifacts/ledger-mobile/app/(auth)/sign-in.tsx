@@ -330,7 +330,7 @@ export default function SignInScreen() {
 
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>ya phir</Text>
+          <Text style={styles.dividerText}>or</Text>
           <View style={styles.dividerLine} />
         </View>
 
@@ -345,7 +345,7 @@ export default function SignInScreen() {
           ) : (
             <>
               <GoogleIcon size={20} />
-              <Text style={styles.ssoBtnText}>Google se sign in karein</Text>
+              <Text style={styles.ssoBtnText}>Continue with Google</Text>
             </>
           )}
         </TouchableOpacity>
@@ -362,19 +362,19 @@ export default function SignInScreen() {
             ) : (
               <>
                 <AppleIcon size={20} color={colors.foreground} />
-                <Text style={styles.ssoBtnText}>Apple se sign in karein</Text>
+                <Text style={styles.ssoBtnText}>Continue with Apple</Text>
               </>
             )}
           </TouchableOpacity>
         )}
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Account nahi hai? </Text>
+          <Text style={styles.footerText}>Don't have an account? </Text>
           <TouchableOpacity
             onPress={() => router.push("/sign-up")}
             testID="go-to-sign-up"
           >
-            <Text style={styles.footerLink}>Sign up karein</Text>
+            <Text style={styles.footerLink}>Sign up</Text>
           </TouchableOpacity>
         </View>
       </View>

@@ -173,9 +173,9 @@ export function LoanForm() {
         <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
           <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-primary">AI से Auto-Fill हुआ</p>
+            <p className="text-sm font-semibold text-primary">Auto-filled by AI</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              File से loan data extract हुआ है — details verify करके Save करें
+              Loan data was extracted from the file — verify the details and Save
             </p>
           </div>
         </div>

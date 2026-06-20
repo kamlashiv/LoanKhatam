@@ -178,7 +178,7 @@ describe("SignUpScreen", () => {
       expect(screen.getByTestId("email-error")).toBeTruthy();
     });
     expect(screen.getByTestId("email-error").props.children).toBe(
-      "Ye email pehle se registered hai. Sign in karein.",
+      "This email is already registered. Please sign in.",
     );
     expect(screen.queryByTestId("code-input")).toBeNull();
     expect(alertSpy).not.toHaveBeenCalled();
@@ -201,7 +201,7 @@ describe("SignUpScreen", () => {
       expect(screen.getByTestId("password-error")).toBeTruthy();
     });
     expect(screen.getByTestId("password-error").props.children).toBe(
-      "Ye password ek data breach mein mila hai. Koi aur chunein.",
+      "This password was found in a data breach. Choose a different one.",
     );
     expect(screen.queryByTestId("code-input")).toBeNull();
     expect(alertSpy).not.toHaveBeenCalled();
@@ -224,7 +224,7 @@ describe("SignUpScreen", () => {
       expect(screen.getByTestId("password-error")).toBeTruthy();
     });
     expect(screen.getByTestId("password-error").props.children).toBe(
-      "Password thoda aur mazboot banayein.",
+      "Please choose a stronger password.",
     );
   });
 
@@ -261,7 +261,7 @@ describe("SignUpScreen", () => {
       fireEvent.press(screen.getByTestId("sign-up-btn"));
 
       expect(screen.getByTestId("email-error").props.children).toBe(
-        "Sahi email address daalein.",
+        "Enter a valid email address.",
       );
       expect(signUpCreate).not.toHaveBeenCalled();
     });
@@ -273,7 +273,7 @@ describe("SignUpScreen", () => {
       fireEvent.press(screen.getByTestId("sign-up-btn"));
 
       expect(screen.getByTestId("password-error").props.children).toBe(
-        "Kam se kam 8 characters ka password rakhein.",
+        "Use a password of at least 8 characters.",
       );
       expect(signUpCreate).not.toHaveBeenCalled();
     });
@@ -287,7 +287,7 @@ describe("SignUpScreen", () => {
       fireEvent.press(screen.getByTestId("sign-up-btn"));
 
       expect(screen.getByTestId("email-error").props.children).toBe(
-        "Email zaroori hai.",
+        "Email is required.",
       );
       expect(signUpCreate).not.toHaveBeenCalled();
     });

@@ -35,11 +35,12 @@ Return ONLY a valid JSON object with these fields (use null for missing values):
 }
 
 Rules:
-- principalAmount must be a plain number (no currency symbols), in Indian Rupees
-- interestRate must be annual percentage (if monthly is given, multiply by 12)
-- Dates must be YYYY-MM-DD format
-- If the document is an amortization schedule, extract the original loan parameters from the header/summary
-- Do NOT guess — use null if genuinely unclear
+- principalAmount must be a plain number (no currency symbols or commas), in Indian Rupees. Read digits exactly — do not round. Expand Indian units: 1 lakh = 100000, 1 crore = 10000000 (e.g. "2.5 lakh" => 250000).
+- principalAmount is the original/sanctioned/disbursed loan amount. Do NOT use the EMI, the total repayable, the outstanding balance, or a single instalment as the principal.
+- interestRate must be the annual percentage. If the rate is stated per month / p.m. / monthly, multiply it by 12. Never return a rate above 100.
+- Dates must be YYYY-MM-DD. Indian documents use day-first (DD/MM/YYYY), so for ambiguous numeric dates assume the first number is the day. startDate is the disbursal/loan date; dueDate is the maturity/final repayment date.
+- If the document is an amortization schedule, extract the original loan parameters from the header/summary, not from a mid-schedule row.
+- Do NOT guess. If a value is genuinely unclear or absent, use null and lower the confidence accordingly. Set "confidence" to "high" only when the core fields (amount, rate, dates) are read with certainty.
 - Return ONLY the JSON, no markdown, no explanation`;
 
 router.post("/", requireAuth, upload.single("file"), async (req: any, res) => {

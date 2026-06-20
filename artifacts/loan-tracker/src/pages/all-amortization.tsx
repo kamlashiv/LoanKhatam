@@ -77,7 +77,7 @@ function LoanAmortizationAccordion({ loan }: { loan: any }) {
               </span>
               {loan.remainingAmount > 0 && (
                 <span className="text-xs text-muted-foreground">
-                  बाकी:{" "}
+                  Remaining:{" "}
                   <span className={`font-medium ${loan.status === "overdue" ? "text-destructive" : "text-foreground"}`}>
                     {formatRupees(loan.remainingAmount)}
                   </span>
@@ -115,7 +115,7 @@ export function AllAmortization() {
           <h1 className="text-2xl font-bold tracking-tight">Amortization Schedules</h1>
         </div>
         <p className="text-sm text-muted-foreground ml-12">
-          सभी loans के bank statement format में repayment schedule — किसी पर click करें expand करने के लिए
+          Repayment schedules for all loans in bank statement format — click any one to expand
         </p>
       </div>
 
@@ -131,13 +131,13 @@ export function AllAmortization() {
         <Card className="border-border shadow-sm">
           <CardContent className="py-16 text-center">
             <BarChart3 className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
-            <p className="text-muted-foreground font-medium mb-2">कोई loan नहीं मिला</p>
+            <p className="text-muted-foreground font-medium mb-2">No loans found</p>
             <p className="text-sm text-muted-foreground mb-4">
-              पहले एक loan जोड़ें फिर amortization schedule देखें।
+              Add a loan first, then view its amortization schedule.
             </p>
             <Link href="/loans/new">
               <span className="text-primary text-sm font-medium hover:underline cursor-pointer">
-                Loan जोड़ें →
+                Add Loan →
               </span>
             </Link>
           </CardContent>

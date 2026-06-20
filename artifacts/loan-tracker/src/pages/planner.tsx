@@ -41,9 +41,9 @@ interface TopUpState {
 function monthsToStr(m: number) {
   const y = Math.floor(m / 12);
   const mo = m % 12;
-  if (y === 0) return `${mo} महीने`;
-  if (mo === 0) return `${y} साल`;
-  return `${y} साल ${mo} महीने`;
+  if (y === 0) return `${mo} months`;
+  if (mo === 0) return `${y} years`;
+  return `${y} years ${mo} months`;
 }
 
 // ─── File upload component ───────────────────────────────────────────────────
@@ -71,7 +71,7 @@ function FileUploadZone({
       setStatus("success");
       onExtracted(data);
     } catch (e: any) {
-      setErrorMsg(e.message ?? "File पढ़ नहीं पाए");
+      setErrorMsg(e.message ?? "Couldn't read the file");
       setStatus("error");
     }
   }, [onExtracted]);
@@ -111,7 +111,7 @@ function FileUploadZone({
         <div className="flex flex-col items-center gap-2 py-2">
           <Loader2 className="h-8 w-8 text-primary animate-spin" />
           <p className="text-sm font-medium text-primary">
-            {progress != null ? `File पढ़ रहे हैं… ${progress}%` : "File पढ़ रहे हैं…"}
+            {progress != null ? `Reading file… ${progress}%` : "Reading file…"}
           </p>
           <p className="text-xs text-muted-foreground">{fileName}</p>
         </div>
@@ -120,7 +120,7 @@ function FileUploadZone({
       {status === "success" && (
         <div className="flex flex-col items-center gap-2 py-2">
           <CheckCircle2 className="h-8 w-8 text-emerald-600" />
-          <p className="text-sm font-semibold text-emerald-800">Data निकाल लिया — नीचे check & edit करें</p>
+          <p className="text-sm font-semibold text-emerald-800">Data extracted — review &amp; edit below</p>
           <p className="text-xs text-muted-foreground">{fileName}</p>
         </div>
       )}
@@ -128,7 +128,7 @@ function FileUploadZone({
       {status === "error" && (
         <div className="flex flex-col items-center gap-2 py-2">
           <AlertCircle className="h-8 w-8 text-red-500" />
-          <p className="text-sm font-semibold text-red-700">Error आया</p>
+          <p className="text-sm font-semibold text-red-700">Something went wrong</p>
           <p className="text-xs text-red-600">{errorMsg}</p>
         </div>
       )}
@@ -139,9 +139,9 @@ function FileUploadZone({
             <Upload className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <p className="font-semibold text-sm">File upload करें या खींचें</p>
+            <p className="font-semibold text-sm">Upload or drag a file</p>
             <p className="text-xs text-muted-foreground mt-1">
-              PNG • JPG • PDF • JSON • CSV — data अपने आप भर जाएगा
+              PNG • JPG • PDF • JSON • CSV — data fills in automatically
             </p>
           </div>
         </div>
@@ -184,7 +184,7 @@ function ExtractedReview({
       <div className="flex items-center justify-between">
         <span className="font-semibold text-sm flex items-center gap-1.5">
           <Pencil className="h-3.5 w-3.5 text-primary" />
-          Extracted Data — Edit करें
+          Extracted Data — Edit
         </span>
         <Badge className={`${confidenceColor[draft.confidence]} border text-xs`}>
           Confidence: {draft.confidence}
@@ -405,13 +405,13 @@ export function Planner() {
   }, [baseline, plan, view, params.principal]);
 
   const pieStandard = [
-    { name: "मूलधन", value: params.principal, color: "#1d5c42" },
-    { name: "कुल ब्याज", value: baseline.totalInterest, color: "#f59e0b" },
+    { name: "Principal", value: params.principal, color: "#1d5c42" },
+    { name: "Total Interest", value: baseline.totalInterest, color: "#f59e0b" },
   ];
   const pieAccelerated = [
-    { name: "मूलधन", value: plan.totalPrincipalBorrowed, color: "#1d5c42" },
-    { name: "कुल ब्याज", value: plan.totalInterest, color: "#34d399" },
-    ...(interestSaved > 0 ? [{ name: "बचत", value: interestSaved, color: "#e5e7eb" }] : []),
+    { name: "Principal", value: plan.totalPrincipalBorrowed, color: "#1d5c42" },
+    { name: "Total Interest", value: plan.totalInterest, color: "#34d399" },
+    ...(interestSaved > 0 ? [{ name: "Savings", value: interestSaved, color: "#e5e7eb" }] : []),
   ];
 
   const applyStrategy = (extraEMI: number, yearlyLump: number) => {
@@ -463,7 +463,7 @@ export function Planner() {
             <h1 className="text-2xl font-bold tracking-tight">Loan Payoff Planner</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-12">
-            File upload करके data extract करें, edit करें, और amortization schedule देखें
+            Upload a file to extract data, edit it, and view the amortization schedule
           </p>
         </div>
         <div className="flex gap-2">
@@ -496,7 +496,7 @@ export function Planner() {
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <FileText className="h-4 w-4 text-primary" />
-                File से Import करें
+                Import from File
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 space-y-3">
@@ -692,7 +692,7 @@ export function Planner() {
               </div>
               {topUp.amount > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Month {topUp.month} पर ₹{topUp.amount.toLocaleString("en-IN")} जुड़ेगा — EMI recalculate होगी।
+                  ₹{topUp.amount.toLocaleString("en-IN")} will be added in month {topUp.month} — the EMI will be recalculated.
                 </p>
               )}
             </CardContent>
@@ -759,7 +759,7 @@ export function Planner() {
               <CardContent className="pt-4 pb-3">
                 <p className="text-xs text-emerald-700 font-medium">Accelerated Payoff</p>
                 <p className="text-base font-bold mt-1 text-emerald-800">{monthsToStr(plan.payoffMonths)}</p>
-                <p className="text-xs text-emerald-700">{monthsSaved > 0 ? `${monthsSaved} महीने जल्दी` : "Same tenure"}</p>
+                <p className="text-xs text-emerald-700">{monthsSaved > 0 ? `${monthsSaved} months earlier` : "Same tenure"}</p>
               </CardContent>
             </Card>
             <Card className="border-border shadow-sm">
@@ -786,10 +786,10 @@ export function Planner() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-emerald-800">
-                  {formatRupees(interestSaved)} बचेगा — loan {monthsSaved} महीने पहले खत्म होगा!
+                  Save {formatRupees(interestSaved)} — the loan ends {monthsSaved} months earlier!
                 </p>
                 <p className="text-xs text-emerald-700">
-                  कुल {formatRupees(totalMonthly)}/month देकर
+                  By paying {formatRupees(totalMonthly)}/month in total
                 </p>
               </div>
               <TrendingDown className="h-6 w-6 text-emerald-600 shrink-0" />
@@ -818,7 +818,7 @@ export function Planner() {
               </div>
               <p className="text-xs text-muted-foreground">
                 {view === "balance"
-                  ? "Remaining principal — accelerated plan में जल्दी zero होता है"
+                  ? "Remaining principal — reaches zero sooner with the accelerated plan"
                   : "Cumulative interest paid — standard vs accelerated"}
               </p>
             </CardHeader>
@@ -884,7 +884,7 @@ export function Planner() {
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                किसी भी साल का "Extra Prepaid" edit करें — schedule तुरंत recalculate होगा।
+                Edit the "Extra Prepaid" amount for any year — the schedule recalculates instantly.
               </p>
             </CardHeader>
             {ledgerOpen && (
@@ -952,7 +952,7 @@ export function Planner() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 Smart Payoff Leverage Strategies
               </CardTitle>
-              <p className="text-xs text-muted-foreground">एक click में calculator पर apply करें</p>
+              <p className="text-xs text-muted-foreground">Apply to the calculator in one click</p>
             </CardHeader>
             <CardContent className="pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
               {STRATEGY_PRESETS.map((s) => {
@@ -1039,13 +1039,13 @@ export function Planner() {
             <Link href="/loans/new">
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                Loan Add करें
+                Add Loan
               </Button>
             </Link>
             <Link href="/loans">
               <Button variant="outline" className="gap-2">
                 <BarChart3 className="h-4 w-4" />
-                All Loans देखें
+                View All Loans
               </Button>
             </Link>
           </div>

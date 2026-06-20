@@ -326,10 +326,10 @@ export function LoanDetail() {
           {showAddPayment && (
             <CardContent className="pt-0 pb-4 border-b border-border">
               <form onSubmit={handleAddPayment} className="space-y-4 bg-muted/40 rounded-lg p-4">
-                <h3 className="font-semibold text-sm">भुगतान दर्ज करें</h3>
+                <h3 className="font-semibold text-sm">Record Payment</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="amount">राशि (₹)</Label>
+                    <Label htmlFor="amount">Amount (₹)</Label>
                     <Input
                       id="amount"
                       type="number"
@@ -341,7 +341,7 @@ export function LoanDetail() {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label htmlFor="date">भुगतान तारीख</Label>
+                    <Label htmlFor="date">Payment Date</Label>
                     <Input
                       id="date"
                       type="date"
@@ -352,10 +352,10 @@ export function LoanDetail() {
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="notes">नोट (वैकल्पिक)</Label>
+                  <Label htmlFor="notes">Note (optional)</Label>
                   <Textarea
                     id="notes"
-                    placeholder="इस भुगतान के बारे में नोट..."
+                    placeholder="A note about this payment..."
                     value={paymentNotes}
                     onChange={(e) => setPaymentNotes(e.target.value)}
                     rows={2}
@@ -363,10 +363,10 @@ export function LoanDetail() {
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" size="sm" disabled={addPayment.isPending}>
-                    {addPayment.isPending ? "सहेज रहे हैं..." : "भुगतान सहेजें"}
+                    {addPayment.isPending ? "Saving..." : "Save Payment"}
                   </Button>
                   <Button type="button" variant="ghost" size="sm" onClick={() => setShowAddPayment(false)}>
-                    रद्द करें
+                    Cancel
                   </Button>
                 </div>
               </form>
@@ -397,18 +397,18 @@ export function LoanDetail() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>यह भुगतान हटाएं?</AlertDialogTitle>
+                          <AlertDialogTitle>Delete this payment?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            {formatDate(payment.paymentDate)} का {formatRupees(payment.amount)} का भुगतान हट जाएगा।
+                            The {formatRupees(payment.amount)} payment from {formatDate(payment.paymentDate)} will be removed.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>रद्द करें</AlertDialogCancel>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             onClick={() => deletePayment.mutate({ id, paymentId: payment.id })}
                           >
-                            हटाएं
+                            Delete
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -418,7 +418,7 @@ export function LoanDetail() {
               </div>
             ) : (
               <div className="px-6 py-10 text-center">
-                <p className="text-muted-foreground">अभी तक कोई भुगतान दर्ज नहीं हुआ।</p>
+                <p className="text-muted-foreground">No payments recorded yet.</p>
               </div>
             )}
           </CardContent>

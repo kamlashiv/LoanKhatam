@@ -116,21 +116,21 @@ export function AmortizationSection({
 
   const pieData = useMemo(() => {
     const data = [
-      { name: "मूलधन चुकाया", value: savings.principalRepaid, color: COLORS.principalPaid },
-      { name: "ब्याज चुकाया", value: savings.estimatedInterestPaid, color: COLORS.interestPaid },
-      { name: "बाकी मूलधन", value: savings.remainingPrincipal, color: COLORS.remainingPrincipal },
-      { name: "बाकी ब्याज", value: savings.projectedRemainingInterest, color: COLORS.remainingInterest },
+      { name: "Principal Repaid", value: savings.principalRepaid, color: COLORS.principalPaid },
+      { name: "Interest Paid", value: savings.estimatedInterestPaid, color: COLORS.interestPaid },
+      { name: "Remaining Principal", value: savings.remainingPrincipal, color: COLORS.remainingPrincipal },
+      { name: "Remaining Interest", value: savings.projectedRemainingInterest, color: COLORS.remainingInterest },
     ];
     if (savings.interestSaved > 0) {
-      data.push({ name: "बचाया गया ब्याज", value: savings.interestSaved, color: COLORS.interestSaved });
+      data.push({ name: "Interest Saved", value: savings.interestSaved, color: COLORS.interestSaved });
     }
     return data.filter((d) => d.value > 0);
   }, [savings]);
 
   const scheduledPieData = useMemo(
     () => [
-      { name: "मूलधन (Principal)", value: principalAmount, color: COLORS.principalPaid },
-      { name: "कुल ब्याज (Interest)", value: amort.totalInterest, color: COLORS.interestPaid },
+      { name: "Principal", value: principalAmount, color: COLORS.principalPaid },
+      { name: "Total Interest", value: amort.totalInterest, color: COLORS.interestPaid },
     ],
     [principalAmount, amort.totalInterest]
   );
@@ -139,7 +139,7 @@ export function AmortizationSection({
     return (
       <Card className="border-border shadow-sm">
         <CardContent className="py-10 text-center">
-          <p className="text-muted-foreground">Amortization schedule उपलब्ध नहीं — start और due date जांचें।</p>
+          <p className="text-muted-foreground">Amortization schedule unavailable — check the start and due dates.</p>
         </CardContent>
       </Card>
     );
@@ -155,10 +155,10 @@ export function AmortizationSection({
           </div>
           <div>
             <p className="font-bold text-emerald-800 text-lg">
-              {formatRupees(savings.interestSaved)} ब्याज बचेगा!
+              {formatRupees(savings.interestSaved)} interest saved!
             </p>
             <p className="text-sm text-emerald-700">
-              जल्दी भुगतान की वजह से scheduled ब्याज से कम देना पड़ेगा।
+              Paying early means you'll owe less than the scheduled interest.
             </p>
           </div>
           <Badge className="ml-auto bg-emerald-100 text-emerald-800 border-emerald-300 border font-semibold text-sm shrink-0">
@@ -171,25 +171,25 @@ export function AmortizationSection({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="border-border shadow-sm">
           <CardContent className="pt-5">
-            <p className="text-xs text-muted-foreground mb-1">मासिक किस्त (EMI)</p>
+            <p className="text-xs text-muted-foreground mb-1">Monthly Installment (EMI)</p>
             <p className="text-lg font-bold text-primary">{formatRupees(amort.emi)}</p>
           </CardContent>
         </Card>
         <Card className="border-border shadow-sm">
           <CardContent className="pt-5">
-            <p className="text-xs text-muted-foreground mb-1">कुल ब्याज (Scheduled)</p>
+            <p className="text-xs text-muted-foreground mb-1">Total Interest (Scheduled)</p>
             <p className="text-lg font-bold text-amber-700">{formatRupees(amort.totalInterest)}</p>
           </CardContent>
         </Card>
         <Card className="border-border shadow-sm">
           <CardContent className="pt-5">
-            <p className="text-xs text-muted-foreground mb-1">बाकी ब्याज (Projected)</p>
+            <p className="text-xs text-muted-foreground mb-1">Remaining Interest (Projected)</p>
             <p className="text-lg font-bold text-red-600">{formatRupees(savings.projectedRemainingInterest)}</p>
           </CardContent>
         </Card>
         <Card className="border-border shadow-sm">
           <CardContent className="pt-5">
-            <p className="text-xs text-muted-foreground mb-1">ब्याज बचत</p>
+            <p className="text-xs text-muted-foreground mb-1">Interest Savings</p>
             <p className={`text-lg font-bold ${savings.interestSaved > 0 ? "text-emerald-700" : "text-muted-foreground"}`}>
               {savings.interestSaved > 0 ? formatRupees(savings.interestSaved) : "₹0"}
             </p>
@@ -203,7 +203,7 @@ export function AmortizationSection({
         <Card className="border-border shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-bold">Loan Breakdown (Scheduled)</CardTitle>
-            <p className="text-xs text-muted-foreground">अगर सभी EMI समय पर दें तो कितना ब्याज लगेगा</p>
+            <p className="text-xs text-muted-foreground">How much interest you'll pay if every EMI is paid on time</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={220}>
@@ -231,7 +231,7 @@ export function AmortizationSection({
             </ResponsiveContainer>
             <div className="text-center mt-1">
               <p className="text-xs text-muted-foreground">
-                कुल देय राशि:{" "}
+                Total Payable:{" "}
                 <span className="font-bold text-foreground">{formatRupees(amort.totalPayment)}</span>
               </p>
             </div>
@@ -244,8 +244,8 @@ export function AmortizationSection({
             <CardTitle className="text-base font-bold">Actual Progress + Savings</CardTitle>
             <p className="text-xs text-muted-foreground">
               {savings.interestSaved > 0
-                ? "हरा भाग = जल्दी भुगतान से बचाया गया ब्याज"
-                : "अभी तक की स्थिति"}
+                ? "Green section = interest saved by paying early"
+                : "Status so far"}
             </p>
           </CardHeader>
           <CardContent>
@@ -274,7 +274,7 @@ export function AmortizationSection({
             </ResponsiveContainer>
             <div className="text-center mt-1">
               <p className="text-xs text-muted-foreground">
-                कुल चुकाया:{" "}
+                Total Paid:{" "}
                 <span className="font-bold text-foreground">{formatRupees(totalPaid)}</span>
               </p>
             </div>
@@ -287,7 +287,7 @@ export function AmortizationSection({
         <div className="mb-3">
           <h3 className="text-base font-bold">Amortization Schedule</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Bank statement format — {amort.tenureMonths} महीने की योजना
+            Bank statement format — {amort.tenureMonths}-month plan
             {payments.length > 0 && `, ${payments.length} prepayment${payments.length > 1 ? "s" : ""} inline`}
           </p>
         </div>

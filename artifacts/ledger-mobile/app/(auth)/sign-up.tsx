@@ -91,21 +91,21 @@ export default function SignUpScreen() {
     const trimmedEmail = email.trim();
 
     if (!trimmedEmail) {
-      setEmailError("Email zaroori hai.");
+      setEmailError("Email is required.");
       ok = false;
     } else if (!EMAIL_RE.test(trimmedEmail)) {
-      setEmailError("Sahi email address daalein.");
+      setEmailError("Enter a valid email address.");
       ok = false;
     } else {
       setEmailError(null);
     }
 
     if (!password) {
-      setPasswordError("Password zaroori hai.");
+      setPasswordError("Password is required.");
       ok = false;
     } else if (password.length < MIN_PASSWORD_LENGTH) {
       setPasswordError(
-        `Kam se kam ${MIN_PASSWORD_LENGTH} characters ka password rakhein.`,
+        `Use a password of at least ${MIN_PASSWORD_LENGTH} characters.`,
       );
       ok = false;
     } else {
@@ -126,26 +126,26 @@ export default function SignUpScreen() {
       const param = e.meta?.paramName ?? "";
 
       if (codeName === "form_identifier_exists") {
-        setEmailError("Ye email pehle se registered hai. Sign in karein.");
+        setEmailError("This email is already registered. Please sign in.");
         handled = true;
       } else if (codeName === "form_password_pwned") {
         setPasswordError(
-          "Ye password ek data breach mein mila hai. Koi aur chunein.",
+          "This password was found in a data breach. Choose a different one.",
         );
         handled = true;
       } else if (codeName === "form_password_length_too_short") {
         setPasswordError(
-          `Kam se kam ${MIN_PASSWORD_LENGTH} characters ka password rakhein.`,
+          `Use a password of at least ${MIN_PASSWORD_LENGTH} characters.`,
         );
         handled = true;
       } else if (codeName === "form_password_not_strong_enough") {
-        setPasswordError("Password thoda aur mazboot banayein.");
+        setPasswordError("Please choose a stronger password.");
         handled = true;
       } else if (param === "email_address") {
-        setEmailError(e.message ?? "Sahi email address daalein.");
+        setEmailError(e.message ?? "Enter a valid email address.");
         handled = true;
       } else if (param === "password") {
-        setPasswordError(e.message ?? "Password sahi nahi hai.");
+        setPasswordError(e.message ?? "Password is invalid.");
         handled = true;
       }
     }
@@ -182,7 +182,7 @@ export default function SignUpScreen() {
   const handleVerify = async () => {
     if (!isLoaded) return;
     if (!code.trim()) {
-      setCodeError("Verification code daalein.");
+      setCodeError("Enter the verification code.");
       return;
     }
 
@@ -195,11 +195,11 @@ export default function SignUpScreen() {
         await setActive({ session: result.createdSessionId });
         router.replace("/(tabs)");
       } else {
-        setCodeError("Sign-up complete nahi ho paaya. Dobara try karein.");
+        setCodeError("Sign-up could not be completed. Please try again.");
       }
     } catch (err: unknown) {
       const fallback = getClerkErrors(err)[0]?.message;
-      setCodeError(fallback ?? "Galat code. Dobara try karein.");
+      setCodeError(fallback ?? "Incorrect code. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -387,7 +387,7 @@ export default function SignUpScreen() {
           </View>
 
           <Text style={styles.helperText}>
-            Humne {email.trim()} par ek code bheja hai.
+            We've sent a code to {email.trim()}.
           </Text>
 
           <Text style={styles.label}>Verification Code</Text>
@@ -568,12 +568,12 @@ export default function SignUpScreen() {
         <View nativeID="clerk-captcha" />
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Account hai? </Text>
+          <Text style={styles.footerText}>Already have an account? </Text>
           <TouchableOpacity
             onPress={() => router.replace("/sign-in")}
             testID="go-to-sign-in"
           >
-            <Text style={styles.footerLink}>Sign in karein</Text>
+            <Text style={styles.footerLink}>Sign in</Text>
           </TouchableOpacity>
         </View>
       </View>

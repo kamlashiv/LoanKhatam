@@ -210,25 +210,25 @@ export const STRATEGY_PRESETS: StrategyPreset[] = [
   {
     id: "one-extra-emi",
     title: "1 Extra EMI / Year",
-    description: "साल में एक बार पूरी EMI जितना prepay करें — बिना बजट बिगाड़े।",
+    description: "Prepay one full EMI once a year — without straining your budget.",
     compute: (baseEMI) => ({ extraEMI: 0, yearlyLump: r2(baseEMI) }),
   },
   {
     id: "round-up",
     title: "Micro-Savings (5% Monthly)",
-    description: "हर महीने EMI का 5% extra — छोटा कदम, बड़ी बचत।",
+    description: "An extra 5% of the EMI every month — small step, big savings.",
     compute: (baseEMI) => ({ extraEMI: r2(baseEMI * 0.05), yearlyLump: 0 }),
   },
   {
     id: "ten-percent",
     title: "10% Monthly Boost",
-    description: "हर महीने EMI का 10% extra देकर tenure तेज़ी से घटाएँ।",
+    description: "Pay an extra 10% of the EMI each month to cut your tenure faster.",
     compute: (baseEMI) => ({ extraEMI: r2(baseEMI * 0.1), yearlyLump: 0 }),
   },
   {
     id: "super-saver",
     title: "Super-Saver Combo",
-    description: "10% monthly extra + साल में 1 extra EMI — maximum बचत।",
+    description: "10% extra monthly + 1 extra EMI a year — maximum savings.",
     compute: (baseEMI) => ({ extraEMI: r2(baseEMI * 0.1), yearlyLump: r2(baseEMI) }),
   },
 ];

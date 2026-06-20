@@ -9,15 +9,18 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingDown, IndianRupee } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrendingDown, Download, FileText, FileSpreadsheet } from "lucide-react";
 import {
   calculateAmortization,
   calculateSavings,
   currentScheduleMonth,
 } from "@/lib/amortization";
 import { formatRupees, formatDate } from "@/lib/loan-utils";
+import { exportToCSV, exportToPDF } from "@/lib/export";
 
 interface Props {
+  borrowerName: string;
   principalAmount: number;
   interestRate: number;
   startDate: string;
@@ -55,6 +58,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 }
 
 export function AmortizationSection({
+  borrowerName,
   principalAmount,
   interestRate,
   startDate,
@@ -63,6 +67,7 @@ export function AmortizationSection({
   remainingAmount,
 }: Props) {
   const [showAll, setShowAll] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const amort = useMemo(
     () => calculateAmortization(principalAmount, interestRate, startDate, dueDate),
@@ -257,10 +262,44 @@ export function AmortizationSection({
       {/* Amortization Schedule Table */}
       <Card className="border-border shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base font-bold">Amortization Schedule</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            हर महीने कितना मूलधन और कितना ब्याज कटेगा — {amort.tenureMonths} महीने की योजना
-          </p>
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <CardTitle className="text-base font-bold">Amortization Schedule</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                हर महीने कितना मूलधन और कितना ब्याज कटेगा — {amort.tenureMonths} महीने की योजना
+              </p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 text-xs"
+                onClick={() =>
+                  exportToCSV(borrowerName, amort, savings, principalAmount, interestRate, startDate, dueDate)
+                }
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-700" />
+                CSV Download
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 text-xs"
+                disabled={pdfLoading}
+                onClick={async () => {
+                  setPdfLoading(true);
+                  try {
+                    await exportToPDF(borrowerName, amort, savings, principalAmount, interestRate, startDate, dueDate);
+                  } finally {
+                    setPdfLoading(false);
+                  }
+                }}
+              >
+                <FileText className="h-3.5 w-3.5 text-red-600" />
+                {pdfLoading ? "बन रहा है..." : "PDF Download"}
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">

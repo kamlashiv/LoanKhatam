@@ -372,6 +372,7 @@ export function LoanDetail() {
       {/* Tab: Amortization */}
       {activeTab === "amortization" && (
         <AmortizationSection
+          borrowerName={loan.borrowerName}
           principalAmount={loan.principalAmount}
           interestRate={loan.interestRate}
           startDate={loan.startDate}

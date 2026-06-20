@@ -29,6 +29,7 @@ import {
 import { exportPlannerCSV, exportPlannerPDF } from "@/lib/export";
 import { extractFromFile, type ExtractedData } from "@/lib/file-extract";
 import { useProfile, monthlySurplus } from "@/lib/profile";
+import { useDerivedLoans } from "@/lib/loan-derive";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface LoanParams {
@@ -330,7 +331,8 @@ const STRAT_VISUAL = [
 export function Planner() {
   const { isDark } = useTheme();
   const { profile } = useProfile();
-  const surplus = monthlySurplus(profile);
+  const derived = useDerivedLoans();
+  const surplus = monthlySurplus(profile, derived.aggregateEmi);
   // Theme-aware chart styling so grids, axes, and slice borders stay legible.
   const gridStroke = isDark ? "#1e293b" : "#f1f5f9";
   const axisTick = { fontSize: 11, fill: isDark ? "#94a3b8" : "#64748b" };

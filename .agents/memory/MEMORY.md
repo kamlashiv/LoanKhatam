@@ -10,6 +10,7 @@
 - [Smart Financial Strategy engine](strategy-engine.md) — /strategy debt baseline must use rollover=false ("minimum only"); unbounded payoffs show "Not reachable"; persisted inputs sanitized not blind-merged.
 - [Loans list status query param](loans-status-query-param.md) — /loans seeds its filter tab from ?status=; sidebar overdue CTA depends on it. Keep param names in sync.
 - [Loan-tracker link/icon button a11y](loan-tracker-a11y-buttons.md) — use Button asChild+Link (not Link>Button); icon-only buttons need aria-label. Both were review rejections.
+- [Profile EMI derived from loans](profile-emi-derived.md) — loan EMI/debts derive live from DB loans via useDerivedLoans; pass derived.aggregateEmi to profile expense/surplus helpers; analyzer must merge localStorage on write-back.
 - [Per-user context + cache scoping](per-user-context-cache-scoping.md) — app-wide per-user contexts must scope component state (key by userId), query cache key, AND guard in-flight saves, or data bleeds across account switches.
 - [Amortization optional/empty dates](amortization-optional-dates.md) — monthsBetween must isNaN-guard to 0; Math.max(0,NaN)=NaN bypasses tenure<=0 guards and leaks NaN EMIs when due date is empty.
 - [localStorage persisted index validation](localstorage-index-validation.md) — persisted array-index values (e.g. a selected-option index) need Number.isInteger + bounds checks in loader AND usage; finite-number + try/catch alone crashes on -1/0.5.

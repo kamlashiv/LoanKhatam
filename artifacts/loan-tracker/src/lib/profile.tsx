@@ -49,6 +49,7 @@ export const EMPTY_PROFILE: ProfileData = {
 
 // Legacy localStorage keys we migrate from on first load.
 const STRATEGY_KEY = "loan-tracker:strategy-inputs";
+const EMI_INVEST_KEY = "loan-tracker:emi-invest";
 const MIGRATION_FLAG = "loan-tracker:profile-migrated";
 
 const SAVE_DEBOUNCE_MS = 800;
@@ -71,14 +72,28 @@ function num(raw: Record<string, unknown>, key: string, fallback: number): numbe
  */
 function readLegacyProfile(): ProfileData | null {
   let strategy: Record<string, unknown> | null = null;
+  let emiInvest: Record<string, unknown> | null = null;
   try {
     const raw = localStorage.getItem(STRATEGY_KEY);
     if (raw) strategy = JSON.parse(raw) as Record<string, unknown>;
   } catch {
     /* ignore corrupt storage */
   }
+  try {
+    const raw = localStorage.getItem(EMI_INVEST_KEY);
+    if (raw) emiInvest = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    /* ignore corrupt storage */
+  }
 
-  if (!strategy) return null;
+  if (!strategy && !emiInvest) return null;
+  strategy = strategy ?? {};
+
+  // Fold the EMI-analyzer's income/expenses into the profile when the Strategy
+  // page didn't already provide them, so nothing is lost on migration. The
+  // analyzer's single "monthly expenses" figure is absorbed into miscellaneous.
+  const emiIncome = emiInvest ? num(emiInvest, "monthlyIncome", 0) : 0;
+  const emiExpenses = emiInvest ? num(emiInvest, "monthlyExpenses", 0) : 0;
 
   const debts = Array.isArray(strategy.loans)
     ? (strategy.loans as unknown[]).flatMap((item) => {
@@ -108,7 +123,7 @@ function readLegacyProfile(): ProfileData | null {
     name: typeof strategy.name === "string" ? strategy.name : "",
     age: num(strategy, "age", 30),
     occupation: typeof strategy.occupation === "string" ? strategy.occupation : "",
-    monthlyIncome: num(strategy, "monthlyIncome", 0),
+    monthlyIncome: num(strategy, "monthlyIncome", 0) || emiIncome,
     additionalIncome: num(strategy, "additionalIncome", 0),
     rent: num(strategy, "rent", 0),
     emi: num(strategy, "emi", 0),
@@ -123,7 +138,7 @@ function readLegacyProfile(): ProfileData | null {
     entertainment: num(strategy, "entertainment", 0),
     shopping: num(strategy, "shopping", 0),
     medical: num(strategy, "medical", 0),
-    miscellaneous: num(strategy, "miscellaneous", 0),
+    miscellaneous: num(strategy, "miscellaneous", 0) || emiExpenses,
     currentSavings: num(strategy, "currentSavings", 0),
     existingInvestments: num(strategy, "existingInvestments", 0),
     creditCardDebt: num(strategy, "creditCardDebt", 0),
@@ -296,10 +311,13 @@ export function totalIncome(p: ProfileData): number {
   return p.monthlyIncome + p.additionalIncome;
 }
 
-export function totalFixedExpenses(p: ProfileData): number {
+// Loan EMI is no longer stored on the profile — it is derived live from real
+// DB loans (see `useDerivedLoans`). Screens that have the derived figure pass
+// it in via `emi`; the `p.emi` fallback only covers pre-migration legacy data.
+export function totalFixedExpenses(p: ProfileData, emi: number = p.emi): number {
   return (
     p.rent +
-    p.emi +
+    emi +
     p.insurance +
     p.utilities +
     p.schoolFees +
@@ -320,12 +338,12 @@ export function totalVariableExpenses(p: ProfileData): number {
   );
 }
 
-export function totalExpenses(p: ProfileData): number {
-  return totalFixedExpenses(p) + totalVariableExpenses(p);
+export function totalExpenses(p: ProfileData, emi: number = p.emi): number {
+  return totalFixedExpenses(p, emi) + totalVariableExpenses(p);
 }
 
-export function monthlySurplus(p: ProfileData): number {
-  return totalIncome(p) - totalExpenses(p);
+export function monthlySurplus(p: ProfileData, emi: number = p.emi): number {
+  return totalIncome(p) - totalExpenses(p, emi);
 }
 
 /** Rough completeness signal for nudges (0–1). */

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   ResponsiveContainer, AreaChart, Area, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -22,13 +22,15 @@ import {
   type EmiInvestInputs,
 } from "@/lib/strategy-engine";
 import { useProfile, totalIncome, totalExpenses } from "@/lib/profile";
+import { useDerivedLoans } from "@/lib/loan-derive";
 
 const STORAGE_KEY = "loan-tracker:emi-invest";
 
+// monthlyIncome / monthlyExpenses are intentionally excluded: they are owned by
+// the global financial profile (single source of truth), not this component.
 const NUMERIC_KEYS: (keyof EmiInvestInputs)[] = [
   "totalLoanAmount", "remainingBalance", "annualRate", "currentEmi",
-  "remainingTenureMonths", "monthlyIncome", "monthlyExpenses",
-  "assumedReturnPct", "investPct", "customPct",
+  "remainingTenureMonths", "assumedReturnPct", "investPct", "customPct",
 ];
 
 function sanitize(parsed: unknown): EmiInvestInputs {
@@ -93,38 +95,55 @@ function StatTile({
 
 export function EmiInvestmentAnalyzer() {
   const { isDark } = useTheme();
-  const { profile } = useProfile();
+  const { profile, update } = useProfile();
+  const derived = useDerivedLoans();
   const [inputs, setInputs] = useState<EmiInvestInputs>(loadInputs);
-  const seededRef = useRef(false);
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(inputs));
+      // Merge over any existing entry so legacy keys we no longer own
+      // (e.g. monthlyIncome/monthlyExpenses) survive until the global-profile
+      // migration has a chance to read and fold them in.
+      let existing: Record<string, unknown> = {};
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") existing = parsed as Record<string, unknown>;
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, ...inputs }));
     } catch {
-      /* ignore quota errors */
+      /* ignore quota / parse errors */
     }
   }, [inputs]);
 
-  // One-time seed of income/expenses from the global financial profile so the
-  // analyzer starts from the same numbers the user already entered elsewhere.
-  useEffect(() => {
-    if (seededRef.current) return;
-    const profIncome = totalIncome(profile);
-    const profExpenses = totalExpenses(profile);
-    if (profIncome <= 0 && profExpenses <= 0) return;
-    seededRef.current = true;
-    setInputs((prev) => ({
-      ...prev,
-      monthlyIncome: prev.monthlyIncome === 0 ? profIncome : prev.monthlyIncome,
-      monthlyExpenses: prev.monthlyExpenses === 0 ? profExpenses : prev.monthlyExpenses,
-    }));
-  }, [profile]);
+  // Income & expenses are read live from the global profile (single source of
+  // truth). The local `inputs` no longer owns them; editing them here writes
+  // straight back to the profile so every other screen updates instantly.
+  // EMI itself is derived from real loans, so expense math injects that figure.
+  const profIncome = totalIncome(profile);
+  const profExpenses = totalExpenses(profile, derived.aggregateEmi);
+
+  const setIncome = useCallback(
+    (n: number) => update({ monthlyIncome: Math.max(0, n - profile.additionalIncome) }),
+    [update, profile.additionalIncome],
+  );
+  const setExpenses = useCallback(
+    (n: number) => {
+      const others = totalExpenses(profile, derived.aggregateEmi) - profile.miscellaneous;
+      update({ miscellaneous: Math.max(0, n - others) });
+    },
+    [update, profile, derived.aggregateEmi],
+  );
 
   const set = useCallback(<K extends keyof EmiInvestInputs>(key: K, val: EmiInvestInputs[K]) => {
     setInputs((prev) => ({ ...prev, [key]: val }));
   }, []);
 
-  const result = useMemo(() => analyzeEmiInvestment(inputs), [inputs]);
+  const analyzeInputs = useMemo<EmiInvestInputs>(
+    () => ({ ...inputs, monthlyIncome: profIncome, monthlyExpenses: profExpenses }),
+    [inputs, profIncome, profExpenses],
+  );
+  const result = useMemo(() => analyzeEmiInvestment(analyzeInputs), [analyzeInputs]);
 
   const gridStroke = isDark ? "#334155" : "#e2e8f0";
   const axisTick = { fontSize: 11, fill: isDark ? "#94a3b8" : "#64748b" } as const;
@@ -159,8 +178,8 @@ export function EmiInvestmentAnalyzer() {
             <NumField label="Interest Rate" value={inputs.annualRate} onChange={(n) => set("annualRate", n)} suffix="%" />
             <NumField label="Current EMI" value={inputs.currentEmi} onChange={(n) => set("currentEmi", n)} />
             <NumField label="Remaining Tenure" value={inputs.remainingTenureMonths} onChange={(n) => set("remainingTenureMonths", n)} suffix="mo" />
-            <NumField label="Monthly Income" value={inputs.monthlyIncome} onChange={(n) => set("monthlyIncome", n)} />
-            <NumField label="Monthly Expenses" value={inputs.monthlyExpenses} onChange={(n) => set("monthlyExpenses", n)} />
+            <NumField label="Monthly Income" value={profIncome} onChange={setIncome} />
+            <NumField label="Monthly Expenses" value={profExpenses} onChange={setExpenses} />
             <NumField label="Assumed Return" value={inputs.assumedReturnPct} onChange={(n) => set("assumedReturnPct", n)} suffix="%" />
           </div>
 

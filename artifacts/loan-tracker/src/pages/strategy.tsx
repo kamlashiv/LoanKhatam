@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { Link } from "wouter";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -14,7 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import {
   Sparkles, Wallet, Receipt, ShoppingBag, Landmark, Target, Download,
-  RefreshCw, Plus, Trash2, ShieldCheck, PiggyBank, TrendingUp, Coins,
+  RefreshCw, ShieldCheck, PiggyBank, TrendingUp, Coins,
   Trophy, AlertTriangle, Lightbulb, CheckCircle2, Activity, Gauge, Info,
 } from "lucide-react";
 import { formatRupees } from "@/lib/loan-utils";
@@ -22,21 +23,26 @@ import { exportStrategyPDF } from "@/lib/export";
 import { EmiInvestmentAnalyzer } from "@/components/emi-investment-analyzer";
 import {
   computeStrategy, monthsToLabel, compactRupees, GOAL_OPTIONS,
-  type StrategyInputs, type DebtItem, type RiskProfile, type HealthCategory,
+  type StrategyInputs, type RiskProfile, type HealthCategory,
 } from "@/lib/strategy-engine";
 import {
   useProfile, EMPTY_PROFILE, type ProfileData,
 } from "@/lib/profile";
+import { useDerivedLoans, type DerivedLoans } from "@/lib/loan-derive";
 import { SaveIndicator } from "@/components/save-indicator";
 
-/** Map the shared financial profile onto the strategy engine's input shape. */
-function profileToStrategyInputs(p: ProfileData): StrategyInputs {
+/**
+ * Map the shared financial profile onto the strategy engine's input shape.
+ * Loan figures (aggregate EMI, outstanding debts) are derived from the real
+ * loans in the database — never re-entered — so they can't drift.
+ */
+function profileToStrategyInputs(p: ProfileData, derived: DerivedLoans): StrategyInputs {
   return {
     age: p.age,
     monthlyIncome: p.monthlyIncome,
     additionalIncome: p.additionalIncome,
     rent: p.rent,
-    emi: p.emi,
+    emi: derived.aggregateEmi,
     insurance: p.insurance,
     utilities: p.utilities,
     schoolFees: p.schoolFees,
@@ -52,7 +58,7 @@ function profileToStrategyInputs(p: ProfileData): StrategyInputs {
     currentSavings: p.currentSavings,
     existingInvestments: p.existingInvestments,
     creditCardDebt: p.creditCardDebt,
-    loans: p.debts,
+    loans: derived.debtItems,
     goals: p.goals,
     riskProfile: p.riskProfile,
   };
@@ -86,6 +92,18 @@ function MoneyField({
   );
 }
 
+function DerivedField({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-slate-500 dark:text-slate-400">{label}</Label>
+      <div className="flex h-9 items-center rounded-md border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 text-sm font-medium text-slate-700 dark:text-slate-200">
+        {value}
+      </div>
+      {hint && <p className="text-[10px] text-slate-400 dark:text-slate-500">{hint}</p>}
+    </div>
+  );
+}
+
 function SectionTitle({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
@@ -98,17 +116,14 @@ function SectionTitle({ icon: Icon, children }: { icon: React.ElementType; child
 export default function Strategy() {
   const { isDark } = useTheme();
   const { profile, update, replace, saveStatus, updatedAt } = useProfile();
+  const derived = useDerivedLoans();
   const [exporting, setExporting] = useState(false);
 
-  const inputs = useMemo(() => profileToStrategyInputs(profile), [profile]);
+  const inputs = useMemo(() => profileToStrategyInputs(profile, derived), [profile, derived]);
 
   const set = useCallback(
     <K extends keyof StrategyInputs>(key: K, val: StrategyInputs[K]) => {
-      if (key === "loans") {
-        update({ debts: val as DebtItem[] });
-      } else {
-        update({ [key]: val } as Partial<ProfileData>);
-      }
+      update({ [key]: val } as Partial<ProfileData>);
     },
     [update],
   );
@@ -120,15 +135,6 @@ export default function Strategy() {
   const result = useMemo(() => computeStrategy(inputs), [inputs]);
   const hasData = result.totalIncome > 0 || result.totalExpenses > 0;
   const cat = CATEGORY_STYLE[result.healthCategory];
-
-  const addLoan = () =>
-    set("loans", [
-      ...inputs.loans,
-      { id: crypto.randomUUID(), name: "", balance: 0, rate: 12, minPayment: 0 } as DebtItem,
-    ]);
-  const updateLoan = (id: string, patch: Partial<DebtItem>) =>
-    set("loans", inputs.loans.map((l) => (l.id === id ? { ...l, ...patch } : l)));
-  const removeLoan = (id: string) => set("loans", inputs.loans.filter((l) => l.id !== id));
 
   const toggleGoal = (g: string) =>
     set("goals", inputs.goals.includes(g) ? inputs.goals.filter((x) => x !== g) : [...inputs.goals, g]);
@@ -209,7 +215,7 @@ export default function Strategy() {
                 <SectionTitle icon={Receipt}>Fixed Expenses</SectionTitle>
                 <div className="grid grid-cols-2 gap-3">
                   <MoneyField label="Rent" value={inputs.rent} onChange={(n) => set("rent", n)} />
-                  <MoneyField label="Loan EMI" value={inputs.emi} onChange={(n) => set("emi", n)} />
+                  <DerivedField label="Loan EMI" value={formatRupees(derived.aggregateEmi)} hint="From your loans" />
                   <MoneyField label="Insurance" value={inputs.insurance} onChange={(n) => set("insurance", n)} />
                   <MoneyField label="Utilities" value={inputs.utilities} onChange={(n) => set("utilities", n)} />
                   <MoneyField label="School Fees" value={inputs.schoolFees} onChange={(n) => set("schoolFees", n)} />
@@ -249,52 +255,31 @@ export default function Strategy() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <SectionTitle icon={Receipt}>Outstanding Loans</SectionTitle>
-                  <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={addLoan}>
-                    <Plus className="h-3.5 w-3.5" /> Add
+                  <Button asChild variant="ghost" size="sm" className="h-7 gap-1 text-xs text-indigo-600 dark:text-indigo-400">
+                    <Link href="/loans">Manage</Link>
                   </Button>
                 </div>
-                {inputs.loans.length === 0 && (
-                  <p className="text-xs text-slate-400 dark:text-slate-500">No loans added. Add one to compare payoff strategies.</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                  Pulled live from your loan list — edit them on the Loans page so figures never disagree.
+                </p>
+                {inputs.loans.length === 0 ? (
+                  <p className="text-xs text-slate-400 dark:text-slate-500">No active loans yet. Add one on the Loans page to compare payoff strategies.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {inputs.loans.map((loan) => (
+                      <div key={loan.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{loan.name}</span>
+                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-50">{formatRupees(loan.balance)}</span>
+                        </div>
+                        <div className="mt-1 flex items-center gap-4 text-[11px] text-slate-500 dark:text-slate-400">
+                          <span>{loan.rate}% rate</span>
+                          <span>{loan.minPayment > 0 ? `${formatRupees(loan.minPayment)}/mo EMI` : "no fixed EMI"}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-                <div className="space-y-3">
-                  {inputs.loans.map((loan) => (
-                    <div key={loan.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Input
-                          className="h-8 text-sm flex-1"
-                          placeholder="Loan name (e.g. Car loan)"
-                          value={loan.name}
-                          onChange={(e) => updateLoan(loan.id, { name: e.target.value })}
-                        />
-                        <Button
-                          variant="ghost" size="icon"
-                          className="h-8 w-8 text-slate-400 hover:text-rose-500"
-                          aria-label="Remove loan"
-                          onClick={() => removeLoan(loan.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="space-y-1">
-                          <Label className="text-[11px] text-slate-500 dark:text-slate-400">Balance</Label>
-                          <Input type="number" min={0} className="h-8 text-xs" value={loan.balance === 0 ? "" : loan.balance}
-                            placeholder="₹0" onChange={(e) => updateLoan(loan.id, { balance: Math.max(0, Number(e.target.value) || 0) })} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[11px] text-slate-500 dark:text-slate-400">Rate %</Label>
-                          <Input type="number" min={0} step={0.1} className="h-8 text-xs" value={loan.rate === 0 ? "" : loan.rate}
-                            placeholder="12" onChange={(e) => updateLoan(loan.id, { rate: Math.max(0, Number(e.target.value) || 0) })} />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[11px] text-slate-500 dark:text-slate-400">Min/mo</Label>
-                          <Input type="number" min={0} className="h-8 text-xs" value={loan.minPayment === 0 ? "" : loan.minPayment}
-                            placeholder="₹0" onChange={(e) => updateLoan(loan.id, { minPayment: Math.max(0, Number(e.target.value) || 0) })} />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               <Separator />

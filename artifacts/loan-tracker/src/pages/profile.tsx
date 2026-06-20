@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { Link } from "wouter";
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card";
@@ -9,15 +10,16 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import {
   UserCircle, Wallet, Receipt, ShoppingBag, Landmark, Target, Gauge,
-  Plus, Trash2, RefreshCw, Sparkles, TrendingUp,
+  RefreshCw, Sparkles, TrendingUp,
 } from "lucide-react";
 import { formatRupees } from "@/lib/loan-utils";
-import { GOAL_OPTIONS, type DebtItem, type RiskProfile } from "@/lib/strategy-engine";
+import { GOAL_OPTIONS, type RiskProfile } from "@/lib/strategy-engine";
 import {
   useProfile, EMPTY_PROFILE, type ProfileData,
   totalIncome, totalFixedExpenses, totalVariableExpenses, monthlySurplus,
   profileCompleteness,
 } from "@/lib/profile";
+import { useDerivedLoans } from "@/lib/loan-derive";
 import { SaveIndicator } from "@/components/save-indicator";
 
 function MoneyField({
@@ -39,6 +41,18 @@ function MoneyField({
   );
 }
 
+function DerivedField({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs text-slate-500 dark:text-slate-400">{label}</Label>
+      <div className="flex h-9 items-center rounded-md border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 text-sm font-medium text-slate-700 dark:text-slate-200">
+        {value}
+      </div>
+      {hint && <p className="text-[10px] text-slate-400 dark:text-slate-500">{hint}</p>}
+    </div>
+  );
+}
+
 function SectionTitle({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
@@ -52,6 +66,7 @@ const RISK_PROFILES: RiskProfile[] = ["conservative", "moderate", "aggressive"];
 
 export function ProfilePage() {
   const { profile, update, replace, saveStatus, updatedAt } = useProfile();
+  const derived = useDerivedLoans();
 
   const set = useCallback(
     <K extends keyof ProfileData>(key: K, val: ProfileData[K]) => {
@@ -60,24 +75,15 @@ export function ProfilePage() {
     [update],
   );
 
-  const addDebt = () =>
-    set("debts", [
-      ...profile.debts,
-      { id: crypto.randomUUID(), name: "", balance: 0, rate: 12, minPayment: 0 } as DebtItem,
-    ]);
-  const updateDebt = (id: string, patch: Partial<DebtItem>) =>
-    set("debts", profile.debts.map((d) => (d.id === id ? { ...d, ...patch } : d)));
-  const removeDebt = (id: string) => set("debts", profile.debts.filter((d) => d.id !== id));
-
   const toggleGoal = (g: string) =>
     set("goals", profile.goals.includes(g) ? profile.goals.filter((x) => x !== g) : [...profile.goals, g]);
 
   const reset = () => replace({ ...EMPTY_PROFILE });
 
   const income = totalIncome(profile);
-  const fixed = totalFixedExpenses(profile);
+  const fixed = totalFixedExpenses(profile, derived.aggregateEmi);
   const variable = totalVariableExpenses(profile);
-  const surplus = monthlySurplus(profile);
+  const surplus = monthlySurplus(profile, derived.aggregateEmi);
   const completeness = Math.round(profileCompleteness(profile) * 100);
 
   return (
@@ -205,7 +211,7 @@ export function ProfilePage() {
             <SectionTitle icon={Receipt}>Fixed Expenses</SectionTitle>
             <div className="grid grid-cols-2 gap-4">
               <MoneyField label="Rent" value={profile.rent} onChange={(n) => set("rent", n)} />
-              <MoneyField label="Loan EMI" value={profile.emi} onChange={(n) => set("emi", n)} />
+              <DerivedField label="Loan EMI" value={formatRupees(derived.aggregateEmi)} hint="From your loans" />
               <MoneyField label="Insurance" value={profile.insurance} onChange={(n) => set("insurance", n)} />
               <MoneyField label="Utilities" value={profile.utilities} onChange={(n) => set("utilities", n)} />
               <MoneyField label="School Fees" value={profile.schoolFees} onChange={(n) => set("schoolFees", n)} />
@@ -246,54 +252,28 @@ export function ProfilePage() {
 
             <div className="flex items-center justify-between">
               <SectionTitle icon={Landmark}>Your Debts</SectionTitle>
-              <Button variant="outline" size="sm" className="h-7 gap-1 text-xs" onClick={addDebt}>
-                <Plus className="h-3 w-3" /> Add Debt
+              <Button asChild variant="ghost" size="sm" className="h-7 gap-1 text-xs text-indigo-600 dark:text-indigo-400">
+                <Link href="/loans">Manage</Link>
               </Button>
             </div>
-            {profile.debts.length === 0 ? (
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              Pulled live from your loan list — add or edit loans on the Loans page and they sync here automatically.
+            </p>
+            {derived.debtItems.length === 0 ? (
               <p className="text-xs text-slate-400 dark:text-slate-500">
-                No debts added. Add loans you owe (home, car, personal) to model payoff strategies.
+                No active loans yet. Add loans on the Loans page to model payoff strategies.
               </p>
             ) : (
-              <div className="space-y-3">
-                {profile.debts.map((debt) => (
-                  <div key={debt.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        className="h-8 text-sm"
-                        placeholder="Debt name"
-                        value={debt.name}
-                        onChange={(e) => updateDebt(debt.id, { name: e.target.value })}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0 text-slate-400 hover:text-rose-500"
-                        aria-label="Remove debt"
-                        onClick={() => removeDebt(debt.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+              <div className="space-y-2">
+                {derived.debtItems.map((debt) => (
+                  <div key={debt.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{debt.name}</span>
+                      <span className="text-sm font-semibold text-slate-900 dark:text-slate-50">{formatRupees(debt.balance)}</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-[10px] text-slate-500 dark:text-slate-400">Balance</Label>
-                        <Input type="number" min={0} inputMode="numeric" className="h-8 text-sm"
-                          value={debt.balance === 0 ? "" : debt.balance} placeholder="₹0"
-                          onChange={(e) => updateDebt(debt.id, { balance: Math.max(0, Number(e.target.value) || 0) })} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[10px] text-slate-500 dark:text-slate-400">Rate %</Label>
-                        <Input type="number" min={0} inputMode="numeric" className="h-8 text-sm"
-                          value={debt.rate === 0 ? "" : debt.rate} placeholder="12"
-                          onChange={(e) => updateDebt(debt.id, { rate: Math.max(0, Number(e.target.value) || 0) })} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[10px] text-slate-500 dark:text-slate-400">Min Pay</Label>
-                        <Input type="number" min={0} inputMode="numeric" className="h-8 text-sm"
-                          value={debt.minPayment === 0 ? "" : debt.minPayment} placeholder="₹0"
-                          onChange={(e) => updateDebt(debt.id, { minPayment: Math.max(0, Number(e.target.value) || 0) })} />
-                      </div>
+                    <div className="mt-1 flex items-center gap-4 text-[11px] text-slate-500 dark:text-slate-400">
+                      <span>{debt.rate}% rate</span>
+                      <span>{debt.minPayment > 0 ? `${formatRupees(debt.minPayment)}/mo EMI` : "no fixed EMI"}</span>
                     </div>
                   </div>
                 ))}

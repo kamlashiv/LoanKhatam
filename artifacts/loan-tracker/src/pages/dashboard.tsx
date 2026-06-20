@@ -16,6 +16,7 @@ import { extractFromFile } from "@/lib/file-extract";
 import {
   useProfile, totalIncome, totalExpenses, monthlySurplus, profileCompleteness,
 } from "@/lib/profile";
+import { useDerivedLoans } from "@/lib/loan-derive";
 
 interface ExtractedLoan {
   borrowerName: string | null;
@@ -265,15 +266,16 @@ export function Dashboard() {
   const { data: summary, isLoading: summaryLoading } = useGetDashboardSummary();
   const { data: recentLoans, isLoading: loansLoading } = useGetRecentLoans();
   const { profile } = useProfile();
+  const derived = useDerivedLoans();
   const [showImport, setShowImport] = useState(false);
 
   const profIncome = totalIncome(profile);
-  const profSurplus = monthlySurplus(profile);
+  const profSurplus = monthlySurplus(profile, derived.aggregateEmi);
   const profNetWorth =
     profile.currentSavings + profile.existingInvestments -
     profile.creditCardDebt -
-    profile.debts.reduce((s, d) => s + d.balance, 0);
-  const profileSet = profIncome > 0 || totalExpenses(profile) > 0;
+    derived.totalOutstanding;
+  const profileSet = profIncome > 0 || totalExpenses(profile, derived.aggregateEmi) > 0;
   const completeness = Math.round(profileCompleteness(profile) * 100);
 
   const today = new Date().toLocaleDateString("en-GB");
@@ -404,9 +406,11 @@ export function Dashboard() {
           </Button>
         </div>
         {profileSet && (
-          <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
             <ProfileStat label="Monthly Income" value={formatRupees(profIncome)} tone="text-emerald-600 dark:text-emerald-400" />
             <ProfileStat label="Monthly Surplus" value={formatRupees(profSurplus)} tone={profSurplus >= 0 ? "text-indigo-600 dark:text-indigo-400" : "text-rose-600 dark:text-rose-400"} />
+            <ProfileStat label="Outstanding Loans" value={formatRupees(derived.totalOutstanding)} tone="text-rose-600 dark:text-rose-400" />
+            <ProfileStat label="Monthly EMI" value={formatRupees(derived.aggregateEmi)} tone="text-amber-600 dark:text-amber-400" />
             <ProfileStat label="Net Worth" value={formatRupees(profNetWorth)} tone={profNetWorth >= 0 ? "text-slate-900 dark:text-slate-50" : "text-rose-600 dark:text-rose-400"} />
             <ProfileStat label="Risk Profile" value={profile.riskProfile} tone="text-slate-900 dark:text-slate-50 capitalize" />
           </div>

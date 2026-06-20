@@ -4,6 +4,7 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
+import { ChartTooltip } from "@/lib/chart-theme";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -310,22 +311,6 @@ function ExtractedReview({
           Discard
         </Button>
       </div>
-    </div>
-  );
-}
-
-// ─── Chart tooltip (RinMukti dark style) ─────────────────────────────────────
-function ChartTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-slate-900 border border-slate-800 text-white rounded-lg shadow-md px-3 py-2.5 text-xs">
-      <p className="font-semibold mb-1 text-slate-300">{label}</p>
-      {payload.map((p: any) => (
-        <div key={p.name} className="flex justify-between gap-4 py-0.5" style={{ color: p.color }}>
-          <span>{p.name}:</span>
-          <span className="font-black">{formatRupees(p.value)}</span>
-        </div>
-      ))}
     </div>
   );
 }
@@ -745,7 +730,7 @@ export function Planner() {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(val: number) => formatRupees(val)} />
+                      <Tooltip content={<ChartTooltip />} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -1182,7 +1167,7 @@ export function Planner() {
                               <Cell key={`donut-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(val: number) => formatRupees(val)} />
+                          <Tooltip content={<ChartTooltip />} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>

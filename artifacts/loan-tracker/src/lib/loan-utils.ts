@@ -17,9 +17,9 @@ export function getLoanStatusConfig(status: string) {
     case "active":
       return {
         label: "Active",
-        bg: "bg-blue-50",
-        text: "text-blue-700",
-        border: "border-blue-200",
+        bg: "bg-indigo-50",
+        text: "text-indigo-700",
+        border: "border-indigo-200",
       };
     case "overdue":
       return {

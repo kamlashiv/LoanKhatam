@@ -166,6 +166,31 @@ export function normalizeDate(raw: string | null | undefined): string | null {
   return null;
 }
 
+// Adds a whole number of months to a YYYY-MM-DD date, returning YYYY-MM-DD.
+function addMonths(dateStr: string, months: number): string | null {
+  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const dt = new Date(+m[1], +m[2] - 1 + months, +m[3]);
+  if (Number.isNaN(dt.getTime())) return null;
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+}
+
+// Pulls a loan tenure (in months) from free text. Prefers a labelled tenure
+// ("Tenure: 240 months", "Loan term 20 years"); otherwise falls back to the
+// first clear "N months/years" phrase. Used to derive a due date when only a
+// start date is present.
+function pickTenureMonths(flat: string): number | null {
+  const labeled = flat.match(
+    /(?:tenure|tenor|loan\s*term|term|duration|period|repayment\s*period)\b[^\d]{0,15}(\d{1,3})\s*(years?|yrs?|y|months?|mos?|m)\b/i
+  );
+  const generic = labeled ?? flat.match(/(\d{1,3})\s*(years?|yrs?|months?|mos?)\b/i);
+  if (!generic) return null;
+  const n = +generic[1];
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const months = /^y/i.test(generic[2]) ? n * 12 : n;
+  return months > 0 && months <= 600 ? months : null;
+}
+
 // ─── Structured parsers (JSON / CSV) ─────────────────────────────────────────
 
 const KEY_ALIASES: Record<keyof typeof EMPTY, string[]> = {
@@ -265,8 +290,16 @@ export function fromText(text: string): Omit<ExtractedData, "confidence" | "note
     out.principalAmount = parseAmount(`${amt[2]} ${amt[3] ?? ""}`);
   }
   if (out.principalAmount == null) {
-    const anyAmt = flat.match(/(₹|rs\.?|inr)\s*([\d,]+(?:\.\d+)?)\s*(crore|cr|lakh|lac)?(?!\s*%)/i);
-    if (anyAmt) out.principalAmount = parseAmount(`${anyAmt[2]} ${anyAmt[3] ?? ""}`);
+    // No labelled figure — the principal is almost always the largest money
+    // amount in the document (vs EMI, fees, balances), so pick the maximum.
+    const amounts: number[] = [];
+    for (const mm of flat.matchAll(
+      /(₹|rs\.?|inr)\s*([\d,]+(?:\.\d+)?)\s*(crore|cr|lakh|lac)?(?!\s*%)/gi
+    )) {
+      const v = parseAmount(`${mm[2]} ${mm[3] ?? ""}`);
+      if (v != null) amounts.push(v);
+    }
+    if (amounts.length) out.principalAmount = Math.max(...amounts);
   }
 
   // Interest rate — label-aware and fee-aware (see pickRate).
@@ -288,20 +321,42 @@ export function fromText(text: string): Omit<ExtractedData, "confidence" | "note
     if (!out.startDate && sorted[0]) out.startDate = sorted[0];
     if (!out.dueDate && sorted.length > 1) out.dueDate = sorted[sorted.length - 1];
   }
+  // If a start date is known but the due date isn't, derive it from the tenure
+  // (e.g. "Tenure: 240 months" → start + 240 months).
+  if (out.startDate && !out.dueDate) {
+    const months = pickTenureMonths(flat);
+    if (months) out.dueDate = addMonths(out.startDate, months);
+  }
 
   // Borrower name. Matched on the raw text (not "flat") so a newline ends the
   // name; a colon/dash separator is required to avoid grabbing prose like
   // "Borrower agrees to…". Trailing field labels that bleed onto the same line
   // (common in single-line PDF/OCR output) are trimmed off.
-  const name = text.match(
-    /(?:borrower(?:'s)?\s*name|name\s*of\s*(?:the\s*)?borrower|borrower|lent\s*to|loaned\s*to|customer|party|payee|debtor|name)\s*[:\-]\s*([A-Za-z][A-Za-z.'\- ]{1,40})/i
-  );
-  if (name) {
-    let nm = name[1].trim().replace(/\s+/g, " ");
+  const trimName = (raw: string): string | null => {
+    let nm = raw.trim().replace(/\s+/g, " ");
     nm = nm
       .split(/\s+(?:amount|loan|principal|interest|rate|date|due|start|sum|disbursed|sanctioned|rs|inr)\b/i)[0]
       .trim();
-    if (nm) out.borrowerName = nm;
+    return nm || null;
+  };
+  const name = text.match(
+    /(?:borrower(?:'s)?\s*name|name\s*of\s*(?:the\s*)?borrower|borrower|lent\s*to|loaned\s*to|customer|party|payee|debtor|name)\s*[:\-]\s*([A-Za-z][A-Za-z.'\- ]{1,40})/i
+  );
+  if (name) out.borrowerName = trimName(name[1]);
+  // Fallback: tables/OCR often drop the colon ("Borrower Name  Rajesh Kumar").
+  // Only for strong borrower labels, and only Capitalised words, to avoid prose.
+  if (!out.borrowerName) {
+    const name2 = text.match(
+      /(?:borrower(?:'s)?\s*name|name\s*of\s*(?:the\s*)?borrower|lent\s*to|loaned\s*to|payee|debtor)\s+([A-Z][A-Za-z.'\-]+(?:\s+[A-Z][A-Za-z.'\-]+){0,3})/
+    );
+    if (name2) out.borrowerName = trimName(name2[1]);
+  }
+
+  // Purpose / description, when explicitly labelled.
+  const purpose = text.match(/(?:purpose|description|remarks?|notes?)\s*[:\-]\s*([^\n]{2,80})/i);
+  if (purpose) {
+    const d = purpose[1].trim().replace(/\s+/g, " ");
+    if (d) out.description = d;
   }
 
   return out;

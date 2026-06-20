@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CHART_COLORS, ChartTooltip } from "@/lib/chart-theme";
 import { Badge } from "@/components/ui/badge";
 import { TrendingDown } from "lucide-react";
 import {
@@ -36,33 +37,13 @@ interface Props {
   rateChanges?: RateChange[];
 }
 
-const COLORS = {
-  principalPaid: "#1d5c42",
-  interestPaid: "#f59e0b",
-  remainingPrincipal: "#94a3b8",
-  remainingInterest: "#f87171",
-  interestSaved: "#34d399",
+const COLORS: Record<string, string> = {
+  principalPaid: CHART_COLORS.principal,
+  interestPaid: CHART_COLORS.interest,
+  remainingPrincipal: CHART_COLORS.neutral,
+  remainingInterest: CHART_COLORS.overdue,
+  interestSaved: CHART_COLORS.savings,
 };
-
-function rupeeLabel(value: number) {
-  return formatRupees(value);
-}
-
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: Array<{ name: string; value: number; payload: { color: string } }>;
-}
-
-function CustomTooltip({ active, payload }: CustomTooltipProps) {
-  if (!active || !payload || !payload.length) return null;
-  const item = payload[0];
-  return (
-    <div className="bg-card border border-border rounded-lg shadow-md px-4 py-2 text-sm">
-      <p className="font-semibold text-foreground">{item.name}</p>
-      <p className="text-muted-foreground">{formatRupees(item.value)}</p>
-    </div>
-  );
-}
 
 export function AmortizationSection({
   borrowerName,
@@ -221,7 +202,7 @@ export function AmortizationSection({
                     <Cell key={index} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<ChartTooltip />} />
                 <Legend
                   formatter={(value) => (
                     <span className="text-xs text-foreground">{value}</span>
@@ -264,7 +245,7 @@ export function AmortizationSection({
                     <Cell key={index} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={<ChartTooltip />} />
                 <Legend
                   formatter={(value) => (
                     <span className="text-xs text-foreground">{value}</span>

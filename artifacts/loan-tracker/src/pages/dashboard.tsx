@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { formatRupees, formatDate } from "@/lib/loan-utils";
+import { STATUS_COLORS, CHART_COLORS } from "@/lib/chart-theme";
 import { extractFromFile } from "@/lib/file-extract";
 
 interface ExtractedLoan {
@@ -247,7 +248,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
 }
 
 const statusPill: Record<string, string> = {
-  active: "bg-blue-100 text-blue-700",
+  active: "bg-indigo-100 text-indigo-700",
   paid: "bg-emerald-100 text-emerald-700",
   overdue: "bg-rose-100 text-rose-700",
 };
@@ -266,15 +267,15 @@ export function Dashboard() {
   const overdue = summary?.overdueLoans ?? 0;
 
   const statusData = [
-    { label: "Active", value: summary?.activeLoans ?? 0, color: "#3b82f6" },
-    { label: "Paid", value: summary?.paidLoans ?? 0, color: "#10b981" },
-    { label: "Overdue", value: summary?.overdueLoans ?? 0, color: "#f43f5e" },
+    { label: "Active", value: summary?.activeLoans ?? 0, color: STATUS_COLORS.active },
+    { label: "Paid", value: summary?.paidLoans ?? 0, color: STATUS_COLORS.paid },
+    { label: "Overdue", value: summary?.overdueLoans ?? 0, color: STATUS_COLORS.overdue },
   ];
   const statusTotal = statusData.reduce((sum, d) => sum + d.value, 0);
   const pieData =
     statusTotal > 0
       ? statusData.filter((d) => d.value > 0)
-      : [{ label: "None", value: 1, color: "#e2e8f0" }];
+      : [{ label: "None", value: 1, color: CHART_COLORS.muted }];
 
   const insight = summaryLoading
     ? null

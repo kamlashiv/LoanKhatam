@@ -43,21 +43,33 @@ export function FitAmount({
       textEl.style.fontSize = `${maxFontSize}px`;
       const available = container.clientWidth;
       const needed = textEl.scrollWidth;
+      let next = maxFontSize;
       if (available > 0 && needed > available) {
-        const next = Math.max(
+        next = Math.max(
           minFontSize,
           Math.floor(maxFontSize * (available / needed)),
         );
-        setFontSize(next);
-      } else {
-        setFontSize(maxFontSize);
       }
+      // Only update when the value actually changes; this avoids the feedback
+      // cycle that produces "ResizeObserver loop completed with undelivered
+      // notifications" when a layout write re-triggers the observer.
+      setFontSize((prev) => (prev === next ? prev : next));
     };
 
     fit();
-    const ro = new ResizeObserver(fit);
+    // Defer the observer callback to the next frame so layout reads/writes do
+    // not run synchronously inside the ResizeObserver notification, which is
+    // what triggers the (benign) ResizeObserver loop error.
+    let raf = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(fit);
+    });
     ro.observe(container);
-    return () => ro.disconnect();
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
   }, [text, maxFontSize, minFontSize]);
 
   return (

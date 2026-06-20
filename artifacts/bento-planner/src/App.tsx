@@ -555,7 +555,7 @@ export default function App() {
         </header>
 
         {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-6 auto-rows-min">
+        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-6 auto-rows-min font-bold">
 
           {/* Tile 1: Input Controls */}
           <Card className="md:col-span-4 lg:col-span-3 lg:row-span-2 rounded-3xl shadow-sm border-slate-200 overflow-hidden flex flex-col">
@@ -866,7 +866,7 @@ export default function App() {
                 </button>
               </div>
             </CardHeader>
-            <CardContent className="p-5 flex-1 min-h-[320px]">
+            <CardContent className="p-5 flex-1 min-h-[320px] text-[12px]">
               {chartTab === "balance" ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={balanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>

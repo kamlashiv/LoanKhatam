@@ -1006,7 +1006,7 @@ export function Planner() {
             </Card>
 
             <Card>
-              <CardContent className="pt-5 pb-[20px]">
+              <CardContent className="pt-5">
                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
                   <Scale className="h-4 w-4" />
                   <p className="text-xs font-semibold uppercase tracking-wide">Net Principal</p>

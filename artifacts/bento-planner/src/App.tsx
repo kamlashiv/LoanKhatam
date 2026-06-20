@@ -1,8 +1,9 @@
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Sparkles, CalendarClock, Wallet, TrendingDown, Clock3, PiggyBank,
   CheckCircle2, ChevronDown, ChevronRight, ArrowRight, CalendarRange,
@@ -40,12 +41,71 @@ const sans = "'Plus Jakarta Sans', 'Outfit', sans-serif";
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
-const inr = (val: number) => `₹${Math.round(val).toLocaleString("en-IN")}`;
-const inrCompact = (val: number) => {
-  if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)}Cr`;
-  if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
-  return `₹${Math.round(val).toLocaleString("en-IN")}`;
+/* User-configurable preferences (persisted to localStorage). */
+type Currency = "INR" | "USD" | "EUR" | "GBP";
+const CURRENCY_META: Record<Currency, { symbol: string; locale: string; label: string }> = {
+  INR: { symbol: "₹", locale: "en-IN", label: "INR · ₹" },
+  USD: { symbol: "$", locale: "en-US", label: "USD · $" },
+  EUR: { symbol: "€", locale: "de-DE", label: "EUR · €" },
+  GBP: { symbol: "£", locale: "en-GB", label: "GBP · £" },
 };
+
+type DateFmt = "mmm-yyyy" | "mm-yyyy" | "yyyy-mm";
+const DATE_FMT_META: Record<DateFmt, { label: string }> = {
+  "mmm-yyyy": { label: "MMM YYYY" },
+  "mm-yyyy": { label: "MM/YYYY" },
+  "yyyy-mm": { label: "YYYY-MM" },
+};
+
+/* Amount formatters bound to the active currency. INR keeps lakh/crore
+   compaction; other currencies use K/M/B. No FX conversion — the chosen
+   currency only controls the symbol and number grouping. */
+function makeCurrencyFormatters(currency: Currency) {
+  const { symbol, locale } = CURRENCY_META[currency];
+  const inr = (val: number) => `${symbol}${Math.round(val).toLocaleString(locale)}`;
+  const inrCompact = (val: number) => {
+    if (currency === "INR") {
+      if (val >= 10000000) return `${symbol}${(val / 10000000).toFixed(2)}Cr`;
+      if (val >= 100000) return `${symbol}${(val / 100000).toFixed(1)}L`;
+      return `${symbol}${Math.round(val).toLocaleString(locale)}`;
+    }
+    if (val >= 1_000_000_000) return `${symbol}${(val / 1_000_000_000).toFixed(2)}B`;
+    if (val >= 1_000_000) return `${symbol}${(val / 1_000_000).toFixed(2)}M`;
+    if (val >= 1_000) return `${symbol}${(val / 1_000).toFixed(1)}K`;
+    return `${symbol}${Math.round(val).toLocaleString(locale)}`;
+  };
+  return { inr, inrCompact };
+}
+
+const SETTINGS_KEY = "rinmukti-planner-settings";
+interface PlannerSettings {
+  profileName: string;
+  currency: Currency;
+  dateFormat: DateFmt;
+  autoImport: boolean;
+}
+function loadSettings(): PlannerSettings {
+  const fallback: PlannerSettings = {
+    profileName: "",
+    currency: "INR",
+    dateFormat: "mmm-yyyy",
+    autoImport: true,
+  };
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return fallback;
+    const p = JSON.parse(raw);
+    return {
+      profileName: typeof p.profileName === "string" ? p.profileName : fallback.profileName,
+      currency: p.currency in CURRENCY_META ? p.currency : fallback.currency,
+      dateFormat: p.dateFormat in DATE_FMT_META ? p.dateFormat : fallback.dateFormat,
+      autoImport: typeof p.autoImport === "boolean" ? p.autoImport : fallback.autoImport,
+    };
+  } catch {
+    return fallback;
+  }
+}
 
 function savedTimeLabel(months: number) {
   const y = Math.floor(months / 12);
@@ -61,9 +121,13 @@ function startParts(startMonth: string) {
   return { year: y || new Date().getFullYear(), month: m || 1 };
 }
 
-function monthLabel(startMonth: string, m: number, long = false) {
+function monthLabel(startMonth: string, m: number, long = false, fmt: DateFmt = "mmm-yyyy") {
   const { year, month } = startParts(startMonth);
   const d = new Date(year, month - 1 + Math.max(0, m - 1), 1);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  if (fmt === "mm-yyyy") return `${mm}/${yyyy}`;
+  if (fmt === "yyyy-mm") return `${yyyy}-${mm}`;
   return d.toLocaleDateString("en-US", { month: long ? "long" : "short", year: "numeric" });
 }
 
@@ -651,6 +715,213 @@ function ExtractedReview({
 }
 
 /* ------------------------------------------------------------------ */
+/* Account holder + website settings (sidebar & mobile)               */
+/* ------------------------------------------------------------------ */
+function SettingDropdown<T extends string>({
+  icon: Icon,
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  icon: any;
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const current = options.find((o) => o.value === value);
+  return (
+    <div className="flex items-center justify-between text-[12px]">
+      <span className="flex items-center gap-2 font-medium" style={{ color: C.muted }}>
+        <Icon className="h-3.5 w-3.5" /> {label}
+      </span>
+      <div className="relative">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex items-center gap-1 rounded-lg px-2 py-1 font-bold transition-colors hover:bg-white/70"
+          style={{ color: C.text }}
+        >
+          {current?.label ?? value}
+          <ChevronDown className="h-3 w-3" style={{ color: C.muted }} />
+        </button>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+            <div
+              className="absolute right-0 z-50 mt-1 w-36 overflow-hidden rounded-xl border bg-white py-1 shadow-xl"
+              style={{ borderColor: C.border }}
+            >
+              {options.map((o) => (
+                <button
+                  key={o.value}
+                  onClick={() => {
+                    onChange(o.value);
+                    setOpen(false);
+                  }}
+                  className="flex w-full items-center justify-between px-3 py-1.5 text-left text-[12px] hover:bg-slate-50"
+                  style={{ color: o.value === value ? C.indigo : C.text, fontWeight: o.value === value ? 700 : 500 }}
+                >
+                  {o.label}
+                  {o.value === value && <CheckCircle2 className="h-3.5 w-3.5" />}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AccountBox({
+  variant,
+  profileName,
+  onName,
+  currency,
+  onCurrency,
+  dateFormat,
+  onDateFormat,
+  autoImport,
+  onAutoImport,
+  onReset,
+}: {
+  variant: "sidebar" | "mobile";
+  profileName: string;
+  onName: (v: string) => void;
+  currency: Currency;
+  onCurrency: (c: Currency) => void;
+  dateFormat: DateFmt;
+  onDateFormat: (d: DateFmt) => void;
+  autoImport: boolean;
+  onAutoImport: (v: boolean) => void;
+  onReset: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [nameInput, setNameInput] = useState(profileName);
+  useEffect(() => {
+    setNameInput(profileName);
+  }, [profileName]);
+
+  const initial = (profileName || "You").trim().charAt(0).toUpperCase();
+  const commit = () => {
+    onName(nameInput.trim());
+    setEditing(false);
+  };
+
+  const currencyOptions = (Object.keys(CURRENCY_META) as Currency[]).map((c) => ({
+    value: c,
+    label: CURRENCY_META[c].label,
+  }));
+  const dateOptions = (Object.keys(DATE_FMT_META) as DateFmt[]).map((d) => ({
+    value: d,
+    label: DATE_FMT_META[d].label,
+  }));
+
+  const nameBlock = editing ? (
+    <div className="min-w-0 flex-1">
+      <Input
+        autoFocus
+        value={nameInput}
+        onChange={(e) => setNameInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") {
+            setNameInput(profileName);
+            setEditing(false);
+          }
+        }}
+        onBlur={commit}
+        placeholder="Your name"
+        className="h-8 text-[13px]"
+        aria-label="Account holder name"
+      />
+    </div>
+  ) : (
+    <div className="min-w-0 flex-1">
+      <button onClick={() => setEditing(true)} className="group flex max-w-full items-center gap-1.5">
+        <span className="truncate text-[14px] font-bold" style={{ color: C.text }}>
+          {profileName || "Your account"}
+        </span>
+        <Pencil className="h-3 w-3 flex-shrink-0 opacity-50 transition-opacity group-hover:opacity-100" style={{ color: C.indigo }} />
+      </button>
+      <div className="text-[11px]" style={{ color: C.muted }}>
+        Account holder
+      </div>
+    </div>
+  );
+
+  const settingsRows = (
+    <>
+      <SettingDropdown icon={Coins} label="Currency" value={currency} options={currencyOptions} onChange={onCurrency} />
+      <SettingDropdown icon={CalendarClock} label="Date format" value={dateFormat} options={dateOptions} onChange={onDateFormat} />
+      <div className="flex items-center justify-between text-[12px]">
+        <span className="flex items-center gap-2 font-medium" style={{ color: C.muted }}>
+          <FileSpreadsheet className="h-3.5 w-3.5" /> Auto-import
+        </span>
+        <Switch checked={autoImport} onCheckedChange={onAutoImport} aria-label="Toggle auto-import" />
+      </div>
+    </>
+  );
+
+  if (variant === "sidebar") {
+    return (
+      <div className="rounded-3xl border p-5" style={{ background: C.indigoSoft, borderColor: "#e0e7ff" }}>
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-white text-[16px] font-bold shadow-sm"
+            style={{ color: C.indigo }}
+          >
+            {initial}
+          </div>
+          {nameBlock}
+        </div>
+        <div className="mt-4 space-y-2.5 border-t pt-3.5" style={{ borderColor: "#e0e7ff" }}>
+          <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: C.muted }}>
+            Website settings
+          </div>
+          {settingsRows}
+          <button
+            onClick={onReset}
+            className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl bg-white py-2 text-[12px] font-bold transition-colors hover:bg-slate-50"
+            style={{ color: C.indigo, border: `1px solid ${C.border}` }}
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Reset planner
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6 rounded-[2rem] border p-5 bento-shadow lg:hidden" style={{ background: "#fff", borderColor: C.border }}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-[16px] font-bold"
+            style={{ background: C.indigoSoft, color: C.indigo }}
+          >
+            {initial}
+          </div>
+          {nameBlock}
+        </div>
+        <button
+          onClick={onReset}
+          className="flex flex-shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-bold transition-colors hover:bg-slate-50"
+          style={{ color: C.indigo, border: `1px solid ${C.border}` }}
+        >
+          <RefreshCw className="h-3.5 w-3.5" /> Reset
+        </button>
+      </div>
+      <div className="mt-4 space-y-2.5 border-t pt-3" style={{ borderColor: C.border }}>
+        {settingsRows}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Main                                                                */
 /* ------------------------------------------------------------------ */
 export default function App() {
@@ -661,7 +932,25 @@ export default function App() {
     startMonth: new Date().toISOString().slice(0, 7),
     extraEMI: 0,
   });
-  const [profileName, setProfileName] = useState("");
+  const initialSettings = useMemo(loadSettings, []);
+  const [profileName, setProfileName] = useState(initialSettings.profileName);
+  const [currency, setCurrency] = useState<Currency>(initialSettings.currency);
+  const [dateFormat, setDateFormat] = useState<DateFmt>(initialSettings.dateFormat);
+  const [autoImport, setAutoImport] = useState(initialSettings.autoImport);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        SETTINGS_KEY,
+        JSON.stringify({ profileName, currency, dateFormat, autoImport }),
+      );
+    } catch {
+      /* ignore storage failures (private mode, quota) */
+    }
+  }, [profileName, currency, dateFormat, autoImport]);
+
+  const { inr, inrCompact } = useMemo(() => makeCurrencyFormatters(currency), [currency]);
+
   // Yearly lump prepayments are driven by strategy selection (no per-row editor
   // in this guided flow), so the advertised strategy savings stay accurate.
   const [yearLumps, setYearLumps] = useState<Record<number, number>>({});
@@ -718,8 +1007,8 @@ export default function App() {
   const monthsSaved = Math.max(0, baseline.payoffMonths - plan.payoffMonths);
   const hasSavings = interestSaved > 0 || monthsSaved > 0;
   const tenureYears = Math.round((params.tenureMonths / 12) * 10) / 10;
-  const debtFreeDate = monthLabel(params.startMonth, Math.max(1, plan.payoffMonths), true);
-  const baselineDebtFreeDate = monthLabel(params.startMonth, Math.max(1, baseline.payoffMonths), true);
+  const debtFreeDate = monthLabel(params.startMonth, Math.max(1, plan.payoffMonths), true, dateFormat);
+  const baselineDebtFreeDate = monthLabel(params.startMonth, Math.max(1, baseline.payoffMonths), true, dateFormat);
   const accBarWidth = baseline.payoffMonths > 0
     ? Math.min(100, Math.max(8, (plan.payoffMonths / baseline.payoffMonths) * 100))
     : 100;
@@ -772,11 +1061,11 @@ export default function App() {
         return {
           years,
           months,
-          label: monthLabel(params.startMonth, months, true),
+          label: monthLabel(params.startMonth, months, true, dateFormat),
           extra: Math.round(rev.requiredExtra),
         };
       });
-  }, [baseline.payoffMonths, params.principal, params.rate, params.startMonth, plan.baseEMI]);
+  }, [baseline.payoffMonths, params.principal, params.rate, params.startMonth, plan.baseEMI, dateFormat]);
 
   // Guard against a stale selection when targetOptions shrinks (e.g. tenure edited).
   const safeTargetSel =
@@ -862,8 +1151,6 @@ export default function App() {
 
   const sliderMax = Math.max(15000, Math.ceil(params.extraEMI / 500) * 500);
 
-  const accountInitial = (profileName || "You").trim().charAt(0).toUpperCase();
-
   return (
     <div className="flex min-h-screen w-full" style={{ background: C.bg, color: C.text, fontFamily: sans }}>
       {/* Sidebar */}
@@ -914,60 +1201,18 @@ export default function App() {
         </div>
 
         {/* Account holder + website settings */}
-        <div className="rounded-3xl border p-5" style={{ background: C.indigoSoft, borderColor: "#e0e7ff" }}>
-          <div className="flex items-center gap-3">
-            <div
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[16px] font-bold shadow-sm"
-              style={{ color: C.indigo }}
-            >
-              {accountInitial}
-            </div>
-            <div className="min-w-0">
-              <div className="truncate text-[14px] font-bold" style={{ color: C.text }}>
-                {profileName || "Your account"}
-              </div>
-              <div className="text-[11px]" style={{ color: C.muted }}>
-                Account holder
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 space-y-2.5 border-t pt-3.5" style={{ borderColor: "#e0e7ff" }}>
-            <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: C.muted }}>
-              Website settings
-            </div>
-            <div className="flex items-center justify-between text-[12px]">
-              <span className="flex items-center gap-2 font-medium" style={{ color: C.muted }}>
-                <Coins className="h-3.5 w-3.5" /> Currency
-              </span>
-              <span className="font-bold" style={{ color: C.text }}>
-                INR · ₹
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[12px]">
-              <span className="flex items-center gap-2 font-medium" style={{ color: C.muted }}>
-                <CalendarClock className="h-3.5 w-3.5" /> Date format
-              </span>
-              <span className="font-bold" style={{ color: C.text }}>
-                DD/MM/YYYY
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[12px]">
-              <span className="flex items-center gap-2 font-medium" style={{ color: C.muted }}>
-                <FileSpreadsheet className="h-3.5 w-3.5" /> Auto-import
-              </span>
-              <span className="font-bold" style={{ color: C.emerald }}>
-                On
-              </span>
-            </div>
-            <button
-              onClick={resetAll}
-              className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl bg-white py-2 text-[12px] font-bold transition-colors hover:bg-slate-50"
-              style={{ color: C.indigo, border: `1px solid ${C.border}` }}
-            >
-              <RefreshCw className="h-3.5 w-3.5" /> Reset planner
-            </button>
-          </div>
-        </div>
+        <AccountBox
+          variant="sidebar"
+          profileName={profileName}
+          onName={setProfileName}
+          currency={currency}
+          onCurrency={setCurrency}
+          dateFormat={dateFormat}
+          onDateFormat={setDateFormat}
+          autoImport={autoImport}
+          onAutoImport={setAutoImport}
+          onReset={resetAll}
+        />
       </aside>
 
       {/* Main scroll area */}
@@ -995,44 +1240,18 @@ export default function App() {
           </header>
 
           {/* Account holder + website settings — mobile fallback (sidebar hidden below lg) */}
-          <div className="mb-6 rounded-[2rem] border p-5 bento-shadow lg:hidden" style={{ background: "#fff", borderColor: C.border }}>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex h-11 w-11 items-center justify-center rounded-full text-[16px] font-bold"
-                  style={{ background: C.indigoSoft, color: C.indigo }}
-                >
-                  {accountInitial}
-                </div>
-                <div className="min-w-0">
-                  <div className="truncate text-[14px] font-bold" style={{ color: C.text }}>
-                    {profileName || "Your account"}
-                  </div>
-                  <div className="text-[11px]" style={{ color: C.muted }}>
-                    Account holder
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={resetAll}
-                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-bold transition-colors hover:bg-slate-50"
-                style={{ color: C.indigo, border: `1px solid ${C.border}` }}
-              >
-                <RefreshCw className="h-3.5 w-3.5" /> Reset
-              </button>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t pt-3 text-[12px]" style={{ borderColor: C.border }}>
-              <span className="flex items-center gap-1.5" style={{ color: C.muted }}>
-                <Coins className="h-3.5 w-3.5" /> Currency <strong style={{ color: C.text }}>INR · ₹</strong>
-              </span>
-              <span className="flex items-center gap-1.5" style={{ color: C.muted }}>
-                <CalendarClock className="h-3.5 w-3.5" /> Dates <strong style={{ color: C.text }}>DD/MM/YYYY</strong>
-              </span>
-              <span className="flex items-center gap-1.5" style={{ color: C.muted }}>
-                <FileSpreadsheet className="h-3.5 w-3.5" /> Auto-import <strong style={{ color: C.emerald }}>On</strong>
-              </span>
-            </div>
-          </div>
+          <AccountBox
+            variant="mobile"
+            profileName={profileName}
+            onName={setProfileName}
+            currency={currency}
+            onCurrency={setCurrency}
+            dateFormat={dateFormat}
+            onDateFormat={setDateFormat}
+            autoImport={autoImport}
+            onAutoImport={setAutoImport}
+            onReset={resetAll}
+          />
 
           {/* Savings message — you've saved interest & time */}
           <div className="mb-10 grid grid-cols-1 gap-5 md:grid-cols-3">
@@ -1132,7 +1351,7 @@ export default function App() {
                     aria-label="Extra monthly payment"
                   />
                   <div className="mt-2 flex justify-between text-[12px]" style={{ color: C.muted }}>
-                    <span style={{ fontFamily: mono }}>₹0</span>
+                    <span style={{ fontFamily: mono }}>{inr(0)}</span>
                     <span style={{ fontFamily: mono }}>{inrCompact(sliderMax)}</span>
                   </div>
                 </>
@@ -1490,7 +1709,7 @@ export default function App() {
                 <Input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="e.g. Home Loan" />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs">Loan amount (₹)</Label>
+                <Label className="text-xs">Loan amount ({CURRENCY_META[currency].symbol})</Label>
                 <Input
                   type="number"
                   value={params.principal}
@@ -1527,14 +1746,30 @@ export default function App() {
             </div>
 
             <div className="mt-5 space-y-3">
-              <FileUploadZone onExtracted={handleExtracted} />
-              {draft && (
-                <ExtractedReview
-                  draft={draft}
-                  onChange={setDraft}
-                  onApply={applyDraft}
-                  onDiscard={() => setDraft(null)}
-                />
+              {autoImport ? (
+                <>
+                  <FileUploadZone onExtracted={handleExtracted} />
+                  {draft && (
+                    <ExtractedReview
+                      draft={draft}
+                      onChange={setDraft}
+                      onApply={applyDraft}
+                      onDiscard={() => setDraft(null)}
+                    />
+                  )}
+                </>
+              ) : (
+                <div
+                  className="rounded-2xl border-2 border-dashed p-4 text-center"
+                  style={{ borderColor: C.border }}
+                >
+                  <p className="text-sm font-semibold" style={{ color: C.muted }}>
+                    Auto-import is off
+                  </p>
+                  <p className="mt-0.5 text-[11px]" style={{ color: C.muted }}>
+                    Turn on <strong>Auto-import</strong> in account settings to upload a statement and fill the form automatically.
+                  </p>
+                </div>
               )}
             </div>
           </div>

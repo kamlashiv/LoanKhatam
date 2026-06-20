@@ -220,16 +220,18 @@ function ExtractedReview({
 
       <div className="grid grid-cols-2 gap-2.5">
         <div className="col-span-2 space-y-1">
-          <Label className="text-xs">Borrower / Profile Name</Label>
+          <Label htmlFor="extracted-borrower-name" className="text-xs">Borrower / Profile Name</Label>
           <Input
+            id="extracted-borrower-name"
             className="h-8 text-xs"
             value={draft.borrowerName ?? ""}
             onChange={(e) => set("borrowerName", e.target.value || null)}
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Loan Amount (₹)</Label>
+          <Label htmlFor="extracted-principal" className="text-xs">Loan Amount (₹)</Label>
           <Input
+            id="extracted-principal"
             className="h-8 text-xs"
             type="number"
             value={draft.principalAmount ?? ""}
@@ -237,8 +239,9 @@ function ExtractedReview({
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Interest Rate (%)</Label>
+          <Label htmlFor="extracted-interest-rate" className="text-xs">Interest Rate (%)</Label>
           <Input
+            id="extracted-interest-rate"
             className="h-8 text-xs"
             type="number"
             step="0.1"
@@ -247,8 +250,9 @@ function ExtractedReview({
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Start Date</Label>
+          <Label htmlFor="extracted-start-date" className="text-xs">Start Date</Label>
           <Input
+            id="extracted-start-date"
             className="h-8 text-xs"
             type="date"
             value={draft.startDate ?? ""}
@@ -256,8 +260,9 @@ function ExtractedReview({
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Due Date</Label>
+          <Label htmlFor="extracted-due-date" className="text-xs">Due Date</Label>
           <Input
+            id="extracted-due-date"
             className="h-8 text-xs"
             type="date"
             value={draft.dueDate ?? ""}
@@ -617,8 +622,9 @@ export function Planner() {
             <CardContent className="space-y-5 pt-0">
               {/* Profile name */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Profile Name</Label>
+                <Label htmlFor="planner-profile-name" className="text-xs font-medium">Profile Name</Label>
                 <Input
+                  id="planner-profile-name"
                   className="h-8 text-xs"
                   placeholder="e.g. Home Loan — SBI"
                   value={profileName}
@@ -629,8 +635,9 @@ export function Planner() {
               {/* Principal */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-xs font-medium">Loan Amount (₹)</Label>
+                  <Label htmlFor="planner-principal" className="text-xs font-medium">Loan Amount (₹)</Label>
                   <Input
+                    id="planner-principal"
                     className="w-32 h-7 text-xs text-right"
                     type="number"
                     value={params.principal}
@@ -653,8 +660,9 @@ export function Planner() {
               {/* Rate */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-xs font-medium">Interest Rate (% p.a.)</Label>
+                  <Label htmlFor="planner-rate" className="text-xs font-medium">Interest Rate (% p.a.)</Label>
                   <Input
+                    id="planner-rate"
                     className="w-20 h-7 text-xs text-right"
                     type="number"
                     step="0.1"
@@ -678,7 +686,7 @@ export function Planner() {
               {/* Tenure */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-xs font-medium">Tenure</Label>
+                  <Label id="planner-tenure-label" className="text-xs font-medium">Tenure</Label>
                   <span className="text-xs font-semibold text-indigo-600">{tenureYears} Years</span>
                 </div>
                 <Slider
@@ -687,6 +695,7 @@ export function Planner() {
                   step={12}
                   value={[params.tenureMonths]}
                   onValueChange={([v]) => set("tenureMonths", v)}
+                  aria-labelledby="planner-tenure-label"
                   className="[&_[role=slider]]:border-indigo-500 [&_[role=slider]]:bg-indigo-500"
                 />
                 <div className="flex justify-between text-xs text-slate-400">
@@ -696,8 +705,9 @@ export function Planner() {
 
               {/* EMI start month */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">EMI Start Month</Label>
+                <Label htmlFor="planner-start-month" className="text-xs font-medium">EMI Start Month</Label>
                 <Input
+                  id="planner-start-month"
                   className="h-8 text-xs"
                   type="month"
                   value={params.startMonth}
@@ -708,10 +718,11 @@ export function Planner() {
               {/* Extra EMI */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-xs font-medium text-emerald-700">
+                  <Label htmlFor="planner-extra-emi" className="text-xs font-medium text-emerald-700">
                     Extra Monthly Payment (₹)
                   </Label>
                   <Input
+                    id="planner-extra-emi"
                     className="w-28 h-7 text-xs text-right border-emerald-300 focus:border-emerald-500"
                     type="number"
                     min={0}
@@ -755,8 +766,9 @@ export function Planner() {
             <CardContent className="space-y-3 pt-0">
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
-                  <Label className="text-xs">Amount (₹)</Label>
+                  <Label htmlFor="topup-amount" className="text-xs">Amount (₹)</Label>
                   <Input
+                    id="topup-amount"
                     className="h-8 text-xs"
                     type="number"
                     min={0}
@@ -765,8 +777,9 @@ export function Planner() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Rate (%)</Label>
+                  <Label htmlFor="topup-rate" className="text-xs">Rate (%)</Label>
                   <Input
+                    id="topup-rate"
                     className="h-8 text-xs"
                     type="number"
                     step="0.1"
@@ -775,8 +788,9 @@ export function Planner() {
                   />
                 </div>
                 <div className="space-y-1 col-span-2">
-                  <Label className="text-xs">Disbursed after (months from start)</Label>
+                  <Label htmlFor="topup-month" className="text-xs">Disbursed after (months from start)</Label>
                   <Input
+                    id="topup-month"
                     className="h-8 text-xs"
                     type="number"
                     min={1}
@@ -805,7 +819,7 @@ export function Planner() {
             <CardContent className="space-y-3 pt-0">
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <Label className="text-xs font-medium">Target payoff in</Label>
+                  <Label id="planner-target-payoff-label" className="text-xs font-medium">Target payoff in</Label>
                   <span className="text-xs font-semibold text-indigo-600">{targetYears} Years</span>
                 </div>
                 <Slider
@@ -814,6 +828,7 @@ export function Planner() {
                   step={1}
                   value={[targetYears]}
                   onValueChange={([v]) => setTargetYears(v)}
+                  aria-labelledby="planner-target-payoff-label"
                   className="[&_[role=slider]]:border-indigo-500 [&_[role=slider]]:bg-indigo-500"
                 />
               </div>

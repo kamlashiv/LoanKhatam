@@ -53,15 +53,10 @@ function payoffDate(startMonth: string, months: number): string {
 
 const DEFAULT_START_MONTH = new Date().toISOString().slice(0, 7);
 
-// The page does not link <label>s to inputs via htmlFor, so locate each control
-// by its visible label text and then the input within the same wrapper.
+// Inputs are programmatically linked to their labels (htmlFor + id), so locate
+// each control directly by its accessible label.
 function inputByLabel(labelText: string | RegExp): HTMLInputElement {
-  const label = screen.getByText(labelText);
-  const wrapper = label.closest("div");
-  if (!wrapper) throw new Error(`No wrapper for label: ${labelText}`);
-  const input = wrapper.querySelector("input");
-  if (!input) throw new Error(`No input near label: ${labelText}`);
-  return input as HTMLInputElement;
+  return screen.getByLabelText(labelText) as HTMLInputElement;
 }
 
 function setNumber(input: HTMLInputElement, value: number) {

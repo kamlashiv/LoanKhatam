@@ -293,8 +293,14 @@ export function LoanForm() {
                   {rateChanges.map((rc, index) => (
                     <div key={index} className="flex items-end gap-2">
                       <div className="flex-1 space-y-1">
-                        <Label className="text-xs text-muted-foreground">Effective Date</Label>
+                        <Label
+                          htmlFor={`rate-change-date-${index}`}
+                          className="text-xs text-muted-foreground"
+                        >
+                          Effective Date
+                        </Label>
                         <Input
+                          id={`rate-change-date-${index}`}
                           type="date"
                           value={rc.effectiveDate}
                           onChange={(e) => updateRateChange(index, "effectiveDate", e.target.value)}
@@ -303,8 +309,14 @@ export function LoanForm() {
                         />
                       </div>
                       <div className="flex-1 space-y-1">
-                        <Label className="text-xs text-muted-foreground">New Rate (% p.a.)</Label>
+                        <Label
+                          htmlFor={`rate-change-rate-${index}`}
+                          className="text-xs text-muted-foreground"
+                        >
+                          New Rate (% p.a.)
+                        </Label>
                         <Input
+                          id={`rate-change-rate-${index}`}
                           type="number"
                           placeholder="0"
                           min="0"

@@ -149,7 +149,7 @@ describe("Loan form", () => {
 
   it("includes a valid rate-change event in the payload", async () => {
     const user = userEvent.setup();
-    const { container } = render(<LoanForm />);
+    render(<LoanForm />);
 
     await user.type(screen.getByLabelText("Borrower Name"), "Geeta Rao");
     await user.type(screen.getByLabelText("Principal Amount (₹)"), "300000");
@@ -158,10 +158,10 @@ describe("Loan form", () => {
     setDate("Due Date", "2026-12-01");
 
     await user.click(screen.getByRole("button", { name: "Add" }));
-    // Rate-change row inputs have no associated label; target them by their
-    // unique compact (.h-8) class within the rate-change panel.
-    const rcDate = container.querySelector('input[type="date"].h-8') as HTMLInputElement;
-    const rcRate = container.querySelector('input[type="number"].h-8') as HTMLInputElement;
+    // Rate-change row inputs are associated with their labels, so target them
+    // by their accessible label.
+    const rcDate = screen.getByLabelText("Effective Date") as HTMLInputElement;
+    const rcRate = screen.getByLabelText("New Rate (% p.a.)") as HTMLInputElement;
     fireEvent.change(rcDate, { target: { value: "2026-06-01" } });
     fireEvent.change(rcRate, { target: { value: "9.25" } });
 

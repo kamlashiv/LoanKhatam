@@ -15,6 +15,7 @@ import { LoansList } from "@/pages/loans";
 import { LoanDetail } from "@/pages/loan-detail";
 import { LoanForm } from "@/pages/loan-form";
 import { AllAmortization } from "@/pages/all-amortization";
+import { Planner } from "@/pages/planner";
 
 const queryClient = new QueryClient();
 
@@ -191,6 +192,7 @@ function ClerkProviderWithRoutes() {
           <Route path="/loans/:id/edit" component={() => <ProtectedRoute component={LoanForm} />} />
           <Route path="/loans/:id" component={() => <ProtectedRoute component={LoanDetail} />} />
           <Route path="/amortization" component={() => <ProtectedRoute component={AllAmortization} />} />
+          <Route path="/planner" component={() => <ProtectedRoute component={Planner} />} />
           
           <Route component={NotFound} />
         </Switch>

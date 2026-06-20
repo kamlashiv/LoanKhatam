@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useClerk } from "@clerk/react";
 import { cn } from "@/lib/utils";
-import { Wallet, LayoutDashboard, List, LogOut, Plus, Menu, BarChart3 } from "lucide-react";
+import { Wallet, LayoutDashboard, List, LogOut, Plus, Menu, BarChart3, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -14,6 +14,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/loans", label: "All Loans", icon: List },
     { href: "/amortization", label: "Amortization", icon: BarChart3 },
+    { href: "/planner", label: "Payoff Planner", icon: Target },
   ];
 
   const handleLogout = () => {

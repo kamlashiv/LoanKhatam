@@ -36,7 +36,7 @@ export function LoanForm() {
   });
 
   const { data: existingLoan } = useGetLoan(id ?? 0, {
-    query: { enabled: isEditing },
+    query: { enabled: isEditing, queryKey: getGetLoanQueryKey(id ?? 0) },
   });
 
   useEffect(() => {

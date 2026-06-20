@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
+  Alert,
   Platform,
   RefreshControl,
   ScrollView,
@@ -20,6 +21,7 @@ import {
   useGetRecentLoans,
 } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
+import { clearNotifiedIds } from "@/hooks/useOverdueNotifications";
 
 function formatRupees(amount: number): string {
   return "₹" + amount.toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -113,6 +115,31 @@ export default function DashboardScreen() {
     refetchLoans();
   };
 
+  const handleResetNotifications = () => {
+    Alert.alert(
+      "Reset Notification History",
+      "Clear the record of overdue alerts you've already received? Overdue loans will trigger fresh notifications next time you open the app.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearNotifiedIds();
+              Alert.alert(
+                "Notification History Cleared",
+                "Overdue loans will alert you again on your next app open."
+              );
+            } catch {
+              Alert.alert("Error", "Could not reset notification history.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const statusColor = (status: string) => {
     if (status === "paid") return colors.success;
     if (status === "overdue") return colors.destructive;
@@ -143,6 +170,11 @@ export default function DashboardScreen() {
       color: colors.mutedForeground,
       marginTop: 2,
       fontFamily: "Inter_400Regular",
+    },
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
     },
     signOutBtn: {
       width: 36,
@@ -384,13 +416,22 @@ export default function DashboardScreen() {
           <Text style={styles.greeting}>Hi, {firstName} 👋</Text>
           <Text style={styles.subtitle}>Here's your lending overview</Text>
         </View>
-        <TouchableOpacity
-          style={styles.signOutBtn}
-          onPress={() => signOut()}
-          testID="sign-out-btn"
-        >
-          <Feather name="log-out" size={16} color={colors.mutedForeground} />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.signOutBtn}
+            onPress={handleResetNotifications}
+            testID="reset-notifications-btn"
+          >
+            <Feather name="bell-off" size={16} color={colors.mutedForeground} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.signOutBtn}
+            onPress={() => signOut()}
+            testID="sign-out-btn"
+          >
+            <Feather name="log-out" size={16} color={colors.mutedForeground} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView

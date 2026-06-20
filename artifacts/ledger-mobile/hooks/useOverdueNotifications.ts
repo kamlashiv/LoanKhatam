@@ -25,6 +25,10 @@ async function saveNotifiedIds(ids: Set<number>): Promise<void> {
   }
 }
 
+export async function clearNotifiedIds(): Promise<void> {
+  await AsyncStorage.removeItem(NOTIFIED_KEY);
+}
+
 async function requestPermissions(): Promise<boolean> {
   if (Platform.OS === "web") return false;
   const Notifications = await import("expo-notifications");

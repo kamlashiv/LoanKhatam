@@ -234,6 +234,8 @@ export default function SignInScreen() {
       fontFamily: "Inter_400Regular",
     },
     footer: {
+      flexDirection: "row",
+      justifyContent: "center",
       alignItems: "center",
       marginTop: 32,
     },
@@ -241,6 +243,11 @@ export default function SignInScreen() {
       fontSize: 13,
       color: colors.mutedForeground,
       fontFamily: "Inter_400Regular",
+    },
+    footerLink: {
+      fontSize: 13,
+      color: colors.primary,
+      fontFamily: "Inter_600SemiBold",
     },
   });
 
@@ -362,9 +369,13 @@ export default function SignInScreen() {
         )}
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Account nahi hai? Web app par sign up karein.
-          </Text>
+          <Text style={styles.footerText}>Account nahi hai? </Text>
+          <TouchableOpacity
+            onPress={() => router.push("/sign-up")}
+            testID="go-to-sign-up"
+          >
+            <Text style={styles.footerLink}>Sign up karein</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>

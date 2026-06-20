@@ -6,6 +6,23 @@ import { Platform } from "react-native";
 import { listLoans } from "@workspace/api-client-react";
 
 const NOTIFIED_KEY = "overdue_notified_loan_ids";
+const NOTIF_ENABLED_KEY = "overdue_notifications_enabled";
+
+export async function getNotificationsEnabled(): Promise<boolean> {
+  try {
+    const raw = await AsyncStorage.getItem(NOTIF_ENABLED_KEY);
+    return raw === null ? true : raw === "true";
+  } catch {
+    return true;
+  }
+}
+
+export async function setNotificationsEnabled(enabled: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(NOTIF_ENABLED_KEY, enabled ? "true" : "false");
+  } catch {
+  }
+}
 
 async function getNotifiedIds(): Promise<Set<number>> {
   try {
@@ -72,6 +89,9 @@ export function useOverdueNotifications(isSignedIn: boolean) {
           shouldShowList: true,
         }),
       });
+
+      const enabled = await getNotificationsEnabled();
+      if (!enabled || cancelled) return;
 
       const granted = await requestPermissions();
       if (!granted || cancelled) return;

@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -26,6 +26,7 @@ import {
   getGetDashboardSummaryQueryKey,
 } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
+import { AmortizationSection } from "@/components/AmortizationSection";
 
 function formatRupees(amount: number): string {
   return "₹" + amount.toLocaleString("en-IN", { maximumFractionDigits: 0 });
@@ -46,6 +47,7 @@ export default function LoanDetailScreen() {
   const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
   const loanId = parseInt(id ?? "0", 10);
+  const [tab, setTab] = useState<"payments" | "schedule">("payments");
 
   const {
     data: loan,
@@ -256,6 +258,31 @@ export default function LoanDetailScreen() {
       fontWeight: "600" as const,
       color: colors.foreground,
       fontFamily: "Inter_600SemiBold",
+    },
+    tabBar: {
+      flexDirection: "row",
+      backgroundColor: colors.muted,
+      borderRadius: colors.radius,
+      padding: 4,
+      marginBottom: 16,
+    },
+    tabBtn: {
+      flex: 1,
+      paddingVertical: 9,
+      borderRadius: colors.radius - 2,
+      alignItems: "center",
+    },
+    tabBtnActive: {
+      backgroundColor: colors.card,
+    },
+    tabBtnText: {
+      fontSize: 13,
+      fontWeight: "600" as const,
+      color: colors.mutedForeground,
+      fontFamily: "Inter_600SemiBold",
+    },
+    tabBtnTextActive: {
+      color: colors.foreground,
     },
     sectionHeader: {
       flexDirection: "row",
@@ -510,7 +537,52 @@ export default function LoanDetailScreen() {
           <Text style={styles.description}>{loan.description}</Text>
         ) : null}
 
-        {loan.remainingAmount > 0 && loan.status !== "paid" && (() => {
+        <View style={styles.tabBar}>
+          <TouchableOpacity
+            style={[styles.tabBtn, tab === "payments" && styles.tabBtnActive]}
+            onPress={() => setTab("payments")}
+            testID="tab-payments"
+          >
+            <Text
+              style={[
+                styles.tabBtnText,
+                tab === "payments" && styles.tabBtnTextActive,
+              ]}
+            >
+              Payments
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabBtn, tab === "schedule" && styles.tabBtnActive]}
+            onPress={() => setTab("schedule")}
+            testID="tab-schedule"
+          >
+            <Text
+              style={[
+                styles.tabBtnText,
+                tab === "schedule" && styles.tabBtnTextActive,
+              ]}
+            >
+              Schedule
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {tab === "schedule" && (
+          <AmortizationSection
+            principalAmount={loan.principalAmount}
+            interestRate={loan.interestRate}
+            startDate={loan.startDate}
+            dueDate={loan.dueDate}
+            payments={(payments ?? []).map((p) => ({
+              paymentDate: p.paymentDate,
+              amount: p.amount,
+            }))}
+            rateChanges={loan.rateChanges}
+          />
+        )}
+
+        {tab === "payments" && loan.remainingAmount > 0 && loan.status !== "paid" && (() => {
           const today = new Date();
           const due = new Date(loan.dueDate);
           const msPerMonth = 1000 * 60 * 60 * 24 * 30.44;
@@ -599,49 +671,53 @@ export default function LoanDetailScreen() {
           );
         })()}
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Payments</Text>
-          <TouchableOpacity
-            style={styles.addPaymentBtn}
-            onPress={() =>
-              router.push(`/loan/${loanId}/payment` as never)
-            }
-            testID="add-payment-btn"
-          >
-            <Feather name="plus" size={14} color={colors.primaryForeground} />
-            <Text style={styles.addPaymentText}>Record</Text>
-          </TouchableOpacity>
-        </View>
-
-        {paymentsLoading ? (
-          <ActivityIndicator color={colors.primary} />
-        ) : payments && payments.length > 0 ? (
-          payments.map((pmt) => (
-            <View key={pmt.id} style={styles.paymentRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.paymentDate}>
-                  {formatDate(pmt.paymentDate)}
-                </Text>
-                {pmt.notes ? (
-                  <Text style={styles.paymentNotes}>{pmt.notes}</Text>
-                ) : null}
-              </View>
-              <Text style={styles.paymentAmount}>
-                +{formatRupees(pmt.amount)}
-              </Text>
+        {tab === "payments" && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Payments</Text>
               <TouchableOpacity
-                style={styles.deletePaymentBtn}
-                onPress={() => handleDeletePayment(pmt.id)}
-                testID={`delete-payment-${pmt.id}`}
+                style={styles.addPaymentBtn}
+                onPress={() =>
+                  router.push(`/loan/${loanId}/payment` as never)
+                }
+                testID="add-payment-btn"
               >
-                <Feather name="x" size={14} color={colors.destructive} />
+                <Feather name="plus" size={14} color={colors.primaryForeground} />
+                <Text style={styles.addPaymentText}>Record</Text>
               </TouchableOpacity>
             </View>
-          ))
-        ) : (
-          <Text style={styles.emptyPayments}>
-            No payments recorded yet. Tap Record to add one.
-          </Text>
+
+            {paymentsLoading ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : payments && payments.length > 0 ? (
+              payments.map((pmt) => (
+                <View key={pmt.id} style={styles.paymentRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.paymentDate}>
+                      {formatDate(pmt.paymentDate)}
+                    </Text>
+                    {pmt.notes ? (
+                      <Text style={styles.paymentNotes}>{pmt.notes}</Text>
+                    ) : null}
+                  </View>
+                  <Text style={styles.paymentAmount}>
+                    +{formatRupees(pmt.amount)}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.deletePaymentBtn}
+                    onPress={() => handleDeletePayment(pmt.id)}
+                    testID={`delete-payment-${pmt.id}`}
+                  >
+                    <Feather name="x" size={14} color={colors.destructive} />
+                  </TouchableOpacity>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyPayments}>
+                No payments recorded yet. Tap Record to add one.
+              </Text>
+            )}
+          </>
         )}
       </ScrollView>
     </View>

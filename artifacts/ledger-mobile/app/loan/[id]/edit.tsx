@@ -26,6 +26,15 @@ import {
 } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 
+interface RateChangeEntry {
+  effectiveDate: string;
+  newRate: string;
+}
+
+function todayISO(): string {
+  return new Date().toISOString().split("T")[0];
+}
+
 export default function EditLoanScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -43,6 +52,7 @@ export default function EditLoanScreen() {
   const [startDate, setStartDate] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [description, setDescription] = useState("");
+  const [rateChanges, setRateChanges] = useState<RateChangeEntry[]>([]);
 
   useEffect(() => {
     if (loan) {
@@ -52,8 +62,39 @@ export default function EditLoanScreen() {
       setStartDate(loan.startDate);
       setDueDate(loan.dueDate);
       setDescription(loan.description ?? "");
+      if (loan.rateChanges && loan.rateChanges.length > 0) {
+        setRateChanges(
+          loan.rateChanges.map((rc) => ({
+            effectiveDate: rc.effectiveDate,
+            newRate: String(rc.newRate),
+          }))
+        );
+      } else {
+        setRateChanges([]);
+      }
     }
   }, [loan]);
+
+  const addRateChange = () => {
+    setRateChanges((prev) => [
+      ...prev,
+      { effectiveDate: todayISO(), newRate: "" },
+    ]);
+  };
+
+  const removeRateChange = (index: number) => {
+    setRateChanges((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateRateChange = (
+    index: number,
+    field: keyof RateChangeEntry,
+    value: string
+  ) => {
+    setRateChanges((prev) =>
+      prev.map((rc, i) => (i === index ? { ...rc, [field]: value } : rc))
+    );
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -129,6 +170,78 @@ export default function EditLoanScreen() {
       marginTop: 4,
       fontFamily: "Inter_400Regular",
     },
+    rateSectionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: 20,
+    },
+    rateSectionTitle: {
+      fontSize: 13,
+      fontWeight: "600" as const,
+      color: colors.foreground,
+      fontFamily: "Inter_600SemiBold",
+    },
+    rateSectionSub: {
+      fontSize: 11,
+      color: colors.mutedForeground,
+      marginTop: 2,
+      fontFamily: "Inter_400Regular",
+      maxWidth: 220,
+    },
+    addRateBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 16,
+    },
+    addRateBtnText: {
+      fontSize: 12,
+      color: colors.primary,
+      fontWeight: "600" as const,
+      fontFamily: "Inter_600SemiBold",
+    },
+    rateList: {
+      marginTop: 10,
+      gap: 8,
+      backgroundColor: colors.muted,
+      borderRadius: colors.radius,
+      padding: 10,
+    },
+    rateRow: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: 8,
+    },
+    rateInputLabel: {
+      fontSize: 11,
+      color: colors.mutedForeground,
+      marginBottom: 4,
+      fontFamily: "Inter_400Regular",
+    },
+    rateInput: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: colors.radius - 2,
+      paddingHorizontal: 10,
+      height: 40,
+      fontSize: 14,
+      color: colors.foreground,
+      fontFamily: "Inter_400Regular",
+    },
+    removeRateBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: colors.radius - 2,
+      backgroundColor: colors.destructive + "18",
+      alignItems: "center",
+      justifyContent: "center",
+    },
     submitBtn: {
       backgroundColor: colors.primary,
       borderRadius: colors.radius,
@@ -172,6 +285,15 @@ export default function EditLoanScreen() {
       return;
     }
 
+    const validRateChanges = rateChanges
+      .filter((rc) => rc.effectiveDate && rc.newRate !== "")
+      .map((rc) => ({
+        effectiveDate: rc.effectiveDate,
+        newRate: parseFloat(rc.newRate),
+      }))
+      .filter((rc) => !isNaN(rc.newRate) && rc.newRate >= 0)
+      .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
+
     try {
       await updateLoan({
         id: loanId,
@@ -182,6 +304,7 @@ export default function EditLoanScreen() {
           startDate,
           dueDate,
           description: description.trim() || undefined,
+          rateChanges: validRateChanges,
         },
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -310,6 +433,64 @@ export default function EditLoanScreen() {
           numberOfLines={3}
           testID="edit-description"
         />
+
+        <View style={styles.rateSectionHeader}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.rateSectionTitle}>Rate Change Events</Text>
+            <Text style={styles.rateSectionSub}>
+              Add dates when the interest rate changed (e.g. RBI rate revision)
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.addRateBtn}
+            onPress={addRateChange}
+            testID="add-rate-change"
+          >
+            <Feather name="plus" size={14} color={colors.primary} />
+            <Text style={styles.addRateBtnText}>Add</Text>
+          </TouchableOpacity>
+        </View>
+
+        {rateChanges.length > 0 && (
+          <View style={styles.rateList}>
+            {rateChanges.map((rc, index) => (
+              <View key={index} style={styles.rateRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rateInputLabel}>Effective Date</Text>
+                  <TextInput
+                    style={styles.rateInput}
+                    value={rc.effectiveDate}
+                    onChangeText={(v) =>
+                      updateRateChange(index, "effectiveDate", v)
+                    }
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={colors.mutedForeground}
+                    testID={`rate-change-date-${index}`}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.rateInputLabel}>New Rate (%)</Text>
+                  <TextInput
+                    style={styles.rateInput}
+                    value={rc.newRate}
+                    onChangeText={(v) => updateRateChange(index, "newRate", v)}
+                    placeholder="10"
+                    placeholderTextColor={colors.mutedForeground}
+                    keyboardType="decimal-pad"
+                    testID={`rate-change-rate-${index}`}
+                  />
+                </View>
+                <TouchableOpacity
+                  style={styles.removeRateBtn}
+                  onPress={() => removeRateChange(index)}
+                  testID={`remove-rate-change-${index}`}
+                >
+                  <Feather name="trash-2" size={16} color={colors.destructive} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
 
         <TouchableOpacity
           style={[styles.submitBtn, isPending && styles.submitBtnDisabled]}

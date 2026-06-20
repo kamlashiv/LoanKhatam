@@ -623,7 +623,7 @@ export function Planner() {
             <Target className="h-6 w-6 text-indigo-600" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Smart Loan Saver</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">SMART Strategy</h1>
             <p className="text-sm text-slate-500 mt-1 max-w-xl">
               Plan prepayments, compare strategies, and see exactly how much interest and time you save.
             </p>
@@ -659,7 +659,6 @@ export function Planner() {
           )}
         </div>
       </div>
-
       {/* ── Impact summary banner ───────────────────────────────────────── */}
       <div className="rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-emerald-500 text-white p-6 shadow-sm">
         {monthsSaved > 0 ? (
@@ -708,7 +707,6 @@ export function Planner() {
           </div>
         )}
       </div>
-
       {/* ── Where Does Your Money Go? ───────────────────────────────────── */}
       <Card>
         <CardContent className="pt-6">
@@ -750,7 +748,6 @@ export function Planner() {
           </div>
         </CardContent>
       </Card>
-
       {/* ── Bento grid: inputs + outputs ────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left column — loan controls */}
@@ -1187,7 +1184,6 @@ export function Planner() {
           </Card>
         </div>
       </div>
-
       {/* ── Repayment ledger ────────────────────────────────────────────── */}
       <Card>
         <CardHeader className="flex-row items-center justify-between space-y-0 gap-4 flex-wrap">
@@ -1296,7 +1292,6 @@ export function Planner() {
           </CardContent>
         )}
       </Card>
-
       {/* ── CTA ─────────────────────────────────────────────────────────── */}
       <Card className="bg-gradient-to-r from-indigo-600 to-emerald-500 text-white border-0">
         <CardContent className="py-6 flex flex-col sm:flex-row items-center justify-between gap-4">

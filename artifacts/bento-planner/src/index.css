@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -111,7 +111,7 @@
   --chart-4: 347 89% 60%;
   --chart-5: 215 16% 47%;
 
-  --app-font-sans: 'Outfit', sans-serif;
+  --app-font-sans: 'Plus Jakarta Sans', 'Outfit', sans-serif;
   --app-font-serif: Georgia, serif;
   --app-font-mono: 'Space Mono', Menlo, monospace;
   --radius: .75rem;
@@ -190,5 +190,16 @@
 @layer utilities {
   input[type="search"]::-webkit-search-cancel-button {
     @apply hidden;
+  }
+
+  .bento-shadow {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+  }
+  .bento-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .bento-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
   }
 }

@@ -8,6 +8,7 @@ import {
   CheckCircle2, ChevronDown, ChevronRight, ArrowRight, CalendarRange,
   Coins, Banknote, Repeat, Rocket, Layers, Pencil, Upload, Loader2,
   AlertCircle, X, FileSpreadsheet, FileText, FileCode, RefreshCw,
+  Target, BarChart3,
 } from "lucide-react";
 import {
   simulatePlan, reverseFromTargetMonths, STRATEGY_PRESETS,
@@ -20,7 +21,7 @@ import { extractFromFile, type ExtractedData } from "@/lib/file-extract";
 /* Brand tokens (RinMukti, light)                                      */
 /* ------------------------------------------------------------------ */
 const C = {
-  bg: "#f8fafc",
+  bg: "#f0f2f5",
   text: "#0f172a",
   muted: "#64748b",
   border: "#e2e8f0",
@@ -34,7 +35,7 @@ const C = {
 };
 
 const mono = "'Space Mono', Menlo, monospace";
-const sans = "'Outfit', sans-serif";
+const sans = "'Plus Jakarta Sans', 'Outfit', sans-serif";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -244,11 +245,11 @@ function StrategyCard({
   return (
     <button
       onClick={onClick}
-      className="group relative flex w-full flex-col rounded-2xl p-5 text-left transition-all"
+      className="group relative flex w-full flex-col rounded-[2rem] p-5 text-left bento-hover"
       style={{
         background: selected ? C.emeraldSoft : "#fff",
         border: `1.5px solid ${selected ? C.emerald : C.border}`,
-        boxShadow: selected ? "0 4px 14px rgba(16,185,129,0.18)" : "0 1px 2px rgba(15,23,42,0.04)",
+        boxShadow: selected ? "0 4px 14px rgba(16,185,129,0.18)" : "0 8px 30px rgba(0,0,0,0.04)",
       }}
     >
       {recommended && (
@@ -861,59 +862,222 @@ export default function App() {
 
   const sliderMax = Math.max(15000, Math.ceil(params.extraEMI / 500) * 500);
 
+  const accountInitial = (profileName || "You").trim().charAt(0).toUpperCase();
+
   return (
-    <div className="min-h-screen w-full" style={{ background: C.bg, color: C.text, fontFamily: sans }}>
-      {/* Top bar */}
-      <header
-        className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 md:px-10"
-        style={{
-          background: "rgba(248,250,252,0.85)",
-          backdropFilter: "blur(10px)",
-          borderBottom: `1px solid ${C.border}`,
-        }}
+    <div className="flex min-h-screen w-full" style={{ background: C.bg, color: C.text, fontFamily: sans }}>
+      {/* Sidebar */}
+      <aside
+        className="sticky top-0 hidden h-screen w-72 shrink-0 flex-col justify-between border-r bg-white/70 p-6 backdrop-blur-xl lg:flex"
+        style={{ borderColor: C.border }}
       >
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: C.indigo }}>
-            <PiggyBank className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <div className="text-[15px] font-bold leading-none">Smart Loan Saver</div>
-            <div className="text-[11px]" style={{ color: C.muted }}>
-              RinMukti · debt-free planner
+        <div>
+          <div className="mb-9 flex items-center gap-3">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-2xl"
+              style={{ background: C.indigo, boxShadow: "0 8px 20px rgba(79,70,229,0.25)" }}
+            >
+              <PiggyBank className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <div className="text-[19px] font-extrabold leading-none tracking-tight">Smart Loan Saver</div>
+              <div className="mt-1 text-[11px]" style={{ color: C.muted }}>
+                RinMukti · debt-free planner
+              </div>
             </div>
           </div>
-        </div>
-        <Badge
-          variant="outline"
-          className="gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium"
-          style={{ borderColor: C.border, color: C.muted, background: "#fff" }}
-        >
-          <Banknote className="h-3.5 w-3.5" />
-          Home Loan · {inrCompact(params.principal)}
-        </Badge>
-      </header>
 
-      {/* Guided single-column flow */}
-      <main className="mx-auto max-w-[920px] px-6 pb-24 pt-12">
-        {/* Intro */}
-        <div className="mb-10 text-center">
-          <div
-            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl shadow-sm"
-            style={{ background: C.indigo }}
-          >
-            <Sparkles className="h-7 w-7 text-white" />
-          </div>
-          <h1 className="text-[34px] font-bold leading-tight">
-            Let's plan your way to <span style={{ color: C.emerald }}>debt-free</span>.
-          </h1>
-          <p className="mx-auto mt-3 max-w-[560px] text-[16px]" style={{ color: C.muted }}>
-            Tell me your goal and I'll work out the plan — no spreadsheets, no jargon. We're starting from your{" "}
-            {inr(params.principal)} {profileName ? `${profileName} ` : ""}loan at {params.rate}% for {tenureYears} years.
-          </p>
+          <nav className="space-y-1.5">
+            {[
+              { id: "goal", label: "Set your goal", icon: Target },
+              { id: "strategies", label: "Strategies", icon: Rocket },
+              { id: "plan", label: "Your plan", icon: BarChart3 },
+              { id: "schedule", label: "Schedule", icon: CalendarRange },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-[14px] font-semibold transition-all ${
+                    i === 0
+                      ? "bg-white text-indigo-700 shadow-sm"
+                      : "text-slate-500 hover:bg-white/60 hover:text-slate-800"
+                  }`}
+                  style={i === 0 ? { border: `1px solid ${C.border}` } : undefined}
+                >
+                  <Icon className="h-5 w-5" /> {item.label}
+                </a>
+              );
+            })}
+          </nav>
         </div>
+
+        {/* Account holder + website settings */}
+        <div className="rounded-3xl border p-5" style={{ background: C.indigoSoft, borderColor: "#e0e7ff" }}>
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[16px] font-bold shadow-sm"
+              style={{ color: C.indigo }}
+            >
+              {accountInitial}
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-[14px] font-bold" style={{ color: C.text }}>
+                {profileName || "Your account"}
+              </div>
+              <div className="text-[11px]" style={{ color: C.muted }}>
+                Account holder
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 space-y-2.5 border-t pt-3.5" style={{ borderColor: "#e0e7ff" }}>
+            <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: C.muted }}>
+              Website settings
+            </div>
+            <div className="flex items-center justify-between text-[12px]">
+              <span className="flex items-center gap-2 font-medium" style={{ color: C.muted }}>
+                <Coins className="h-3.5 w-3.5" /> Currency
+              </span>
+              <span className="font-bold" style={{ color: C.text }}>
+                INR · ₹
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[12px]">
+              <span className="flex items-center gap-2 font-medium" style={{ color: C.muted }}>
+                <CalendarClock className="h-3.5 w-3.5" /> Date format
+              </span>
+              <span className="font-bold" style={{ color: C.text }}>
+                DD/MM/YYYY
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[12px]">
+              <span className="flex items-center gap-2 font-medium" style={{ color: C.muted }}>
+                <FileSpreadsheet className="h-3.5 w-3.5" /> Auto-import
+              </span>
+              <span className="font-bold" style={{ color: C.emerald }}>
+                On
+              </span>
+            </div>
+            <button
+              onClick={resetAll}
+              className="mt-1 flex w-full items-center justify-center gap-1.5 rounded-xl bg-white py-2 text-[12px] font-bold transition-colors hover:bg-slate-50"
+              style={{ color: C.indigo, border: `1px solid ${C.border}` }}
+            >
+              <RefreshCw className="h-3.5 w-3.5" /> Reset planner
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main scroll area */}
+      <div className="min-w-0 flex-1 overflow-x-hidden">
+        <main className="mx-auto max-w-[980px] px-6 pb-24 pt-10 md:px-10">
+          {/* Header */}
+          <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h1 className="text-[34px] font-extrabold leading-tight tracking-tight md:text-[40px]">
+                Let's plan your way to <span style={{ color: C.emerald }}>debt-free</span>.
+              </h1>
+              <p className="mt-2 max-w-[560px] text-[15px] font-medium" style={{ color: C.muted }}>
+                Starting from your {inr(params.principal)} {profileName ? `${profileName} ` : ""}loan at {params.rate}% for{" "}
+                {tenureYears} years.
+              </p>
+            </div>
+            <Badge
+              variant="outline"
+              className="gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold"
+              style={{ borderColor: C.border, color: C.muted, background: "#fff" }}
+            >
+              <Banknote className="h-3.5 w-3.5" />
+              Home Loan · {inrCompact(params.principal)}
+            </Badge>
+          </header>
+
+          {/* Account holder + website settings — mobile fallback (sidebar hidden below lg) */}
+          <div className="mb-6 rounded-[2rem] border p-5 bento-shadow lg:hidden" style={{ background: "#fff", borderColor: C.border }}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-[16px] font-bold"
+                  style={{ background: C.indigoSoft, color: C.indigo }}
+                >
+                  {accountInitial}
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-[14px] font-bold" style={{ color: C.text }}>
+                    {profileName || "Your account"}
+                  </div>
+                  <div className="text-[11px]" style={{ color: C.muted }}>
+                    Account holder
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={resetAll}
+                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-bold transition-colors hover:bg-slate-50"
+                style={{ color: C.indigo, border: `1px solid ${C.border}` }}
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Reset
+              </button>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t pt-3 text-[12px]" style={{ borderColor: C.border }}>
+              <span className="flex items-center gap-1.5" style={{ color: C.muted }}>
+                <Coins className="h-3.5 w-3.5" /> Currency <strong style={{ color: C.text }}>INR · ₹</strong>
+              </span>
+              <span className="flex items-center gap-1.5" style={{ color: C.muted }}>
+                <CalendarClock className="h-3.5 w-3.5" /> Dates <strong style={{ color: C.text }}>DD/MM/YYYY</strong>
+              </span>
+              <span className="flex items-center gap-1.5" style={{ color: C.muted }}>
+                <FileSpreadsheet className="h-3.5 w-3.5" /> Auto-import <strong style={{ color: C.emerald }}>On</strong>
+              </span>
+            </div>
+          </div>
+
+          {/* Savings message — you've saved interest & time */}
+          <div className="mb-10 grid grid-cols-1 gap-5 md:grid-cols-3">
+            <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 to-indigo-950 p-7 text-white bento-shadow bento-hover md:col-span-2">
+              <div className="pointer-events-none absolute right-0 top-0 p-6 opacity-10">
+                <PiggyBank className="h-28 w-28" />
+              </div>
+              <div className="relative z-10 flex items-center gap-2 font-semibold text-indigo-200">
+                <Sparkles className="h-5 w-5" /> {hasSavings ? "You've saved interest & time" : "Your savings preview"}
+              </div>
+              <div className="relative z-10 mt-5">
+                {hasSavings ? (
+                  <p className="text-[22px] font-extrabold leading-snug md:text-[26px]">
+                    You're keeping <span className="text-emerald-300">{inrCompact(interestSaved)}</span> in interest and
+                    becoming debt-free <span className="text-emerald-300">{savedTimeLabel(monthsSaved)} sooner</span>.
+                  </p>
+                ) : (
+                  <p className="text-[19px] font-bold leading-snug text-indigo-100 md:text-[21px]">
+                    Add an extra amount or pick a strategy below to see how much interest and time you'll save.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-rows-2 gap-5">
+              <div className="rounded-[2rem] bg-gradient-to-br from-emerald-400 to-teal-500 p-5 text-white bento-shadow bento-hover">
+                <div className="flex items-center gap-2 text-[13px] font-semibold text-emerald-50">
+                  <TrendingDown className="h-4 w-4" /> Interest saved
+                </div>
+                <div className="mt-2 text-[26px] font-extrabold tracking-tight" style={{ fontFamily: mono }}>
+                  {hasSavings ? inrCompact(interestSaved) : "—"}
+                </div>
+              </div>
+              <div className="rounded-[2rem] bg-gradient-to-b from-blue-400 to-indigo-500 p-5 text-white bento-shadow bento-hover">
+                <div className="flex items-center gap-2 text-[13px] font-semibold text-blue-50">
+                  <Clock3 className="h-4 w-4" /> Time saved
+                </div>
+                <div className="mt-2 text-[26px] font-extrabold tracking-tight" style={{ fontFamily: mono }}>
+                  {monthsSaved > 0 ? savedTimeLabel(monthsSaved) : "—"}
+                </div>
+              </div>
+            </div>
+          </div>
 
         {/* Step 1 — Goal */}
-        <section className="mb-8">
+        <section id="goal" className="mb-8 scroll-mt-6">
           <AssistantBubble step="Step 1 · Your goal">
             How would you like to plan? You can give me a <strong>monthly budget</strong> you can spare, or pick a{" "}
             <strong>date</strong> you want to be debt-free by.
@@ -935,7 +1099,7 @@ export default function App() {
               />
             </div>
 
-            <div className="mt-5 rounded-2xl p-6" style={{ background: "#fff", border: `1px solid ${C.border}` }}>
+            <div className="mt-5 rounded-[2rem] p-6 bento-shadow" style={{ background: "#fff", border: `1px solid ${C.border}` }}>
               {goalMode === "budget" ? (
                 <>
                   <label className="text-[14px] font-medium" style={{ color: C.text }}>
@@ -1017,7 +1181,7 @@ export default function App() {
         </section>
 
         {/* Step 2 — Strategy suggestions */}
-        <section className="mb-8">
+        <section id="strategies" className="mb-8 scroll-mt-6">
           <AssistantBubble step="Step 2 · Pick an approach">
             Based on a <strong style={{ fontFamily: mono }}>{inr(params.extraEMI)}/mo</strong> budget, here are four ways to
             get there. I'd suggest the <strong>10% Monthly Boost</strong> — it fits neatly and saves the most for the
@@ -1042,7 +1206,7 @@ export default function App() {
         </section>
 
         {/* Step 3 — Your plan response */}
-        <section className="mb-8">
+        <section id="plan" className="mb-8 scroll-mt-6">
           <AssistantBubble step="Step 3 · Your plan">
             {hasSavings ? (
               <>
@@ -1057,7 +1221,7 @@ export default function App() {
 
           <div className="ml-0 mt-5 sm:ml-[60px]">
             {/* Hero outcome card */}
-            <div className="overflow-hidden rounded-2xl" style={{ border: `1.5px solid ${C.emerald}`, background: "#fff" }}>
+            <div className="overflow-hidden rounded-[2rem] bento-shadow" style={{ border: `1.5px solid ${C.emerald}`, background: "#fff" }}>
               <div
                 className="flex items-center justify-between px-6 py-5"
                 style={{ background: C.emeraldSoft, borderBottom: `1px solid #bbf7d0` }}
@@ -1121,7 +1285,7 @@ export default function App() {
             </div>
 
             {/* Projection */}
-            <div className="mt-4 rounded-2xl p-6" style={{ background: "#fff", border: `1px solid ${C.border}` }}>
+            <div className="mt-4 rounded-[2rem] p-6 bento-shadow" style={{ background: "#fff", border: `1px solid ${C.border}` }}>
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-[15px] font-semibold">Your payoff journey</div>
@@ -1178,7 +1342,7 @@ export default function App() {
         </section>
 
         {/* Step 4 — schedule (collapsed) */}
-        <section className="ml-0 sm:ml-[60px]">
+        <section id="schedule" className="ml-0 scroll-mt-6 sm:ml-[60px]">
           <button
             onClick={() => setScheduleOpen((v) => !v)}
             className="flex w-full items-center justify-between rounded-2xl px-6 py-4 transition-all"
@@ -1375,7 +1539,8 @@ export default function App() {
             </div>
           </div>
         )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

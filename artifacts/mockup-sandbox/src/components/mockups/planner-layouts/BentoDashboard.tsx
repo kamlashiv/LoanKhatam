@@ -36,6 +36,18 @@ const COLORS = {
   grey: "#e5e7eb"
 };
 
+const RADIAN = Math.PI / 180;
+function renderSliceLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) {
+  const r = innerRadius + (outerRadius - innerRadius) * 0.6;
+  const x = cx + r * Math.cos(-midAngle * RADIAN);
+  const y = cy + r * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={16} fontWeight={700}>
+      {`${Math.round(percent * 100)}%`}
+    </text>
+  );
+}
+
 const STRAT_VISUAL = [
   { icon: TrendingUp, card: "from-blue-50 to-indigo-100 border-blue-200", iconColor: "text-blue-600" },
   { icon: Award, card: "from-emerald-50 to-teal-100 border-emerald-200", iconColor: "text-emerald-600" },
@@ -96,6 +108,17 @@ export function BentoDashboard() {
     { name: "Total Interest", value: accInterest, color: COLORS.emerald },
     { name: "Interest Saved", value: intSaved, color: COLORS.grey },
   ];
+
+  const pieMoneyStd = [
+    { name: "Loan Amount", value: principal, color: COLORS.indigo },
+    { name: "Interest", value: stdInterest, color: COLORS.amber },
+  ];
+  const pieMoneySavings = [
+    { name: "Loan Amount", value: principal, color: COLORS.indigo },
+    { name: "Interest", value: accInterest, color: COLORS.emerald },
+  ];
+  const interestShareStd = Math.round((stdInterest / (principal + stdInterest)) * 100);
+  const interestShareSavings = Math.round((accInterest / (principal + accInterest)) * 100);
 
   const strategies = [
     {
@@ -189,6 +212,49 @@ export function BentoDashboard() {
                   <p className="text-xs text-white/70 mt-1">Less Interest</p>
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Where Your Money Goes — simple pies for everyone */}
+        <Card className="rounded-3xl shadow-sm border-slate-200">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-lg">Where Does Your Money Go?</CardTitle>
+            <CardDescription>A simple look at how much you pay back as the loan amount vs. extra interest</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {[
+                { label: "Paying the Normal Way", data: pieMoneyStd, share: interestShareStd, total: stdTotal, tone: "text-amber-600", note: `For every ₹100 you repay, about ₹${interestShareStd} is just interest.` },
+                { label: "With Smart Prepayments", data: pieMoneySavings, share: interestShareSavings, total: accTotal, tone: "text-emerald-600", note: `With smart payments, only about ₹${interestShareSavings} of every ₹100 is interest.` },
+              ].map((p) => (
+                <div key={p.label} className="flex flex-col items-center">
+                  <p className="font-semibold text-slate-700 mb-3">{p.label}</p>
+                  <div className="w-full h-[240px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={p.data} cx="50%" cy="50%" outerRadius={90} dataKey="value" labelLine={false} label={renderSliceLabel} stroke="#fff" strokeWidth={2} isAnimationActive={false}>
+                          {p.data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(val: number) => formatRupees(val)} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex items-center justify-center gap-5 mt-2">
+                    {p.data.map((entry) => (
+                      <div key={entry.name} className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                        <span className="text-sm text-slate-600">{entry.name}</span>
+                        <span className="text-sm font-semibold text-slate-900">{compactRupees(entry.value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className={`text-sm font-medium mt-3 text-center ${p.tone}`}>{p.note}</p>
+                  <p className="text-xs text-slate-400 mt-1">Total repaid: {formatRupees(p.total)}</p>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

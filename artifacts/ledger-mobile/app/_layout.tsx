@@ -17,6 +17,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { setBaseUrl, setAuthTokenGetter } from "@workspace/api-client-react";
+import { useOverdueNotifications } from "@/hooks/useOverdueNotifications";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -70,11 +71,18 @@ function AuthGuard() {
   return null;
 }
 
+function OverdueNotificationsSync() {
+  const { isSignedIn } = useAuth();
+  useOverdueNotifications(!!isSignedIn);
+  return null;
+}
+
 function RootLayoutNav() {
   return (
     <>
       <AuthSync />
       <AuthGuard />
+      <OverdueNotificationsSync />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(auth)" />

@@ -317,7 +317,7 @@ export function ProfilePage() {
                 <span className="text-sm font-semibold">Synced everywhere</span>
               </div>
               <p className="text-xs text-indigo-700/80 dark:text-indigo-300/80">
-                These numbers power your SMART Strategy and Financial Strategy tabs. Update them here
+                These numbers power your Smart Strategy and Financial Strategy tabs. Update them here
                 once and the rest of Ledger follows.
               </p>
             </div>

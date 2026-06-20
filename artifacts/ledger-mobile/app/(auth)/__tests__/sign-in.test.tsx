@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import React from "react";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 
 import SignInScreen from "../sign-in";
 
@@ -181,5 +181,99 @@ describe("SignInScreen", () => {
       );
     });
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  describe("Apple SSO (iOS only)", () => {
+    it("renders the Apple button on iOS", () => {
+      expect(Platform.OS).toBe("ios");
+
+      render(<SignInScreen />);
+
+      expect(screen.getByTestId("apple-sign-in-btn")).toBeTruthy();
+    });
+
+    it("does not render the Apple button on Android", () => {
+      const original = Platform.OS;
+      Platform.OS = "android";
+      try {
+        render(<SignInScreen />);
+
+        expect(screen.queryByTestId("apple-sign-in-btn")).toBeNull();
+        expect(screen.getByTestId("google-sign-in-btn")).toBeTruthy();
+      } finally {
+        Platform.OS = original;
+      }
+    });
+
+    it("signs in with Apple SSO and navigates to the app on success", async () => {
+      const ssoSetActive = jest.fn().mockResolvedValue(undefined);
+      startSSOFlow.mockResolvedValue({
+        createdSessionId: "sess_apple_1",
+        setActive: ssoSetActive,
+      });
+
+      render(<SignInScreen />);
+      fireEvent.press(screen.getByTestId("apple-sign-in-btn"));
+
+      await waitFor(() => {
+        expect(ssoSetActive).toHaveBeenCalledWith({ session: "sess_apple_1" });
+      });
+      expect(startSSOFlow).toHaveBeenCalledWith({
+        strategy: "oauth_apple",
+        redirectUrl: "ledger://redirect",
+      });
+      expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
+      expect(alertSpy).not.toHaveBeenCalled();
+    });
+
+    it("does not navigate when Apple SSO is dismissed without a session", async () => {
+      const ssoSetActive = jest.fn().mockResolvedValue(undefined);
+      startSSOFlow.mockResolvedValue({
+        createdSessionId: null,
+        setActive: ssoSetActive,
+      });
+
+      render(<SignInScreen />);
+      fireEvent.press(screen.getByTestId("apple-sign-in-btn"));
+
+      await waitFor(() => {
+        expect(startSSOFlow).toHaveBeenCalled();
+      });
+      expect(ssoSetActive).not.toHaveBeenCalled();
+      expect(mockReplace).not.toHaveBeenCalled();
+      expect(alertSpy).not.toHaveBeenCalled();
+    });
+
+    it("shows an error alert and does not navigate when Apple SSO fails", async () => {
+      startSSOFlow.mockRejectedValue({
+        errors: [{ message: "Apple SSO connection failed." }],
+      });
+
+      render(<SignInScreen />);
+      fireEvent.press(screen.getByTestId("apple-sign-in-btn"));
+
+      await waitFor(() => {
+        expect(alertSpy).toHaveBeenCalledWith(
+          "Sign-in Failed",
+          "Apple SSO connection failed.",
+        );
+      });
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
+
+    it("shows a fallback error message when Apple SSO throws without details", async () => {
+      startSSOFlow.mockRejectedValue(new Error("network down"));
+
+      render(<SignInScreen />);
+      fireEvent.press(screen.getByTestId("apple-sign-in-btn"));
+
+      await waitFor(() => {
+        expect(alertSpy).toHaveBeenCalledWith(
+          "Sign-in Failed",
+          "Apple sign-in failed. Please try again.",
+        );
+      });
+      expect(mockReplace).not.toHaveBeenCalled();
+    });
   });
 });

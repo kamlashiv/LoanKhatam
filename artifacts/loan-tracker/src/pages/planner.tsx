@@ -1003,7 +1003,7 @@ export function Planner() {
                   <Scale className="h-4 w-4" />
                   <p className="text-xs font-semibold uppercase tracking-wide">Net Principal</p>
                 </div>
-                <p className="text-2xl font-black text-slate-900 mt-2">{formatRupees(netPrincipal)}</p>
+                <p className="font-black text-slate-900 mt-2 text-[23px]">{formatRupees(netPrincipal)}</p>
                 <p className="text-xs text-slate-500 mt-1">
                   Borrowed amount
                   {disbursedTopUp > 0 && (

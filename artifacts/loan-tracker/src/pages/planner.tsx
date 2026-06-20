@@ -568,7 +568,7 @@ export function Planner() {
             <div className="h-9 w-9 rounded-lg bg-indigo-100 flex items-center justify-center">
               <Target className="h-5 w-5 text-indigo-600" />
             </div>
-            <h1 className="font-bold tracking-tight text-[30px]">SMART Strategy</h1>
+            <h1 className="font-black tracking-tight text-[30px] text-left">SMART Strategy</h1>
           </div>
           <p className="text-slate-500 ml-12 text-[16px]">
             Plan prepayments, compare strategies, and see exactly how much interest and time you save

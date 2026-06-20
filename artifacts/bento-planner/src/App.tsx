@@ -1,21 +1,14 @@
 import { useState, useRef, useMemo, useCallback } from "react";
-import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, PieChart, Pie, Cell,
-} from "recharts";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import {
-  Target, Download, Upload, FileText, CheckCircle2, AlertCircle, Loader2,
-  TrendingDown, BarChart3, RefreshCw, Plus, Pencil, X, Calculator, Sparkles,
-  ChevronDown, PiggyBank, Coins, CalendarRange, TrendingUp,
-  Award, Flame, Search, EyeOff, FileSpreadsheet, FileCode, Zap,
+  Sparkles, CalendarClock, Wallet, TrendingDown, Clock3, PiggyBank,
+  CheckCircle2, ChevronDown, ChevronRight, ArrowRight, CalendarRange,
+  Coins, Banknote, Repeat, Rocket, Layers, Pencil, Upload, Loader2,
+  AlertCircle, X, FileSpreadsheet, FileText, FileCode, RefreshCw,
 } from "lucide-react";
-import { formatRupees } from "@/lib/loan-utils";
 import {
   simulatePlan, reverseFromTargetMonths, STRATEGY_PRESETS,
   type PlannerResult,
@@ -23,7 +16,68 @@ import {
 import { exportPlannerCSV, exportPlannerPDF } from "@/lib/export";
 import { extractFromFile, type ExtractedData } from "@/lib/file-extract";
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+/* ------------------------------------------------------------------ */
+/* Brand tokens (RinMukti, light)                                      */
+/* ------------------------------------------------------------------ */
+const C = {
+  bg: "#f8fafc",
+  text: "#0f172a",
+  muted: "#64748b",
+  border: "#e2e8f0",
+  card: "#ffffff",
+  indigo: "#4f46e5",
+  indigoSoft: "#eef2ff",
+  emerald: "#10b981",
+  emeraldSoft: "#ecfdf5",
+  amber: "#f59e0b",
+  rose: "#f43f5e",
+};
+
+const mono = "'Space Mono', Menlo, monospace";
+const sans = "'Outfit', sans-serif";
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                             */
+/* ------------------------------------------------------------------ */
+const inr = (val: number) => `₹${Math.round(val).toLocaleString("en-IN")}`;
+const inrCompact = (val: number) => {
+  if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)}Cr`;
+  if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+  return `₹${Math.round(val).toLocaleString("en-IN")}`;
+};
+
+function savedTimeLabel(months: number) {
+  const y = Math.floor(months / 12);
+  const mo = months % 12;
+  if (y > 0 && mo > 0) return `${y} yr ${mo} mo`;
+  if (y > 0) return `${y} yr${y > 1 ? "s" : ""}`;
+  if (mo > 0) return `${mo} mo`;
+  return "0 mo";
+}
+
+function startParts(startMonth: string) {
+  const [y, m] = startMonth.split("-").map(Number);
+  return { year: y || new Date().getFullYear(), month: m || 1 };
+}
+
+function monthLabel(startMonth: string, m: number, long = false) {
+  const { year, month } = startParts(startMonth);
+  const d = new Date(year, month - 1 + Math.max(0, m - 1), 1);
+  return d.toLocaleDateString("en-US", { month: long ? "long" : "short", year: "numeric" });
+}
+
+function yearRange(startMonth: string, yearIdx: number, monthsInYear: number) {
+  const { year, month } = startParts(startMonth);
+  const begin = new Date(year, month - 1 + (yearIdx - 1) * 12, 1);
+  const end = new Date(year, month - 1 + (yearIdx - 1) * 12 + Math.max(0, monthsInYear - 1), 1);
+  const by = begin.getFullYear();
+  const ey = end.getFullYear();
+  return by === ey ? `${by}` : `${by}–${String(ey).slice(2)}`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Types & state                                                      */
+/* ------------------------------------------------------------------ */
 interface LoanParams {
   principal: number;
   rate: number;
@@ -32,40 +86,378 @@ interface LoanParams {
   extraEMI: number;
 }
 
-interface TopUpState {
-  amount: number;
-  rate: number;
-  month: number;
-}
+const STRAT_META: Record<string, { icon: any; recommended?: boolean }> = {
+  "one-extra-emi": { icon: Repeat },
+  "round-up": { icon: Coins },
+  "ten-percent": { icon: Rocket, recommended: true },
+  "super-saver": { icon: Layers },
+};
 
-function monthLabel(startMonth: string, m: number) {
-  const [y, mo] = startMonth.split("-").map(Number);
-  if (!y || !mo) return `Month ${m}`;
-  const d = new Date(y, mo - 1 + (m - 1), 1);
-  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-}
-
-function savedTimeLabel(months: number) {
-  const y = Math.floor(months / 12);
-  const mo = months % 12;
-  if (y > 0 && mo > 0) return `${y} Yr(s), ${mo} Mo(s)`;
-  if (y > 0) return `${y} Yr(s)`;
-  if (mo > 0) return `${mo} Mo(s)`;
-  return "0 Months";
-}
-
-function compactRupees(val: number) {
-  if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
-  if (val >= 100000) return `₹${(val / 100000).toFixed(1)} L`;
-  return `₹${Math.round(val).toLocaleString("en-IN")}`;
-}
-
-// ─── File upload component ───────────────────────────────────────────────────
-function FileUploadZone({
-  onExtracted,
+/* ------------------------------------------------------------------ */
+/* Sub-components                                                      */
+/* ------------------------------------------------------------------ */
+function AssistantBubble({
+  children,
+  step,
 }: {
-  onExtracted: (data: ExtractedData) => void;
+  children: React.ReactNode;
+  step?: string;
 }) {
+  return (
+    <div className="flex items-start gap-4">
+      <div
+        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full shadow-sm"
+        style={{ background: C.indigo }}
+      >
+        <Sparkles className="h-5 w-5 text-white" />
+      </div>
+      <div className="flex-1">
+        {step && (
+          <div
+            className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em]"
+            style={{ color: C.indigo }}
+          >
+            {step}
+          </div>
+        )}
+        <div
+          className="inline-block rounded-2xl rounded-tl-md px-5 py-4 text-[17px] leading-relaxed"
+          style={{ background: C.indigoSoft, color: C.text, border: `1px solid #e0e7ff` }}
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GoalToggle({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: any;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all"
+      style={{
+        background: active ? C.indigo : C.card,
+        color: active ? "#fff" : C.muted,
+        border: `1px solid ${active ? C.indigo : C.border}`,
+        boxShadow: active ? "0 2px 8px rgba(79,70,229,0.25)" : "none",
+      }}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
+  );
+}
+
+function Chip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="rounded-full px-4 py-2 text-sm font-medium transition-all"
+      style={{
+        background: active ? C.indigo : "#fff",
+        color: active ? "#fff" : C.text,
+        border: `1px solid ${active ? C.indigo : C.border}`,
+        fontFamily: mono,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function PlanStat({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  icon: any;
+  label: string;
+  value: string;
+  sub?: string;
+  accent: string;
+}) {
+  return (
+    <div className="rounded-xl p-5" style={{ background: "#fff", border: `1px solid ${C.border}` }}>
+      <div className="flex items-center gap-2">
+        <div
+          className="flex h-8 w-8 items-center justify-center rounded-lg"
+          style={{ background: `${accent}14` }}
+        >
+          <Icon className="h-4 w-4" style={{ color: accent }} />
+        </div>
+        <span className="text-[12px] font-medium uppercase tracking-wide" style={{ color: C.muted }}>
+          {label}
+        </span>
+      </div>
+      <div className="mt-3 text-[26px] font-bold leading-none" style={{ fontFamily: mono, color: C.text }}>
+        {value}
+      </div>
+      {sub && (
+        <div className="mt-1.5 text-[13px]" style={{ color: C.muted }}>
+          {sub}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StrategyCard({
+  icon: Icon,
+  title,
+  desc,
+  saveAmt,
+  saveTime,
+  recommended,
+  selected,
+  onClick,
+}: {
+  icon: any;
+  title: string;
+  desc: string;
+  saveAmt: string;
+  saveTime: string;
+  recommended?: boolean;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="group relative flex w-full flex-col rounded-2xl p-5 text-left transition-all"
+      style={{
+        background: selected ? C.emeraldSoft : "#fff",
+        border: `1.5px solid ${selected ? C.emerald : C.border}`,
+        boxShadow: selected ? "0 4px 14px rgba(16,185,129,0.18)" : "0 1px 2px rgba(15,23,42,0.04)",
+      }}
+    >
+      {recommended && (
+        <span
+          className="absolute -top-2.5 right-4 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white"
+          style={{ background: C.indigo }}
+        >
+          Recommended
+        </span>
+      )}
+      <div className="flex items-center gap-3">
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-xl"
+          style={{ background: selected ? C.emerald : C.indigoSoft }}
+        >
+          <Icon className="h-5 w-5" style={{ color: selected ? "#fff" : C.indigo }} />
+        </div>
+        <div className="font-semibold" style={{ color: C.text }}>
+          {title}
+        </div>
+        {selected && <CheckCircle2 className="ml-auto h-5 w-5" style={{ color: C.emerald }} />}
+      </div>
+      <p className="mt-3 text-[13px] leading-relaxed" style={{ color: C.muted }}>
+        {desc}
+      </p>
+      <div
+        className="mt-4 flex items-center justify-between border-t pt-3"
+        style={{ borderColor: selected ? "#bbf7d0" : C.border }}
+      >
+        <div>
+          <div className="text-[15px] font-bold" style={{ fontFamily: mono, color: C.emerald }}>
+            {saveAmt}
+          </div>
+          <div className="text-[11px]" style={{ color: C.muted }}>
+            interest saved
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-[15px] font-bold" style={{ fontFamily: mono, color: C.text }}>
+            {saveTime}
+          </div>
+          <div className="text-[11px]" style={{ color: C.muted }}>
+            sooner
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/* Real payoff projection: standard vs accelerated, from engine year rows. */
+function PayoffChart({
+  baseline,
+  plan,
+  principal,
+  startMonth,
+}: {
+  baseline: PlannerResult;
+  plan: PlannerResult;
+  principal: number;
+  startMonth: string;
+}) {
+  const w = 760;
+  const h = 240;
+  const padL = 8;
+  const padB = 28;
+  const padT = 16;
+  const innerW = w - padL - 8;
+  const innerH = h - padB - padT;
+
+  const startBal = Math.max(1, principal);
+  const maxMonths = Math.max(baseline.payoffMonths, plan.payoffMonths, 1);
+  const yFor = (bal: number) => padT + (1 - Math.max(0, bal) / startBal) * innerH;
+  const xFor = (months: number) => padL + (months / maxMonths) * innerW;
+
+  const buildPts = (res: PlannerResult): [number, number][] => {
+    const pts: [number, number][] = [[xFor(0), yFor(startBal)]];
+    let cum = 0;
+    for (const yr of res.years) {
+      cum += yr.monthsInYear;
+      pts.push([xFor(cum), yFor(yr.closing)]);
+    }
+    return pts;
+  };
+
+  const stdPts = buildPts(baseline);
+  const accPts = buildPts(plan);
+
+  const toPath = (pts: [number, number][]) =>
+    pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+
+  const lastAcc = accPts[accPts.length - 1];
+  const accArea = toPath(accPts) + ` L${lastAcc[0].toFixed(1)},${padT + innerH} L${padL},${padT + innerH} Z`;
+
+  const { year: startYear } = startParts(startMonth);
+  const maxYears = Math.max(1, Math.ceil(maxMonths / 12));
+  const xLabels = [0, 1, 2, 3, 4].map((i) => String(startYear + Math.round((i / 4) * maxYears)));
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ overflow: "visible" }}>
+      <defs>
+        <linearGradient id="accFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={C.emerald} stopOpacity="0.22" />
+          <stop offset="100%" stopColor={C.emerald} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {[0, 0.25, 0.5, 0.75, 1].map((g) => (
+        <line
+          key={g}
+          x1={padL}
+          x2={padL + innerW}
+          y1={padT + g * innerH}
+          y2={padT + g * innerH}
+          stroke={C.border}
+          strokeWidth={1}
+          strokeDasharray="3 4"
+        />
+      ))}
+      <path d={accArea} fill="url(#accFill)" />
+      <path d={toPath(stdPts)} fill="none" stroke={C.muted} strokeWidth={2.5} strokeDasharray="5 5" />
+      <path d={toPath(accPts)} fill="none" stroke={C.emerald} strokeWidth={3} />
+      <circle cx={lastAcc[0]} cy={lastAcc[1]} r={5} fill={C.emerald} />
+      <circle cx={stdPts[stdPts.length - 1][0]} cy={stdPts[stdPts.length - 1][1]} r={5} fill={C.muted} />
+      {xLabels.map((yr, i) => (
+        <text
+          key={`${yr}-${i}`}
+          x={padL + (i / 4) * innerW}
+          y={h - 6}
+          fontSize={11}
+          fill={C.muted}
+          textAnchor={i === 0 ? "start" : i === 4 ? "end" : "middle"}
+          fontFamily={mono}
+        >
+          {yr}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+function ScheduleRow({
+  year,
+  date,
+  emi,
+  extra,
+  interest,
+  balance,
+}: {
+  year: number;
+  date: string;
+  emi: string;
+  extra: string;
+  interest: string;
+  balance: string;
+}) {
+  return (
+    <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+      <td className="py-2.5 pl-5 pr-3 text-[13px] font-medium" style={{ color: C.text }}>
+        Year {year}
+        <span className="ml-2 text-[12px] font-normal" style={{ color: C.muted }}>
+          {date}
+        </span>
+      </td>
+      <td className="px-3 py-2.5 text-right text-[13px]" style={{ fontFamily: mono, color: C.text }}>
+        {emi}
+      </td>
+      <td className="px-3 py-2.5 text-right text-[13px]" style={{ fontFamily: mono, color: C.emerald }}>
+        {extra}
+      </td>
+      <td className="px-3 py-2.5 text-right text-[13px]" style={{ fontFamily: mono, color: C.amber }}>
+        {interest}
+      </td>
+      <td className="px-3 py-2.5 pr-5 text-right text-[13px]" style={{ fontFamily: mono, color: C.text }}>
+        {balance}
+      </td>
+    </tr>
+  );
+}
+
+function CompareRow({
+  label,
+  value,
+  color,
+  strong,
+}: {
+  label: string;
+  value: string;
+  color: string;
+  strong?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-[13px]" style={{ color: C.muted }}>
+        {label}
+      </span>
+      <span
+        className="text-[14px]"
+        style={{ fontFamily: mono, color, fontWeight: strong ? 700 : 500 }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* File upload (re-used inside "Adjust loan details")                  */
+/* ------------------------------------------------------------------ */
+function FileUploadZone({ onExtracted }: { onExtracted: (data: ExtractedData) => void }) {
   const [dragOver, setDragOver] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -73,22 +465,25 @@ function FileUploadZone({
   const [progress, setProgress] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const processFile = useCallback(async (file: File) => {
-    setFileName(file.name);
-    setStatus("loading");
-    setErrorMsg("");
-    setProgress(null);
-    try {
-      const data = await extractFromFile(file, (info) => {
-        if (info.stage === "ocr" && info.percent != null) setProgress(info.percent);
-      });
-      setStatus("success");
-      onExtracted(data);
-    } catch (e: any) {
-      setErrorMsg(e.message ?? "Couldn't read the file");
-      setStatus("error");
-    }
-  }, [onExtracted]);
+  const processFile = useCallback(
+    async (file: File) => {
+      setFileName(file.name);
+      setStatus("loading");
+      setErrorMsg("");
+      setProgress(null);
+      try {
+        const data = await extractFromFile(file, (info) => {
+          if (info.stage === "ocr" && info.percent != null) setProgress(info.percent);
+        });
+        setStatus("success");
+        onExtracted(data);
+      } catch (e: any) {
+        setErrorMsg(e.message ?? "Couldn't read the file");
+        setStatus("error");
+      }
+    },
+    [onExtracted]
+  );
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -99,7 +494,7 @@ function FileUploadZone({
 
   return (
     <div
-      className={`relative border-2 border-dashed rounded-2xl p-4 text-center transition-all cursor-pointer ${
+      className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-4 text-center transition-all ${
         dragOver
           ? "border-indigo-500 bg-indigo-50"
           : status === "success"
@@ -109,7 +504,10 @@ function FileUploadZone({
           : "border-slate-200 hover:border-indigo-400 hover:bg-slate-50"
       }`}
       onDrop={onDrop}
-      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
       onDragLeave={() => setDragOver(false)}
       onClick={() => inputRef.current?.click()}
     >
@@ -118,19 +516,20 @@ function FileUploadZone({
         type="file"
         accept=".png,.jpg,.jpeg,.webp,.pdf,.json,.csv"
         className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) processFile(f); }}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) processFile(f);
+        }}
       />
-
       {status === "loading" && (
         <div className="flex flex-col items-center gap-2 py-2">
-          <Loader2 className="h-7 w-7 text-indigo-600 animate-spin" />
+          <Loader2 className="h-7 w-7 animate-spin text-indigo-600" />
           <p className="text-sm font-medium text-indigo-600">
             {progress != null ? `Reading file… ${progress}%` : "Reading file…"}
           </p>
           <p className="text-xs text-slate-500">{fileName}</p>
         </div>
       )}
-
       {status === "success" && (
         <div className="flex flex-col items-center gap-2 py-2">
           <CheckCircle2 className="h-7 w-7 text-emerald-600" />
@@ -138,7 +537,6 @@ function FileUploadZone({
           <p className="text-xs text-slate-500">{fileName}</p>
         </div>
       )}
-
       {status === "error" && (
         <div className="flex flex-col items-center gap-2 py-2">
           <AlertCircle className="h-7 w-7 text-red-500" />
@@ -146,21 +544,19 @@ function FileUploadZone({
           <p className="text-xs text-red-600">{errorMsg}</p>
         </div>
       )}
-
       {status === "idle" && (
         <div className="flex flex-col items-center gap-2 py-2">
-          <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
-            <Upload className="w-5 h-5 text-indigo-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
+            <Upload className="h-5 w-5 text-indigo-600" />
           </div>
-          <p className="font-semibold text-sm text-slate-700">Upload or drag a file</p>
-          <p className="text-[10px] text-slate-500">PNG • JPG • PDF • JSON • CSV — data fills in automatically</p>
+          <p className="text-sm font-semibold text-slate-700">Upload or drag a statement</p>
+          <p className="text-[10px] text-slate-500">PNG • JPG • PDF • JSON • CSV — fields fill in automatically</p>
         </div>
       )}
     </div>
   );
 }
 
-// ─── Editable extracted-data review ──────────────────────────────────────────
 function ExtractedReview({
   draft,
   onChange,
@@ -177,25 +573,21 @@ function ExtractedReview({
     medium: "bg-amber-100 text-amber-800 border-amber-300",
     low: "bg-red-100 text-red-800 border-red-300",
   };
-
   const set = <K extends keyof ExtractedData>(k: K, v: ExtractedData[K]) =>
     onChange({ ...draft, [k]: v });
 
   return (
-    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-3">
+    <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
       <div className="flex items-center justify-between">
-        <span className="font-semibold text-sm flex items-center gap-1.5">
+        <span className="flex items-center gap-1.5 text-sm font-semibold">
           <Pencil className="h-3.5 w-3.5 text-indigo-600" />
-          Extracted Data — Edit
+          Extracted data — edit
         </span>
         <Badge className={`${confidenceColor[draft.confidence]} border text-xs`}>
           Confidence: {draft.confidence}
         </Badge>
       </div>
-      {draft.notes && (
-        <p className="text-xs text-slate-500 italic">{draft.notes}</p>
-      )}
-
+      {draft.notes && <p className="text-xs italic text-slate-500">{draft.notes}</p>}
       <div className="grid grid-cols-2 gap-2.5">
         <div className="col-span-2 space-y-1">
           <Label className="text-xs">Borrower / Profile Name</Label>
@@ -243,11 +635,10 @@ function ExtractedReview({
           />
         </div>
       </div>
-
       <div className="flex flex-wrap gap-2 pt-1">
-        <Button size="sm" className="h-8 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-700" onClick={onApply}>
+        <Button size="sm" className="h-8 gap-1.5 bg-indigo-600 text-xs hover:bg-indigo-700" onClick={onApply}>
           <CheckCircle2 className="h-3.5 w-3.5" />
-          Apply to Calculator
+          Apply
         </Button>
         <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-xs" onClick={onDiscard}>
           <X className="h-3.5 w-3.5" />
@@ -258,31 +649,9 @@ function ExtractedReview({
   );
 }
 
-// ─── Chart tooltip (RinMukti dark style) ─────────────────────────────────────
-function ChartTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-slate-900 border border-slate-800 text-white rounded-lg shadow-md px-3 py-2.5 text-xs">
-      <p className="font-semibold mb-1 text-slate-300">{label}</p>
-      {payload.map((p: any) => (
-        <div key={p.name} className="flex justify-between gap-4 py-0.5" style={{ color: p.color }}>
-          <span>{p.name}:</span>
-          <span className="font-black">{formatRupees(p.value)}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// Visual config for the 4 strategy cards (RinMukti palette).
-const STRAT_VISUAL = [
-  { icon: TrendingUp, card: "from-blue-50 to-indigo-100 border-blue-200", iconColor: "text-blue-600" },
-  { icon: Award, card: "from-emerald-50 to-teal-100 border-emerald-200", iconColor: "text-emerald-600" },
-  { icon: PiggyBank, card: "from-amber-50 to-orange-100 border-amber-200", iconColor: "text-amber-600" },
-  { icon: Flame, card: "from-rose-50 to-pink-100 border-rose-200", iconColor: "text-rose-600" },
-];
-
-// ─── App ─────────────────────────────────────────────────────────────────────
+/* ------------------------------------------------------------------ */
+/* Main                                                                */
+/* ------------------------------------------------------------------ */
 export default function App() {
   const [params, setParams] = useState<LoanParams>({
     principal: 2500000,
@@ -292,22 +661,132 @@ export default function App() {
     extraEMI: 0,
   });
   const [profileName, setProfileName] = useState("");
-  const [topUp, setTopUp] = useState<TopUpState>({ amount: 0, rate: 9, month: 12 });
+  // Yearly lump prepayments are driven by strategy selection (no per-row editor
+  // in this guided flow), so the advertised strategy savings stay accurate.
   const [yearLumps, setYearLumps] = useState<Record<number, number>>({});
-  const [targetYears, setTargetYears] = useState(10);
-  const [chartTab, setChartTab] = useState<"balance" | "costs">("balance");
-  const [draft, setDraft] = useState<ExtractedData | null>(null);
   const [activeStrategy, setActiveStrategy] = useState<string | null>(null);
 
-  // Amortization table state
-  const [tableExpanded, setTableExpanded] = useState(true);
-  const [viewMode, setViewMode] = useState<"yearly" | "monthly">("yearly");
-  const [search, setSearch] = useState("");
+  const [goalMode, setGoalMode] = useState<"date" | "budget">("budget");
+  const [targetSel, setTargetSel] = useState<number | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [adjustOpen, setAdjustOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [draft, setDraft] = useState<ExtractedData | null>(null);
 
-  const set = (k: keyof LoanParams, v: number | string) =>
-    setParams((p) => ({ ...p, [k]: v }));
+  const setBudget = (v: number) => {
+    setActiveStrategy(null);
+    setYearLumps({});
+    setTargetSel(null);
+    setParams((p) => ({ ...p, extraEMI: Math.max(0, Math.round(v)) }));
+  };
+
+  const lumpPrepayments = useMemo(() => {
+    const out: Record<number, number> = {};
+    for (const [yr, amt] of Object.entries(yearLumps)) {
+      const n = Number(amt);
+      if (n > 0) out[Number(yr) * 12] = n;
+    }
+    return out;
+  }, [yearLumps]);
+
+  const plan: PlannerResult = useMemo(
+    () =>
+      simulatePlan({
+        principal: params.principal,
+        rate: params.rate,
+        tenureMonths: params.tenureMonths,
+        extraEMI: params.extraEMI,
+        lumpPrepayments,
+      }),
+    [params, lumpPrepayments]
+  );
+
+  const baseline: PlannerResult = useMemo(
+    () =>
+      simulatePlan({
+        principal: params.principal,
+        rate: params.rate,
+        tenureMonths: params.tenureMonths,
+        extraEMI: 0,
+      }),
+    [params.principal, params.rate, params.tenureMonths]
+  );
+
+  const interestSaved = Math.max(0, baseline.totalInterest - plan.totalInterest);
+  const monthsSaved = Math.max(0, baseline.payoffMonths - plan.payoffMonths);
+  const hasSavings = interestSaved > 0 || monthsSaved > 0;
+  const tenureYears = Math.round((params.tenureMonths / 12) * 10) / 10;
+  const debtFreeDate = monthLabel(params.startMonth, Math.max(1, plan.payoffMonths), true);
+  const baselineDebtFreeDate = monthLabel(params.startMonth, Math.max(1, baseline.payoffMonths), true);
+  const accBarWidth = baseline.payoffMonths > 0
+    ? Math.min(100, Math.max(8, (plan.payoffMonths / baseline.payoffMonths) * 100))
+    : 100;
+
+  // Strategy cards — engine-computed savings for each preset.
+  const strategyCards = useMemo(() => {
+    const totalYears = Math.ceil(params.tenureMonths / 12);
+    return STRATEGY_PRESETS.map((s) => {
+      const res = s.compute(plan.baseEMI, params.principal);
+      const lumps: Record<number, number> = {};
+      if (res.yearlyLump > 0) for (let y = 1; y <= totalYears; y++) lumps[y * 12] = Math.round(res.yearlyLump);
+      const sim = simulatePlan({
+        principal: params.principal,
+        rate: params.rate,
+        tenureMonths: params.tenureMonths,
+        extraEMI: Math.round(res.extraEMI),
+        lumpPrepayments: lumps,
+      });
+      const saved = Math.max(0, baseline.totalInterest - sim.totalInterest);
+      const mSaved = Math.max(0, baseline.payoffMonths - sim.payoffMonths);
+      const meta = STRAT_META[s.id] ?? { icon: Rocket };
+      return { ...s, res, saved, mSaved, icon: meta.icon, recommended: meta.recommended };
+    });
+  }, [plan.baseEMI, params.principal, params.rate, params.tenureMonths, baseline]);
+
+  const applyStrategy = (id: string, extraEMI: number, yearlyLump: number) => {
+    setActiveStrategy(id);
+    setTargetSel(null);
+    setParams((p) => ({ ...p, extraEMI: Math.round(extraEMI) }));
+    if (yearlyLump > 0) {
+      const totalYears = Math.ceil(params.tenureMonths / 12);
+      const next: Record<number, number> = {};
+      for (let y = 1; y <= totalYears; y++) next[y] = Math.round(yearlyLump);
+      setYearLumps(next);
+    } else {
+      setYearLumps({});
+    }
+  };
+
+  // Date-goal options: a few earlier payoff targets and the extra they require.
+  const targetOptions = useMemo(() => {
+    const baseYears = Math.max(2, Math.round(baseline.payoffMonths / 12));
+    const cuts = [0.85, 0.72, 0.6].map((f) => Math.max(1, Math.round(baseYears * f)));
+    const seen = new Set<number>();
+    return cuts
+      .filter((c) => (seen.has(c) ? false : (seen.add(c), true)))
+      .map((years) => {
+        const months = years * 12;
+        const rev = reverseFromTargetMonths(params.principal, params.rate, plan.baseEMI, months);
+        return {
+          years,
+          months,
+          label: monthLabel(params.startMonth, months, true),
+          extra: Math.round(rev.requiredExtra),
+        };
+      });
+  }, [baseline.payoffMonths, params.principal, params.rate, params.startMonth, plan.baseEMI]);
+
+  // Guard against a stale selection when targetOptions shrinks (e.g. tenure edited).
+  const safeTargetSel =
+    targetSel != null && targetSel < targetOptions.length ? targetSel : 0;
+
+  const selectTarget = (i: number) => {
+    setTargetSel(i);
+    setActiveStrategy(null);
+    setYearLumps({});
+    setParams((p) => ({ ...p, extraEMI: targetOptions[i]?.extra ?? 0 }));
+  };
 
   const handleExtracted = useCallback((data: ExtractedData) => {
     setDraft(data);
@@ -330,151 +809,22 @@ export default function App() {
     setParams((p) => ({ ...p, ...updates }));
     setYearLumps({});
     setActiveStrategy(null);
+    setTargetSel(null);
     setDraft(null);
   }, [draft]);
 
-  // Convert per-year lumps to month-indexed prepayments (end of each year).
-  const lumpPrepayments = useMemo(() => {
-    const out: Record<number, number> = {};
-    for (const [yr, amt] of Object.entries(yearLumps)) {
-      const n = Number(amt);
-      if (n > 0) out[Number(yr) * 12] = n;
-    }
-    return out;
-  }, [yearLumps]);
-
-  const topUpInput = useMemo(
-    () =>
-      topUp.amount > 0
-        ? {
-            amount: topUp.amount,
-            rate: topUp.rate,
-            month: Math.min(params.tenureMonths, Math.max(1, topUp.month)),
-          }
-        : null,
-    [topUp.amount, topUp.rate, topUp.month, params.tenureMonths]
-  );
-
-  const plan: PlannerResult = useMemo(
-    () => simulatePlan({
-      principal: params.principal,
-      rate: params.rate,
-      tenureMonths: params.tenureMonths,
-      extraEMI: params.extraEMI,
-      lumpPrepayments,
-      topUp: topUpInput,
-    }),
-    [params, lumpPrepayments, topUpInput]
-  );
-
-  // Baseline keeps the same loan context (incl. top-up) but no acceleration,
-  // so deltas isolate the prepayment effect rather than loan-definition changes.
-  const baseline: PlannerResult = useMemo(
-    () => simulatePlan({
-      principal: params.principal,
-      rate: params.rate,
-      tenureMonths: params.tenureMonths,
-      extraEMI: 0,
-      topUp: topUpInput,
-    }),
-    [params.principal, params.rate, params.tenureMonths, topUpInput]
-  );
-
-  const interestSaved = Math.max(0, baseline.totalInterest - plan.totalInterest);
-  const monthsSaved = Math.max(0, baseline.payoffMonths - plan.payoffMonths);
-  const tenureYears = Math.round(params.tenureMonths / 12 * 10) / 10;
-  const interestSavingPct = baseline.totalInterest > 0 ? (interestSaved / baseline.totalInterest) * 100 : 0;
-  const timeSavingPct = baseline.payoffMonths > 0 ? (monthsSaved / baseline.payoffMonths) * 100 : 0;
-  // Actual borrowed principal from the engine (top-up only counts once disbursed).
-  const netPrincipal = plan.totalPrincipalBorrowed;
-  const disbursedTopUp = Math.max(0, plan.totalPrincipalBorrowed - params.principal);
-
-  const reverse = useMemo(
-    () => reverseFromTargetMonths(params.principal, params.rate, plan.baseEMI, targetYears * 12),
-    [params.principal, params.rate, plan.baseEMI, targetYears]
-  );
-
-  // Balance-over-time chart (yearly closing balances).
-  const balanceData = useMemo(() => {
-    const maxYears = Math.max(baseline.years.length, plan.years.length);
-    const data: Array<{ year: string; "Standard Balance": number; "Accelerated Balance": number }> = [{
-      year: "Start",
-      "Standard Balance": Math.round(params.principal),
-      "Accelerated Balance": Math.round(params.principal),
-    }];
-    for (let i = 0; i < maxYears; i++) {
-      data.push({
-        year: `Year ${i + 1}`,
-        "Standard Balance": Math.round(baseline.years[i]?.closing ?? 0),
-        "Accelerated Balance": Math.round(plan.years[i]?.closing ?? 0),
-      });
-    }
-    return data;
-  }, [baseline, plan, params.principal]);
-
-  const costData = useMemo(() => [
-    {
-      name: "Standard Path",
-      Principal: Math.round(baseline.totalPrincipalBorrowed),
-      Interest: Math.round(baseline.totalInterest),
-    },
-    {
-      name: "Savings Plan",
-      Principal: Math.round(plan.totalPrincipalBorrowed),
-      Interest: Math.round(plan.totalInterest),
-    },
-  ], [baseline.totalPrincipalBorrowed, baseline.totalInterest, plan.totalPrincipalBorrowed, plan.totalInterest]);
-
-  const pieStandard = [
-    { name: "Principal", value: baseline.totalPrincipalBorrowed, color: "#6366f1" },
-    { name: "Total Interest", value: baseline.totalInterest, color: "#f59e0b" },
-  ];
-  const pieAccelerated = [
-    { name: "Principal", value: plan.totalPrincipalBorrowed, color: "#6366f1" },
-    { name: "Total Interest", value: plan.totalInterest, color: "#10b981" },
-    ...(interestSaved > 0 ? [{ name: "Interest Saved", value: interestSaved, color: "#e5e7eb" }] : []),
-  ];
-
-  // Strategy cards: compute each strategy's savings via the engine.
-  const strategyCards = useMemo(() => {
-    const totalYears = Math.ceil(params.tenureMonths / 12);
-    return STRATEGY_PRESETS.map((s, i) => {
-      const res = s.compute(plan.baseEMI, params.principal);
-      const lumps: Record<number, number> = {};
-      if (res.yearlyLump > 0) for (let y = 1; y <= totalYears; y++) lumps[y * 12] = Math.round(res.yearlyLump);
-      const sim = simulatePlan({
-        principal: params.principal,
-        rate: params.rate,
-        tenureMonths: params.tenureMonths,
-        extraEMI: Math.round(res.extraEMI),
-        lumpPrepayments: lumps,
-        topUp: topUpInput,
-      });
-      const saved = Math.max(0, baseline.totalInterest - sim.totalInterest);
-      const mSaved = Math.max(0, baseline.payoffMonths - sim.payoffMonths);
-      return { ...s, res, saved, mSaved, ...STRAT_VISUAL[i % STRAT_VISUAL.length] };
-    });
-  }, [plan.baseEMI, params.principal, params.rate, params.tenureMonths, topUpInput, baseline]);
-
-  const applyStrategy = (id: string, extraEMI: number, yearlyLump: number) => {
-    setActiveStrategy(id);
-    setParams((p) => ({ ...p, extraEMI: Math.round(extraEMI) }));
-    if (yearlyLump > 0) {
-      const totalYears = Math.ceil(params.tenureMonths / 12);
-      const next: Record<number, number> = {};
-      for (let y = 1; y <= totalYears; y++) next[y] = Math.round(yearlyLump);
-      setYearLumps(next);
-    } else {
-      setYearLumps({});
-    }
-  };
-
   const resetAll = () => {
-    setParams({ principal: 2500000, rate: 8.5, tenureMonths: 240, startMonth: new Date().toISOString().slice(0, 7), extraEMI: 0 });
-    setTopUp({ amount: 0, rate: 9, month: 12 });
+    setParams({
+      principal: 2500000,
+      rate: 8.5,
+      tenureMonths: 240,
+      startMonth: new Date().toISOString().slice(0, 7),
+      extraEMI: 0,
+    });
     setYearLumps({});
     setProfileName("");
     setActiveStrategy(null);
+    setTargetSel(null);
   };
 
   const exportMeta = {
@@ -483,7 +833,7 @@ export default function App() {
     rate: params.rate,
     tenureMonths: params.tenureMonths,
     extraEMI: params.extraEMI,
-    topUp: topUpInput,
+    topUp: null,
   };
 
   const handlePDF = async () => {
@@ -492,11 +842,14 @@ export default function App() {
       await exportPlannerPDF(exportMeta, baseline, plan);
     } finally {
       setExporting(false);
+      setExportOpen(false);
     }
   };
 
   const exportJSON = () => {
-    const blob = new Blob([JSON.stringify({ meta: exportMeta, baseline, plan }, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify({ meta: exportMeta, baseline, plan }, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -506,164 +859,510 @@ export default function App() {
     setExportOpen(false);
   };
 
-  // Monthly rows filtered by search.
-  const monthlyRows = useMemo(() => {
-    const term = search.toLowerCase().trim();
-    return plan.months
-      .map((m) => ({ ...m, label: monthLabel(params.startMonth, m.month) }))
-      .filter((m) =>
-        !term ||
-        m.label.toLowerCase().includes(term) ||
-        `month ${m.month}`.includes(term) ||
-        String(m.month).includes(term)
-      );
-  }, [plan.months, params.startMonth, search]);
-
-  const yearlyRows = useMemo(() => {
-    const term = search.toLowerCase().trim();
-    return plan.years.filter((y) =>
-      !term || `year ${y.year}`.includes(term) || String(y.year).includes(term)
-    );
-  }, [plan.years, search]);
-
-  const targetYearsMax = Math.max(1, Math.round(params.tenureMonths / 12));
-
-  // ─── Impact summary (narrative hero) ───────────────────────────────────────
-  const hasSavings = interestSaved > 0 || monthsSaved > 0;
-  const plannedDuration = savedTimeLabel(plan.payoffMonths);
-  const baselineDuration = savedTimeLabel(baseline.payoffMonths);
-  const debtFreeDate = monthLabel(params.startMonth, Math.max(1, plan.payoffMonths));
-  const baselineDebtFreeDate = monthLabel(params.startMonth, Math.max(1, baseline.payoffMonths));
-  const lumpCount = Object.values(yearLumps).filter((v) => Number(v) > 0).length;
-  const impactContrib = [
-    params.extraEMI > 0 ? `${compactRupees(params.extraEMI)} extra each month` : null,
-    lumpCount > 0 ? "yearly prepayments" : null,
-  ].filter(Boolean) as string[];
-  const impactContribText = impactContrib.length ? impactContrib.join(" plus ") : "your accelerated plan";
+  const sliderMax = Math.max(15000, Math.ceil(params.extraEMI / 500) * 500);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
-      <div className="max-w-7xl mx-auto space-y-6">
-
-        {/* Header */}
-        <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center shrink-0">
-              <Target className="w-6 h-6 text-indigo-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Smart Loan Saver</h1>
-              <p className="text-sm text-slate-500 mt-1 max-w-xl">
-                Plan prepayments, compare strategies, and see exactly how much interest and time you save
-              </p>
+    <div className="min-h-screen w-full" style={{ background: C.bg, color: C.text, fontFamily: sans }}>
+      {/* Top bar */}
+      <header
+        className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 md:px-10"
+        style={{
+          background: "rgba(248,250,252,0.85)",
+          backdropFilter: "blur(10px)",
+          borderBottom: `1px solid ${C.border}`,
+        }}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: C.indigo }}>
+            <PiggyBank className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <div className="text-[15px] font-bold leading-none">Smart Loan Saver</div>
+            <div className="text-[11px]" style={{ color: C.muted }}>
+              RinMukti · debt-free planner
             </div>
           </div>
-          <Button
-            variant="outline"
-            className="gap-2 shrink-0 rounded-xl bg-white"
-            onClick={() => exportPlannerCSV(exportMeta, baseline, plan)}
+        </div>
+        <Badge
+          variant="outline"
+          className="gap-1.5 rounded-full px-3 py-1 text-[12px] font-medium"
+          style={{ borderColor: C.border, color: C.muted, background: "#fff" }}
+        >
+          <Banknote className="h-3.5 w-3.5" />
+          Home Loan · {inrCompact(params.principal)}
+        </Badge>
+      </header>
+
+      {/* Guided single-column flow */}
+      <main className="mx-auto max-w-[920px] px-6 pb-24 pt-12">
+        {/* Intro */}
+        <div className="mb-10 text-center">
+          <div
+            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl shadow-sm"
+            style={{ background: C.indigo }}
           >
-            <Download className="w-4 h-4" /> Export CSV
-          </Button>
-        </header>
+            <Sparkles className="h-7 w-7 text-white" />
+          </div>
+          <h1 className="text-[34px] font-bold leading-tight">
+            Let's plan your way to <span style={{ color: C.emerald }}>debt-free</span>.
+          </h1>
+          <p className="mx-auto mt-3 max-w-[560px] text-[16px]" style={{ color: C.muted }}>
+            Tell me your goal and I'll work out the plan — no spreadsheets, no jargon. We're starting from your{" "}
+            {inr(params.principal)} {profileName ? `${profileName} ` : ""}loan at {params.rate}% for {tenureYears} years.
+          </p>
+        </div>
 
-        {/* Impact Summary — narrative hero (Layout B) atop the bento grid (Layout C) */}
-        <Card className="rounded-3xl border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-indigo-50/50 shadow-sm overflow-hidden">
-          <CardContent className="p-6 md:p-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="space-y-3 max-w-2xl">
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider">
-                  <Sparkles className="h-3.5 w-3.5" /> Impact Summary
-                </span>
-                {hasSavings ? (
-                  <>
-                    <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
-                      You save{" "}
-                      {interestSaved > 0 && <span className="text-emerald-600">{compactRupees(interestSaved)}</span>}
-                      {interestSaved > 0 && monthsSaved > 0 && " and "}
-                      {monthsSaved > 0 && <span className="text-emerald-600">{savedTimeLabel(monthsSaved)}</span>}
-                    </h2>
-                    <p className="text-sm md:text-base text-slate-500 leading-relaxed">
-                      {monthsSaved > 0 ? (
-                        <>
-                          By adding {impactContribText}, you become debt-free in{" "}
-                          <span className="font-semibold text-slate-700">{plannedDuration}</span> instead of{" "}
-                          <span className="font-semibold text-slate-700">{baselineDuration}</span>
-                          {interestSaved > 0 ? (
-                            <> — keeping <span className="font-semibold text-emerald-700">{compactRupees(interestSaved)}</span> of interest in your pocket.</>
-                          ) : (
-                            "."
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          By adding {impactContribText}, you keep{" "}
-                          <span className="font-semibold text-emerald-700">{compactRupees(interestSaved)}</span> of
-                          interest in your pocket — without pushing out your payoff timeline.
-                        </>
-                      )}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
-                      See how much you could <span className="text-emerald-600">save</span>
-                    </h2>
-                    <p className="text-sm md:text-base text-slate-500 leading-relaxed">
-                      Add an extra EMI, a yearly prepayment, or pick a strategy below — watch your total
-                      interest and loan tenure drop in real time.
-                    </p>
-                  </>
-                )}
-              </div>
+        {/* Step 1 — Goal */}
+        <section className="mb-8">
+          <AssistantBubble step="Step 1 · Your goal">
+            How would you like to plan? You can give me a <strong>monthly budget</strong> you can spare, or pick a{" "}
+            <strong>date</strong> you want to be debt-free by.
+          </AssistantBubble>
 
-              {/* Debt-free timeline — standard vs accelerated (additive comparison) */}
-              <div className="shrink-0 rounded-2xl bg-white/70 backdrop-blur border border-slate-200 p-5 lg:min-w-[250px]">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
-                  <CalendarRange className="h-3.5 w-3.5 text-indigo-600" /> Debt-free timeline
-                </p>
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between gap-6">
-                    <span className="text-xs text-slate-500 flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-rose-400" /> Standard
-                    </span>
-                    <span className="text-sm font-bold text-slate-700">{baselineDebtFreeDate}</span>
+          <div className="ml-0 mt-5 sm:ml-[60px]">
+            <div className="flex flex-wrap gap-3">
+              <GoalToggle
+                active={goalMode === "budget"}
+                onClick={() => setGoalMode("budget")}
+                icon={Wallet}
+                label="I have a monthly budget"
+              />
+              <GoalToggle
+                active={goalMode === "date"}
+                onClick={() => setGoalMode("date")}
+                icon={CalendarClock}
+                label="I have a target date"
+              />
+            </div>
+
+            <div className="mt-5 rounded-2xl p-6" style={{ background: "#fff", border: `1px solid ${C.border}` }}>
+              {goalMode === "budget" ? (
+                <>
+                  <label className="text-[14px] font-medium" style={{ color: C.text }}>
+                    How much extra can you set aside each month?
+                  </label>
+                  <div className="mt-4 flex flex-wrap items-end gap-6">
+                    <div className="text-[40px] font-bold leading-none" style={{ fontFamily: mono, color: C.indigo }}>
+                      {inr(params.extraEMI)}
+                      <span className="text-[18px]" style={{ color: C.muted }}>
+                        /mo
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pb-1">
+                      {[2000, 5000, 8000, 12000].map((b) => (
+                        <Chip key={b} active={params.extraEMI === b} onClick={() => setBudget(b)}>
+                          {inrCompact(b)}
+                        </Chip>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between gap-6">
-                    <span className="text-xs text-slate-500 flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" /> Accelerated
-                    </span>
-                    <span className="text-sm font-bold text-emerald-600">{debtFreeDate}</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={sliderMax}
+                    step={500}
+                    value={Math.min(params.extraEMI, sliderMax)}
+                    onChange={(e) => setBudget(Number(e.target.value))}
+                    className="mt-5 w-full"
+                    style={{ accentColor: C.indigo }}
+                    aria-label="Extra monthly payment"
+                  />
+                  <div className="mt-2 flex justify-between text-[12px]" style={{ color: C.muted }}>
+                    <span style={{ fontFamily: mono }}>₹0</span>
+                    <span style={{ fontFamily: mono }}>{inrCompact(sliderMax)}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <label className="text-[14px] font-medium" style={{ color: C.text }}>
+                    When do you want to be debt-free?
+                  </label>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    {targetOptions.map((opt, i) => {
+                      const active = targetSel === i;
+                      return (
+                        <button
+                          key={opt.label}
+                          onClick={() => selectTarget(i)}
+                          className="rounded-xl px-5 py-3 text-left transition-all"
+                          style={{
+                            background: active ? C.indigoSoft : "#fff",
+                            border: `1.5px solid ${active ? C.indigo : C.border}`,
+                          }}
+                        >
+                          <div className="text-[18px] font-bold" style={{ fontFamily: mono, color: active ? C.indigo : C.text }}>
+                            {opt.label}
+                          </div>
+                          <div className="text-[12px]" style={{ color: C.muted }}>
+                            in {opt.years} years
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {targetOptions.length > 0 && (
+                    <p className="mt-4 text-[13px]" style={{ color: C.muted }}>
+                      To hit{" "}
+                      <strong>{targetOptions[safeTargetSel].label}</strong>, you'd need about{" "}
+                      <strong style={{ color: C.indigo, fontFamily: mono }}>
+                        {inr(targetOptions[safeTargetSel].extra)}/mo
+                      </strong>{" "}
+                      extra.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Step 2 — Strategy suggestions */}
+        <section className="mb-8">
+          <AssistantBubble step="Step 2 · Pick an approach">
+            Based on a <strong style={{ fontFamily: mono }}>{inr(params.extraEMI)}/mo</strong> budget, here are four ways to
+            get there. I'd suggest the <strong>10% Monthly Boost</strong> — it fits neatly and saves the most for the
+            effort.
+          </AssistantBubble>
+
+          <div className="ml-0 mt-5 grid grid-cols-1 gap-4 sm:ml-[60px] sm:grid-cols-2">
+            {strategyCards.map((s) => (
+              <StrategyCard
+                key={s.id}
+                icon={s.icon}
+                title={s.title}
+                desc={s.description}
+                saveAmt={s.saved > 0 ? inrCompact(s.saved) : "—"}
+                saveTime={s.mSaved > 0 ? savedTimeLabel(s.mSaved) : "—"}
+                recommended={s.recommended}
+                selected={activeStrategy === s.id}
+                onClick={() => applyStrategy(s.id, s.res.extraEMI, s.res.yearlyLump)}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Step 3 — Your plan response */}
+        <section className="mb-8">
+          <AssistantBubble step="Step 3 · Your plan">
+            {hasSavings ? (
+              <>
+                Here's what that does to your loan. You'll be{" "}
+                <strong style={{ color: C.emerald }}>debt-free {savedTimeLabel(monthsSaved)} sooner</strong> and keep{" "}
+                <strong style={{ color: C.emerald }}>{inrCompact(interestSaved)}</strong> in interest in your pocket.
+              </>
+            ) : (
+              <>Add an extra monthly amount or pick a strategy above and I'll show you how much time and interest you'd save.</>
+            )}
+          </AssistantBubble>
+
+          <div className="ml-0 mt-5 sm:ml-[60px]">
+            {/* Hero outcome card */}
+            <div className="overflow-hidden rounded-2xl" style={{ border: `1.5px solid ${C.emerald}`, background: "#fff" }}>
+              <div
+                className="flex items-center justify-between px-6 py-5"
+                style={{ background: C.emeraldSoft, borderBottom: `1px solid #bbf7d0` }}
+              >
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="h-6 w-6" style={{ color: C.emerald }} />
+                  <div>
+                    <div className="text-[13px] font-semibold uppercase tracking-wide" style={{ color: C.emerald }}>
+                      New debt-free date
+                    </div>
+                    <div className="text-[28px] font-bold leading-tight" style={{ fontFamily: mono }}>
+                      {debtFreeDate}
+                    </div>
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-slate-100 text-center">
-                  <span className="text-xs font-semibold text-emerald-700">
-                    {monthsSaved > 0
-                      ? `${savedTimeLabel(monthsSaved)} sooner`
-                      : interestSaved > 0
-                      ? "Same timeline · lower interest"
-                      : "Set a plan to pull this in"}
+                <div className="text-right">
+                  <div className="text-[12px]" style={{ color: C.muted }}>
+                    was {baselineDebtFreeDate}
+                  </div>
+                  <div
+                    className="mt-1 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-bold text-white"
+                    style={{ background: C.emerald }}
+                  >
+                    <Clock3 className="h-3.5 w-3.5" />
+                    {monthsSaved > 0 ? `${savedTimeLabel(monthsSaved)} earlier` : "no change yet"}
+                  </div>
+                </div>
+              </div>
+
+              {/* Plan stats grid */}
+              <div className="grid grid-cols-2 gap-4 p-6 md:grid-cols-4">
+                <PlanStat
+                  icon={Wallet}
+                  label="Monthly EMI"
+                  value={inr(plan.baseEMI)}
+                  sub={params.extraEMI > 0 ? `+ ${inr(params.extraEMI)} extra` : "no extra yet"}
+                  accent={C.indigo}
+                />
+                <PlanStat
+                  icon={TrendingDown}
+                  label="Interest saved"
+                  value={inrCompact(interestSaved)}
+                  sub={`of ${inrCompact(baseline.totalInterest)} baseline`}
+                  accent={C.emerald}
+                />
+                <PlanStat
+                  icon={Clock3}
+                  label="Time saved"
+                  value={savedTimeLabel(monthsSaved)}
+                  sub={`${monthsSaved} months sooner`}
+                  accent={C.amber}
+                />
+                <PlanStat
+                  icon={Coins}
+                  label="New total interest"
+                  value={inrCompact(plan.totalInterest)}
+                  sub={`net principal ${inrCompact(plan.totalPrincipalBorrowed)}`}
+                  accent={C.rose}
+                />
+              </div>
+            </div>
+
+            {/* Projection */}
+            <div className="mt-4 rounded-2xl p-6" style={{ background: "#fff", border: `1px solid ${C.border}` }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[15px] font-semibold">Your payoff journey</div>
+                  <div className="text-[13px]" style={{ color: C.muted }}>
+                    Balance over time — standard vs your accelerated plan
+                  </div>
+                </div>
+                <div className="flex items-center gap-5 text-[12px]">
+                  <span className="flex items-center gap-2" style={{ color: C.muted }}>
+                    <span className="inline-block h-0.5 w-5" style={{ borderTop: `2px dashed ${C.muted}` }} />
+                    Standard
+                  </span>
+                  <span className="flex items-center gap-2" style={{ color: C.text }}>
+                    <span className="inline-block h-1 w-5 rounded" style={{ background: C.emerald }} />
+                    Your plan
                   </span>
                 </div>
               </div>
+              <div className="mt-5">
+                <PayoffChart baseline={baseline} plan={plan} principal={params.principal} startMonth={params.startMonth} />
+              </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Bento Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-6 auto-rows-min font-bold">
+            {/* Comparison strip */}
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl p-5" style={{ background: "#fff", border: `1px solid ${C.border}` }}>
+                <div className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: C.muted }}>
+                  Standard plan
+                </div>
+                <div className="mt-3 space-y-2.5">
+                  <CompareRow label="Total interest" value={inrCompact(baseline.totalInterest)} color={C.muted} />
+                  <CompareRow label="Total paid" value={inrCompact(baseline.totalPaid)} color={C.muted} />
+                  <CompareRow label="Debt-free" value={baselineDebtFreeDate} color={C.muted} />
+                </div>
+                <div className="mt-4 h-2 w-full overflow-hidden rounded-full" style={{ background: C.border }}>
+                  <div className="h-full rounded-full" style={{ width: "100%", background: C.muted }} />
+                </div>
+              </div>
+              <div className="rounded-2xl p-5" style={{ background: C.emeraldSoft, border: `1.5px solid ${C.emerald}` }}>
+                <div className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: C.emerald }}>
+                  Your accelerated plan
+                </div>
+                <div className="mt-3 space-y-2.5">
+                  <CompareRow label="Total interest" value={inrCompact(plan.totalInterest)} color={C.text} strong />
+                  <CompareRow label="Total paid" value={inrCompact(plan.totalPaid)} color={C.text} strong />
+                  <CompareRow label="Debt-free" value={debtFreeDate} color={C.text} strong />
+                </div>
+                <div className="mt-4 h-2 w-full overflow-hidden rounded-full" style={{ background: "#bbf7d0" }}>
+                  <div className="h-full rounded-full" style={{ width: `${accBarWidth}%`, background: C.emerald }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-          {/* Tile 1: Input Controls */}
-          <Card className="md:col-span-4 lg:col-span-3 lg:row-span-2 rounded-3xl shadow-sm border-slate-200 overflow-hidden flex flex-col">
-            <CardHeader className="bg-slate-50/50 pb-4 border-b border-slate-100">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-indigo-600" /> Loan Details
-              </CardTitle>
-              <CardDescription>Configure your loan parameters</CardDescription>
-            </CardHeader>
-            <CardContent className="p-5 space-y-5 flex-1 lg:max-h-[1100px] lg:overflow-y-auto">
+        {/* Step 4 — schedule (collapsed) */}
+        <section className="ml-0 sm:ml-[60px]">
+          <button
+            onClick={() => setScheduleOpen((v) => !v)}
+            className="flex w-full items-center justify-between rounded-2xl px-6 py-4 transition-all"
+            style={{ background: "#fff", border: `1px solid ${C.border}` }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: C.indigoSoft }}>
+                <CalendarRange className="h-4 w-4" style={{ color: C.indigo }} />
+              </div>
+              <div className="text-left">
+                <div className="text-[15px] font-semibold">View full repayment schedule</div>
+                <div className="text-[13px]" style={{ color: C.muted }}>
+                  Year-by-year breakdown of EMI, extra payments &amp; balance
+                </div>
+              </div>
+            </div>
+            {scheduleOpen ? (
+              <ChevronDown className="h-5 w-5" style={{ color: C.muted }} />
+            ) : (
+              <ChevronRight className="h-5 w-5" style={{ color: C.muted }} />
+            )}
+          </button>
 
-              {/* File upload + review */}
+          {scheduleOpen && (
+            <div className="mt-3 overflow-hidden rounded-2xl" style={{ background: "#fff", border: `1px solid ${C.border}` }}>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ background: "#f8fafc", borderBottom: `1px solid ${C.border}` }}>
+                      <th className="py-3 pl-5 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide" style={{ color: C.muted }}>
+                        Period
+                      </th>
+                      <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide" style={{ color: C.muted }}>
+                        EMI paid
+                      </th>
+                      <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide" style={{ color: C.muted }}>
+                        Extra
+                      </th>
+                      <th className="px-3 py-3 text-right text-[11px] font-semibold uppercase tracking-wide" style={{ color: C.muted }}>
+                        Interest
+                      </th>
+                      <th className="px-3 py-3 pr-5 text-right text-[11px] font-semibold uppercase tracking-wide" style={{ color: C.muted }}>
+                        Balance
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {plan.years.map((y) => (
+                      <ScheduleRow
+                        key={y.year}
+                        year={y.year}
+                        date={yearRange(params.startMonth, y.year, y.monthsInYear)}
+                        emi={inr(y.emiPaid)}
+                        extra={y.extraPaid > 0 ? `+${inr(y.extraPaid)}` : "—"}
+                        interest={inr(y.interest)}
+                        balance={inr(y.closing)}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="px-5 py-3 text-[12px]" style={{ color: C.muted, background: "#f8fafc" }}>
+                Year-by-year breakdown · loan fully repaid by{" "}
+                <strong style={{ color: C.emerald }}>{debtFreeDate}</strong>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Footer CTA */}
+        <div className="ml-0 mt-8 flex flex-wrap items-center gap-3 sm:ml-[60px]">
+          <div className="relative">
+            <Button
+              className="h-12 gap-2 rounded-xl px-6 text-[15px] font-semibold text-white hover:opacity-90"
+              style={{ background: C.indigo }}
+              onClick={() => setExportOpen((o) => !o)}
+              disabled={exporting}
+            >
+              {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Lock in this plan
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            {exportOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setExportOpen(false)} />
+                <div className="absolute bottom-full left-0 z-50 mb-2 w-60 rounded-xl border border-slate-100 bg-white p-1.5 shadow-xl">
+                  <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                    Save your plan
+                  </p>
+                  <button
+                    onClick={() => {
+                      exportPlannerCSV(exportMeta, baseline, plan);
+                      setExportOpen(false);
+                    }}
+                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
+                    <span className="flex-1">Download Excel/CSV report</span>
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-400">.csv</span>
+                  </button>
+                  <button
+                    onClick={handlePDF}
+                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    <FileText className="h-4 w-4 text-rose-500" />
+                    <span className="flex-1">Download PDF report</span>
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-400">.pdf</span>
+                  </button>
+                  <button
+                    onClick={exportJSON}
+                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    <FileCode className="h-4 w-4 text-amber-500" />
+                    <span className="flex-1">Download JSON data</span>
+                    <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-400">.json</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            className="h-12 gap-2 rounded-xl px-5 text-[15px]"
+            style={{ borderColor: C.border, color: C.text, background: "#fff" }}
+            onClick={() => setAdjustOpen((o) => !o)}
+          >
+            <Pencil className="h-4 w-4" />
+            Adjust loan details
+          </Button>
+        </div>
+
+        {/* Adjust loan details (collapsible editor + file import) */}
+        {adjustOpen && (
+          <div className="ml-0 mt-4 rounded-2xl p-6 sm:ml-[60px]" style={{ background: "#fff", border: `1px solid ${C.border}` }}>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-[15px] font-semibold">Loan details</div>
+              <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs" onClick={resetAll}>
+                <RefreshCw className="h-3.5 w-3.5" />
+                Reset
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-xs">Profile / borrower name</Label>
+                <Input value={profileName} onChange={(e) => setProfileName(e.target.value)} placeholder="e.g. Home Loan" />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Loan amount (₹)</Label>
+                <Input
+                  type="number"
+                  value={params.principal}
+                  onChange={(e) => setParams((p) => ({ ...p, principal: Math.max(0, Number(e.target.value)) }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Interest rate (%)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={params.rate}
+                  onChange={(e) => setParams((p) => ({ ...p, rate: Math.max(0, Number(e.target.value)) }))}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Tenure (years)</Label>
+                <Input
+                  type="number"
+                  value={Math.round(params.tenureMonths / 12)}
+                  onChange={(e) =>
+                    setParams((p) => ({ ...p, tenureMonths: Math.max(1, Math.round(Number(e.target.value) * 12)) }))
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Start month</Label>
+                <Input
+                  type="month"
+                  value={params.startMonth}
+                  onChange={(e) => setParams((p) => ({ ...p, startMonth: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
               <FileUploadZone onExtracted={handleExtracted} />
               {draft && (
                 <ExtractedReview
@@ -673,627 +1372,10 @@ export default function App() {
                   onDiscard={() => setDraft(null)}
                 />
               )}
-
-              {/* Profile name */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold text-slate-600">Profile Name</Label>
-                <Input
-                  className="h-9 rounded-xl text-sm"
-                  placeholder="e.g. Home Loan — SBI"
-                  value={profileName}
-                  onChange={(e) => setProfileName(e.target.value)}
-                />
-              </div>
-
-              {/* Principal */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label className="text-xs font-semibold text-slate-600">Loan Amount (₹)</Label>
-                  <Input
-                    className="w-32 h-7 text-xs text-right rounded-lg"
-                    type="number"
-                    value={params.principal}
-                    onChange={(e) => set("principal", Math.max(1000, Number(e.target.value)))}
-                  />
-                </div>
-                <Slider
-                  min={100000}
-                  max={10000000}
-                  step={50000}
-                  value={[params.principal]}
-                  onValueChange={([v]) => set("principal", v)}
-                  className="w-full [&_[role=slider]]:border-indigo-500 [&_[role=slider]]:bg-indigo-500"
-                />
-                <div className="flex justify-between text-[10px] text-slate-400">
-                  <span>₹1L</span><span>₹1Cr</span>
-                </div>
-              </div>
-
-              {/* Rate + Tenure */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-slate-600">Rate (% p.a.)</Label>
-                  <Input
-                    className="h-9 rounded-xl text-sm"
-                    type="number"
-                    step="0.1"
-                    value={params.rate}
-                    onChange={(e) => set("rate", Math.max(0, Math.min(50, Number(e.target.value))))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-slate-600">Tenure (Mo)</Label>
-                  <Input
-                    className="h-9 rounded-xl text-sm"
-                    type="number"
-                    value={params.tenureMonths}
-                    onChange={(e) => set("tenureMonths", Math.max(1, Math.min(360, Number(e.target.value))))}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Slider
-                  min={12}
-                  max={360}
-                  step={12}
-                  value={[params.tenureMonths]}
-                  onValueChange={([v]) => set("tenureMonths", v)}
-                  className="[&_[role=slider]]:border-indigo-500 [&_[role=slider]]:bg-indigo-500"
-                />
-                <div className="flex justify-between text-[10px] text-slate-400">
-                  <span>1 Yr</span><span className="font-semibold text-indigo-600">{tenureYears} Yrs</span><span>30 Yrs</span>
-                </div>
-              </div>
-
-              {/* Start month */}
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold text-slate-600">EMI Start Month</Label>
-                <Input
-                  className="h-9 rounded-xl text-sm"
-                  type="month"
-                  value={params.startMonth}
-                  onChange={(e) => set("startMonth", e.target.value)}
-                />
-              </div>
-
-              {/* Extra EMI */}
-              <div className="space-y-2 pt-3 border-t border-slate-100">
-                <div className="flex justify-between items-center">
-                  <Label className="text-xs font-semibold text-emerald-600">Extra EMI / month (₹)</Label>
-                  <Input
-                    className="w-28 h-7 text-xs text-right rounded-lg border-emerald-300 focus:border-emerald-500"
-                    type="number"
-                    min={0}
-                    value={params.extraEMI}
-                    onChange={(e) => { setActiveStrategy(null); set("extraEMI", Math.max(0, Number(e.target.value))); }}
-                  />
-                </div>
-                <Slider
-                  min={0}
-                  max={Math.max(1000, Math.round(plan.baseEMI))}
-                  step={500}
-                  value={[params.extraEMI]}
-                  onValueChange={([v]) => { setActiveStrategy(null); set("extraEMI", v); }}
-                  className="[&_[role=slider]]:border-emerald-500 [&_[role=slider]]:bg-emerald-500"
-                />
-                <p className="text-[11px] text-slate-500">
-                  Base EMI: <span className="font-medium text-slate-900">{formatRupees(plan.baseEMI)}</span>/month
-                </p>
-              </div>
-
-              {/* Top-up loan */}
-              <div className="pt-3 border-t border-slate-100 space-y-3">
-                <Label className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
-                  <Plus className="h-3.5 w-3.5 text-indigo-600" /> Top-Up Loan (optional)
-                </Label>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-slate-400">Amount</Label>
-                    <Input
-                      className="h-8 text-xs rounded-lg"
-                      type="number"
-                      min={0}
-                      value={topUp.amount}
-                      onChange={(e) => setTopUp((t) => ({ ...t, amount: Math.max(0, Number(e.target.value)) }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-slate-400">Rate %</Label>
-                    <Input
-                      className="h-8 text-xs rounded-lg"
-                      type="number"
-                      step="0.1"
-                      value={topUp.rate}
-                      onChange={(e) => setTopUp((t) => ({ ...t, rate: Math.max(0, Number(e.target.value)) }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-slate-400">Month</Label>
-                    <Input
-                      className="h-8 text-xs rounded-lg"
-                      type="number"
-                      min={1}
-                      max={params.tenureMonths}
-                      value={topUp.month}
-                      onChange={(e) => setTopUp((t) => ({ ...t, month: Math.max(1, Number(e.target.value)) }))}
-                    />
-                  </div>
-                </div>
-                {topUp.amount > 0 && (
-                  <p className="text-[11px] text-slate-500">
-                    ₹{topUp.amount.toLocaleString("en-IN")} added in month {topUp.month} — EMI recalculated.
-                  </p>
-                )}
-              </div>
-
-              {/* Reverse calculator */}
-              <div className="pt-3 border-t border-slate-100 space-y-3">
-                <Label className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
-                  <Calculator className="h-3.5 w-3.5 text-indigo-600" /> Reverse Calculator
-                </Label>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] text-slate-500">Target payoff in</span>
-                    <span className="text-xs font-semibold text-indigo-600">{targetYears} Years</span>
-                  </div>
-                  <Slider
-                    min={1}
-                    max={targetYearsMax}
-                    step={1}
-                    value={[Math.min(targetYears, targetYearsMax)]}
-                    onValueChange={([v]) => setTargetYears(v)}
-                    className="[&_[role=slider]]:border-indigo-500 [&_[role=slider]]:bg-indigo-500"
-                  />
-                </div>
-                <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-xs space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Required monthly payment</span>
-                    <span className="font-semibold">{formatRupees(reverse.requiredPayment)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Extra over base EMI</span>
-                    <span className="font-semibold text-emerald-700">+{formatRupees(reverse.requiredExtra)}</span>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full gap-2 text-xs rounded-xl"
-                  onClick={() => { setActiveStrategy(null); set("extraEMI", Math.round(reverse.requiredExtra)); }}
-                >
-                  <Zap className="h-3.5 w-3.5" />
-                  Apply to Calculator
-                </Button>
-              </div>
-            </CardContent>
-            <CardFooter className="p-4 border-t border-slate-100 bg-slate-50/50">
-              <Button variant="ghost" className="w-full text-slate-500 h-9 rounded-xl gap-2" onClick={resetAll}>
-                <RefreshCw className="h-3.5 w-3.5" /> Reset All
-              </Button>
-            </CardFooter>
-          </Card>
-
-          {/* Tile 2: Summary Metrics */}
-          <div className="md:col-span-4 lg:col-span-9 grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-min">
-            <Card className="rounded-3xl shadow-sm border-emerald-200 bg-emerald-50/50">
-              <CardContent className="p-5">
-                <p className="text-sm font-medium text-emerald-800 mb-1 flex items-center gap-1.5">
-                  <PiggyBank className="h-4 w-4" /> Interest Saved
-                </p>
-                <p className="text-2xl font-bold text-emerald-600">{compactRupees(interestSaved)}</p>
-                <p className="text-xs text-emerald-600/80 mt-1">
-                  {interestSaved > 0 ? `≈${interestSavingPct.toFixed(1)}% of standard interest` : "Add prepayments to save"}
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="rounded-3xl shadow-sm border-emerald-200 bg-emerald-50/50">
-              <CardContent className="p-5">
-                <p className="text-sm font-medium text-emerald-800 mb-1 flex items-center gap-1.5">
-                  <CalendarRange className="h-4 w-4" /> Tenure Saved
-                </p>
-                <p className="text-2xl font-bold text-emerald-600">{monthsSaved > 0 ? savedTimeLabel(monthsSaved) : "0 Mo"}</p>
-                <p className="text-xs text-emerald-600/80 mt-1">
-                  {monthsSaved > 0 ? `Reduced by ${timeSavingPct.toFixed(1)}%` : "On schedule"}
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="rounded-3xl shadow-sm border-slate-200">
-              <CardContent className="p-5">
-                <p className="text-sm font-medium text-slate-500 mb-1 flex items-center gap-1.5">
-                  <Coins className="h-4 w-4" /> Net Principal
-                </p>
-                <p className="text-2xl font-bold text-slate-900">{compactRupees(netPrincipal)}</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  {disbursedTopUp > 0 ? `incl. +${compactRupees(disbursedTopUp)} top-up` : "No active top-up"}
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="rounded-3xl shadow-sm border-slate-200">
-              <CardContent className="p-5">
-                <p className="text-sm font-medium text-slate-500 mb-1 flex items-center gap-1.5">
-                  <BarChart3 className="h-4 w-4" /> Monthly EMI
-                </p>
-                <p className="text-2xl font-bold text-slate-900">{compactRupees(plan.baseEMI)}</p>
-                {params.extraEMI > 0 && (
-                  <p className="text-xs text-emerald-600 font-medium mt-1">+{compactRupees(params.extraEMI)} extra</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* PDF report bar (full width within summary block) */}
-            <div className="col-span-2 md:col-span-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 rounded-2xl bg-indigo-50/60 border border-indigo-100 px-5 py-4">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
-                  <FileText className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-slate-800 text-sm">Print-Ready Client PDF Report</p>
-                  <p className="text-[11px] text-slate-500">Includes payoff roadmap and comparative graphs</p>
-                </div>
-              </div>
-              <Button
-                size="sm"
-                className="gap-2 bg-indigo-600 hover:bg-slate-900 text-white shrink-0 w-full sm:w-auto rounded-xl"
-                onClick={handlePDF}
-                disabled={exporting}
-              >
-                {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                Download PDF Summary
-              </Button>
             </div>
           </div>
-
-          {/* Tile 3: Main Chart */}
-          <Card className="md:col-span-4 lg:col-span-5 rounded-3xl shadow-sm border-slate-200 flex flex-col">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <CardTitle className="text-base font-bold">Projection</CardTitle>
-              <div className="flex bg-slate-100 p-1 rounded-lg">
-                <button
-                  onClick={() => setChartTab("balance")}
-                  className={`px-3 py-1 text-xs rounded-md font-medium transition-colors flex items-center gap-1 ${chartTab === "balance" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-900"}`}
-                >
-                  <TrendingDown className="h-3 w-3" /> Balance
-                </button>
-                <button
-                  onClick={() => setChartTab("costs")}
-                  className={`px-3 py-1 text-xs rounded-md font-medium transition-colors flex items-center gap-1 ${chartTab === "costs" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-900"}`}
-                >
-                  <BarChart3 className="h-3 w-3" /> Costs
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-5 flex-1 min-h-[320px] text-[17px]">
-              {chartTab === "balance" ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={balanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorStandard" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorAccelerated" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#64748b" }} />
-                    <YAxis tickFormatter={compactRupees} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#64748b" }} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: "12px" }} />
-                    <Area name="Standard Balance" type="monotone" dataKey="Standard Balance" stroke="#f43f5e" fillOpacity={1} fill="url(#colorStandard)" strokeWidth={2} />
-                    <Area name="Accelerated Balance" type="monotone" dataKey="Accelerated Balance" stroke="#10b981" fillOpacity={1} fill="url(#colorAccelerated)" strokeWidth={2.5} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={costData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b" }} />
-                    <YAxis tickFormatter={compactRupees} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#64748b" }} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Legend iconType="circle" wrapperStyle={{ fontSize: "12px" }} />
-                    <Bar name="Principal Loan Capital" dataKey="Principal" stackId="a" fill="#6366f1" radius={[0, 0, 4, 4]} />
-                    <Bar name="Total Interest Cost" dataKey="Interest" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Tile 4: Strategies Grid */}
-          <Card className="md:col-span-4 lg:col-span-4 rounded-3xl shadow-sm border-slate-200 bg-white flex flex-col">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-bold flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-indigo-600" /> Smart Payoff Leverage Strategies
-              </CardTitle>
-              <CardDescription className="text-xs">Select any strategy below to instantly load it into the prepayment dashboard</CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 flex-1">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {strategyCards.map((strat) => {
-                  const Icon = strat.icon;
-                  const isActive = activeStrategy === strat.id;
-                  return (
-                    <div
-                      key={strat.id}
-                      className={`rounded-2xl p-4 border bg-gradient-to-br ${strat.card} flex flex-col transition-all ${
-                        isActive ? "ring-2 ring-indigo-500 ring-offset-1" : "hover:shadow-md"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <Icon className={`w-4 h-4 ${strat.iconColor}`} />
-                        <h4 className="font-semibold text-sm text-slate-900 leading-tight">{strat.title}</h4>
-                      </div>
-                      <p className="text-xs text-slate-700 leading-snug mb-1 flex-1">{strat.description}</p>
-                      <p className="text-[11px] font-semibold text-emerald-700 mb-1">
-                        {strat.saved > 0
-                          ? `Saves ${compactRupees(strat.saved)} & ${savedTimeLabel(strat.mSaved)}`
-                          : "Loads this plan"}
-                      </p>
-                      <p className="text-[10px] text-slate-500 mb-3">
-                        {strat.res.extraEMI > 0 && `+${compactRupees(strat.res.extraEMI)}/mo`}
-                        {strat.res.extraEMI > 0 && strat.res.yearlyLump > 0 && " · "}
-                        {strat.res.yearlyLump > 0 && `${compactRupees(strat.res.yearlyLump)}/yr`}
-                      </p>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className={`w-full h-8 text-[11px] rounded-lg shadow-sm ${
-                          isActive ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600" : "bg-white/50 hover:bg-white border-white/40"
-                        }`}
-                        onClick={() => applyStrategy(strat.id, strat.res.extraEMI, strat.res.yearlyLump)}
-                      >
-                        {isActive ? "Strategy Active!" : "Apply to Calculator"}
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-4 bg-slate-50 rounded-xl p-3 border border-slate-100 flex items-start gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
-                  <TrendingUp className="w-4 h-4 text-slate-600" />
-                </div>
-                <p className="text-[10px] text-slate-500 leading-relaxed">
-                  <strong className="text-slate-700">The Prepayment Acceleration Magic</strong> — In the early years of a loan, 70–80% of your EMI goes strictly to interest while principal decreases slowly. Any extra prepayment directly reduces the core principal — slicing years off your loan.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Tile 5/6: Donut Charts */}
-          <Card className="md:col-span-4 lg:col-span-3 rounded-3xl shadow-sm border-slate-200 flex flex-col">
-            <CardHeader className="pb-0 text-center">
-              <CardTitle className="text-sm font-bold">Comparison Breakdown</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 flex-1 flex flex-col gap-4">
-              <div className="flex-1 min-h-[150px] flex flex-col items-center">
-                <p className="text-xs font-medium text-slate-500 mb-1 text-center">Traditional Bank Contract</p>
-                <div className="h-28 w-full relative">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={pieStandard} cx="50%" cy="50%" innerRadius={30} outerRadius={45} stroke="none" dataKey="value">
-                        {pieStandard.map((entry, index) => (
-                          <Cell key={`cell-std-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(val: number) => formatRupees(val)} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <p className="text-[10px] text-slate-400 font-medium">Total: {formatRupees(baseline.totalPrincipalBorrowed + baseline.totalInterest)}</p>
-              </div>
-              <div className="w-full h-px bg-slate-100" />
-              <div className="flex-1 min-h-[150px] flex flex-col items-center">
-                <p className="text-xs font-medium text-emerald-600 mb-1 text-center flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Accelerated Prepayout
-                </p>
-                <div className="h-28 w-full relative">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={pieAccelerated} cx="50%" cy="50%" innerRadius={30} outerRadius={45} stroke="none" dataKey="value">
-                        {pieAccelerated.map((entry, index) => (
-                          <Cell key={`cell-acc-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(val: number) => formatRupees(val)} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <p className="text-[10px] text-emerald-600 font-medium">Total: {formatRupees(plan.totalPaid)}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Full-width Amortization Ledger */}
-        <Card className="rounded-3xl shadow-sm border-slate-200">
-          <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-5 border-b border-slate-100">
-            <div>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="w-5 h-5 text-indigo-600" />
-                Detailed Amortization &amp; Repayment Ledger
-              </CardTitle>
-              <CardDescription className="text-xs mt-0.5">
-                {viewMode === "yearly"
-                  ? "Edit the “Extra Prepaid” amount for any year — the schedule recalculates instantly."
-                  : "Month-by-month breakdown of every payment."}
-              </CardDescription>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  placeholder={viewMode === "yearly" ? "Search years…" : "Search months…"}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 pr-3 h-9 w-44 rounded-xl text-sm bg-slate-50 border border-transparent focus:outline-none focus-visible:border-indigo-500"
-                />
-              </div>
-              <div className="flex bg-slate-100 p-1 rounded-lg">
-                <button
-                  onClick={() => { setViewMode("yearly"); setSearch(""); }}
-                  className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${viewMode === "yearly" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-900"}`}
-                >
-                  Yearly
-                </button>
-                <button
-                  onClick={() => { setViewMode("monthly"); setSearch(""); }}
-                  className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${viewMode === "monthly" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-900"}`}
-                >
-                  Monthly
-                </button>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-9 gap-1.5 rounded-xl"
-                onClick={() => setTableExpanded((o) => !o)}
-              >
-                {tableExpanded ? <EyeOff className="h-3.5 w-3.5 text-indigo-500" /> : <ChevronDown className="h-3.5 w-3.5 text-indigo-500" />}
-                {tableExpanded ? "Collapse" : "Expand"}
-              </Button>
-              <div className="relative">
-                <Button
-                  size="sm"
-                  className="h-9 gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
-                  onClick={() => setExportOpen((o) => !o)}
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  Export Report
-                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${exportOpen ? "rotate-180" : ""}`} />
-                </Button>
-                {exportOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setExportOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 p-1.5 z-50">
-                      <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 px-3 py-1.5">Select format</p>
-                      <button
-                        onClick={() => { exportPlannerCSV(exportMeta, baseline, plan); setExportOpen(false); }}
-                        className="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-2.5 cursor-pointer"
-                      >
-                        <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
-                        <span className="flex-1">Download Excel/CSV Report</span>
-                        <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded font-mono">.csv</span>
-                      </button>
-                      <button
-                        onClick={() => { handlePDF(); setExportOpen(false); }}
-                        className="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-2.5 cursor-pointer"
-                      >
-                        <FileText className="h-4 w-4 text-rose-500" />
-                        <span className="flex-1">Download PDF Report</span>
-                        <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded font-mono">.pdf</span>
-                      </button>
-                      <button
-                        onClick={exportJSON}
-                        className="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-2.5 cursor-pointer"
-                      >
-                        <FileCode className="h-4 w-4 text-amber-500" />
-                        <span className="flex-1">Download JSON Data</span>
-                        <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded font-mono">.json</span>
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-
-          {tableExpanded && (
-            <div className="p-5">
-              <div className="flex justify-end mb-3">
-                <span className="text-[11px] text-slate-400 font-medium">
-                  {viewMode === "yearly" ? `${plan.years.length} year(s)` : `${plan.months.length} month(s)`}
-                </span>
-              </div>
-              <div className="overflow-x-auto">
-                {viewMode === "yearly" ? (
-                  <table className="w-full text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-indigo-50/60">
-                        {["Year", "Opening Balance", "EMI Paid", "Extra Prepaid (edit)", "Interest", "Principal", "Closing Balance"].map((h) => (
-                          <th key={h} className="px-3 py-3 text-right font-semibold border-b border-slate-200 whitespace-nowrap first:text-left text-slate-500 uppercase tracking-wide">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {yearlyRows.map((y) => (
-                        <tr key={y.year} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-3 py-2 text-left font-medium border-b border-slate-100 text-slate-900">Year {y.year}</td>
-                          <td className="px-3 py-2 text-right border-b border-slate-100 text-slate-600">{formatRupees(y.opening)}</td>
-                          <td className="px-3 py-2 text-right border-b border-slate-100 text-slate-600">{formatRupees(y.emiPaid)}</td>
-                          <td className="px-3 py-2 text-right border-b border-slate-100">
-                            <Input
-                              className="h-7 w-28 ml-auto text-xs text-right bg-emerald-50/50 border-emerald-100 text-emerald-700 font-medium focus-visible:ring-emerald-500"
-                              type="number"
-                              min={0}
-                              placeholder="0"
-                              value={yearLumps[y.year] ?? ""}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                setActiveStrategy(null);
-                                setYearLumps((prev) => {
-                                  const next = { ...prev };
-                                  if (!v || Number(v) <= 0) delete next[y.year];
-                                  else next[y.year] = Number(v);
-                                  return next;
-                                });
-                              }}
-                            />
-                          </td>
-                          <td className="px-3 py-2 text-right text-amber-700 border-b border-slate-100">{formatRupees(y.interest)}</td>
-                          <td className="px-3 py-2 text-right text-indigo-600 border-b border-slate-100">{formatRupees(y.principal)}</td>
-                          <td className="px-3 py-2 text-right font-medium border-b border-slate-100">{formatRupees(y.closing)}</td>
-                        </tr>
-                      ))}
-                      {yearlyRows.length === 0 && (
-                        <tr><td colSpan={7} className="px-3 py-6 text-center text-slate-400">No matching rows</td></tr>
-                      )}
-                    </tbody>
-                    <tfoot>
-                      <tr className="bg-slate-50 font-semibold">
-                        <td className="px-3 py-3 text-left">Total</td>
-                        <td className="px-3 py-3 text-right">—</td>
-                        <td className="px-3 py-3 text-right">{formatRupees(plan.years.reduce((s, y) => s + y.emiPaid, 0))}</td>
-                        <td className="px-3 py-3 text-right">{formatRupees(plan.years.reduce((s, y) => s + y.extraPaid, 0))}</td>
-                        <td className="px-3 py-3 text-right text-amber-700">{formatRupees(plan.totalInterest)}</td>
-                        <td className="px-3 py-3 text-right text-indigo-600">{formatRupees(plan.totalPrincipalBorrowed)}</td>
-                        <td className="px-3 py-3 text-right">₹0</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                ) : (
-                  <table className="w-full text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-indigo-50/60">
-                        {["Month", "Opening", "EMI", "Extra", "Interest", "Principal", "Closing"].map((h) => (
-                          <th key={h} className="px-3 py-3 text-right font-semibold border-b border-slate-200 whitespace-nowrap first:text-left text-slate-500 uppercase tracking-wide">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {monthlyRows.map((m) => (
-                        <tr key={m.month} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-3 py-2 text-left font-medium border-b border-slate-100 whitespace-nowrap text-slate-900">{m.label}</td>
-                          <td className="px-3 py-2 text-right border-b border-slate-100 text-slate-600">{formatRupees(m.opening)}</td>
-                          <td className="px-3 py-2 text-right border-b border-slate-100 text-slate-600">{formatRupees(m.emi)}</td>
-                          <td className="px-3 py-2 text-right text-emerald-700 border-b border-slate-100">{m.extra > 0 ? formatRupees(m.extra) : "—"}</td>
-                          <td className="px-3 py-2 text-right text-amber-700 border-b border-slate-100">{formatRupees(m.interest)}</td>
-                          <td className="px-3 py-2 text-right text-indigo-600 border-b border-slate-100">{formatRupees(m.principal)}</td>
-                          <td className="px-3 py-2 text-right font-medium border-b border-slate-100">{formatRupees(m.closing)}</td>
-                        </tr>
-                      ))}
-                      {monthlyRows.length === 0 && (
-                        <tr><td colSpan={7} className="px-3 py-6 text-center text-slate-400">No matching rows</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
-          )}
-        </Card>
-      </div>
+        )}
+      </main>
     </div>
   );
 }

@@ -568,9 +568,9 @@ export function Planner() {
             <div className="h-9 w-9 rounded-lg bg-indigo-100 flex items-center justify-center">
               <Target className="h-5 w-5 text-indigo-600" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">Smart Loan Saver</h1>
+            <h1 className="font-bold tracking-tight text-[30px]">Smart Strategy</h1>
           </div>
-          <p className="text-sm text-slate-500 ml-12">
+          <p className="text-slate-500 ml-12 text-[16px]">
             Plan prepayments, compare strategies, and see exactly how much interest and time you save
           </p>
         </div>
@@ -586,7 +586,6 @@ export function Planner() {
           </Button>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── Left Panel: Inputs ── */}
         <div className="space-y-5">

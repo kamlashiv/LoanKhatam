@@ -23,15 +23,18 @@ import {
 } from "@/lib/strategy-engine";
 import { useProfile, totalIncome, totalExpenses } from "@/lib/profile";
 import { useDerivedLoans } from "@/lib/loan-derive";
+import { useGetDashboardSummary } from "@workspace/api-client-react";
 import { SurplusCaution } from "@/components/budget-warnings";
 
 const STORAGE_KEY = "loan-tracker:emi-invest";
 
-// monthlyIncome / monthlyExpenses are intentionally excluded: they are owned by
-// the global financial profile (single source of truth), not this component.
+// Several fields are intentionally excluded because they are owned elsewhere
+// (single source of truth), not by this component's local scenario state:
+//   - monthlyIncome / monthlyExpenses  -> the global financial profile
+//   - totalLoanAmount / remainingBalance / currentEmi -> live loan data
+//     (same figures the dashboard shows: total lent, outstanding, monthly EMI)
 const NUMERIC_KEYS: (keyof EmiInvestInputs)[] = [
-  "totalLoanAmount", "remainingBalance", "annualRate", "currentEmi",
-  "remainingTenureMonths", "assumedReturnPct", "investPct", "customPct",
+  "annualRate", "remainingTenureMonths", "assumedReturnPct", "investPct", "customPct",
 ];
 
 function sanitize(parsed: unknown): EmiInvestInputs {
@@ -55,9 +58,28 @@ function loadInputs(): EmiInvestInputs {
   return { ...EMPTY_EMI_INVEST };
 }
 
+/**
+ * Persist ONLY the keys this component still owns (the scenario knobs in
+ * NUMERIC_KEYS), merged over whatever is already stored. Spreading the full
+ * `inputs` would write `0` for keys owned elsewhere — monthlyIncome/Expenses
+ * (the global profile) and the loan figures (live loans) — clobbering legacy
+ * values the profile migration still needs to read. Pure + exported for tests.
+ */
+export function mergeOwnedInputs(
+  existing: Record<string, unknown>,
+  inputs: EmiInvestInputs,
+): Record<string, unknown> {
+  const owned: Record<string, number> = {};
+  for (const k of NUMERIC_KEYS) owned[k] = inputs[k];
+  return { ...existing, ...owned };
+}
+
 function NumField({
-  label, value, onChange, suffix, placeholder = "0",
-}: { label: string; value: number; onChange: (n: number) => void; suffix?: string; placeholder?: string }) {
+  label, value, onChange, suffix, placeholder = "0", readOnly = false, hint,
+}: {
+  label: string; value: number; onChange?: (n: number) => void;
+  suffix?: string; placeholder?: string; readOnly?: boolean; hint?: string;
+}) {
   return (
     <div className="space-y-1">
       <Label className="text-xs text-slate-500 dark:text-slate-400">{label}</Label>
@@ -66,15 +88,19 @@ function NumField({
           type="number"
           min={0}
           inputMode="numeric"
-          className="h-9 text-sm"
-          value={value === 0 ? "" : value}
+          readOnly={readOnly}
+          aria-readonly={readOnly || undefined}
+          tabIndex={readOnly ? -1 : undefined}
+          className={`h-9 text-sm ${readOnly ? "bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 cursor-default focus-visible:ring-0" : ""}`}
+          value={readOnly ? value : value === 0 ? "" : value}
           placeholder={placeholder}
-          onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
+          onChange={readOnly ? undefined : (e) => onChange?.(Math.max(0, Number(e.target.value) || 0))}
         />
         {suffix && (
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">{suffix}</span>
         )}
       </div>
+      {hint && <p className="text-[10px] text-slate-400 dark:text-slate-500">{hint}</p>}
     </div>
   );
 }
@@ -98,7 +124,16 @@ export function EmiInvestmentAnalyzer() {
   const { isDark } = useTheme();
   const { profile, update } = useProfile();
   const derived = useDerivedLoans();
+  const { data: summary } = useGetDashboardSummary();
   const [inputs, setInputs] = useState<EmiInvestInputs>(loadInputs);
+
+  // Loan figures are read live from the real loans — the exact values shown on
+  // the dashboard (total lent, outstanding, monthly EMI). They are connected,
+  // not manually entered, so the analyzer can never drift from the ledger.
+  const connectedTotalLoan = Math.round(summary?.totalLent ?? 0);
+  const connectedBalance = Math.round(summary?.totalOutstanding ?? 0);
+  const connectedEmi = Math.round(derived.aggregateEmi);
+  const hasLoanData = connectedTotalLoan > 0 || connectedBalance > 0 || connectedEmi > 0;
 
   useEffect(() => {
     try {
@@ -111,7 +146,7 @@ export function EmiInvestmentAnalyzer() {
         const parsed = JSON.parse(raw);
         if (parsed && typeof parsed === "object") existing = parsed as Record<string, unknown>;
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, ...inputs }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergeOwnedInputs(existing, inputs)));
     } catch {
       /* ignore quota / parse errors */
     }
@@ -147,8 +182,15 @@ export function EmiInvestmentAnalyzer() {
   }, []);
 
   const analyzeInputs = useMemo<EmiInvestInputs>(
-    () => ({ ...inputs, monthlyIncome: profIncome, monthlyExpenses: profExpenses }),
-    [inputs, profIncome, profExpenses],
+    () => ({
+      ...inputs,
+      totalLoanAmount: connectedTotalLoan,
+      remainingBalance: connectedBalance,
+      currentEmi: connectedEmi,
+      monthlyIncome: profIncome,
+      monthlyExpenses: profExpenses,
+    }),
+    [inputs, connectedTotalLoan, connectedBalance, connectedEmi, profIncome, profExpenses],
   );
   const result = useMemo(() => analyzeEmiInvestment(analyzeInputs), [analyzeInputs]);
 
@@ -180,10 +222,10 @@ export function EmiInvestmentAnalyzer() {
         {/* Inputs */}
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <NumField label="Total Loan Amount" value={inputs.totalLoanAmount} onChange={(n) => set("totalLoanAmount", n)} />
-            <NumField label="Remaining Balance" value={inputs.remainingBalance} onChange={(n) => set("remainingBalance", n)} />
+            <NumField label="Total Loan Amount" value={connectedTotalLoan} readOnly hint="From your loans" />
+            <NumField label="Remaining Balance" value={connectedBalance} readOnly hint="From your loans" />
             <NumField label="Interest Rate" value={inputs.annualRate} onChange={(n) => set("annualRate", n)} suffix="%" />
-            <NumField label="Current EMI" value={inputs.currentEmi} onChange={(n) => set("currentEmi", n)} />
+            <NumField label="Current EMI" value={connectedEmi} readOnly hint="From your loans" />
             <NumField label="Remaining Tenure" value={inputs.remainingTenureMonths} onChange={(n) => set("remainingTenureMonths", n)} suffix="mo" />
             <NumField label="Monthly Income" value={profIncome} onChange={setIncome} />
             <NumField label="Monthly Expenses" value={profExpenses} onChange={setExpenses} />
@@ -240,7 +282,9 @@ export function EmiInvestmentAnalyzer() {
           <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 py-12 flex flex-col items-center text-center gap-2">
             <Scale className="h-8 w-8 text-slate-300 dark:text-slate-600" />
             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
-              Enter your current EMI and remaining balance (or tenure) to compare paying down debt against investing.
+              {hasLoanData
+                ? "Set an interest rate and remaining tenure to compare paying down debt against investing."
+                : "Add a loan to populate your balance and EMI here — these stay in sync with your dashboard — then compare paying down debt against investing."}
             </p>
           </div>
         ) : (

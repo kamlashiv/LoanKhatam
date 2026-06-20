@@ -1274,6 +1274,7 @@ export function Planner() {
                     </span>
                     <input
                       type="text"
+                      aria-label={viewMode === "yearly" ? "Search amortization schedule by year" : "Search amortization schedule by month"}
                       placeholder={viewMode === "yearly" ? "Search years (e.g. Year 2)…" : "Search months (e.g. Jul 2028)…"}
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
@@ -1309,6 +1310,7 @@ export function Planner() {
                                 type="number"
                                 min={0}
                                 placeholder="0"
+                                aria-label={`Extra prepaid amount for Year ${y.year}`}
                                 value={yearLumps[y.year] ?? ""}
                                 onChange={(e) => {
                                   const v = e.target.value;

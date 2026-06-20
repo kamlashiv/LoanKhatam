@@ -10,7 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Target, Download, Upload, TrendingUp, Award, PiggyBank, Flame, Search, ChevronDown, CheckCircle2, ChevronRight, FileText
+  Target, Download, Upload, TrendingUp, Award, PiggyBank, Flame, Search, ChevronDown, CheckCircle2, ChevronRight, FileText, Sparkles
 } from "lucide-react";
 
 function formatRupees(val: number) {
@@ -157,6 +157,41 @@ export function BentoDashboard() {
             <Download className="w-4 h-4" /> Export CSV
           </Button>
         </header>
+
+        {/* Impact Summary */}
+        <Card className="rounded-3xl border-0 shadow-sm overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-600 to-emerald-600 text-white">
+          <CardContent className="p-6 md:p-8">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="flex items-start gap-4 max-w-xl">
+                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-white/70 mb-1">Your Impact Summary</p>
+                  <p className="text-lg md:text-xl font-bold leading-snug">
+                    Paying {formatRupees(extraEmi)} extra each month saves you{" "}
+                    <span className="text-emerald-200">{formatRupees(intSaved)}</span> in interest and clears your loan{" "}
+                    <span className="text-emerald-200">{tenureSavedYrs} years sooner</span>.
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4 lg:gap-8 shrink-0">
+                <div className="text-center lg:text-left">
+                  <p className="text-2xl md:text-3xl font-bold tracking-tight">{compactRupees(intSaved)}</p>
+                  <p className="text-xs text-white/70 mt-1">Interest Saved</p>
+                </div>
+                <div className="text-center lg:text-left lg:border-l lg:border-white/20 lg:pl-8">
+                  <p className="text-2xl md:text-3xl font-bold tracking-tight">{tenureSavedYrs} Yrs</p>
+                  <p className="text-xs text-white/70 mt-1">Debt-Free Sooner</p>
+                </div>
+                <div className="text-center lg:text-left lg:border-l lg:border-white/20 lg:pl-8">
+                  <p className="text-2xl md:text-3xl font-bold tracking-tight">{Math.round((intSaved / stdInterest) * 100)}%</p>
+                  <p className="text-xs text-white/70 mt-1">Less Interest</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-6 auto-rows-min">

@@ -1,0 +1,26 @@
+.cockpit-theme {
+  --cockpit-bg: 240 5% 96%;
+  --cockpit-card: 0 0% 100%;
+  --cockpit-border: 240 5% 90%;
+  --cockpit-primary: 221 83% 53%;
+  --cockpit-success: 152 69% 31%;
+  --cockpit-muted: 240 5% 65%;
+  --cockpit-text: 240 10% 15%;
+}
+
+.cockpit-strategy-card {
+  transition: all 0.2s ease;
+}
+.cockpit-strategy-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(99, 102, 241, 0.1);
+  border-color: #a5b4fc;
+}
+.cockpit-strategy-card:active {
+  transform: translateY(0);
+}
+
+.font-mono-numbers {
+  font-family: "Space Mono", monospace;
+  font-variant-numeric: tabular-nums;
+}

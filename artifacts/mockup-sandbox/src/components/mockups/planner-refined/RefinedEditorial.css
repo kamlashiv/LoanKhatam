@@ -1,0 +1,57 @@
+.refined-editorial-root {
+  --color-accent: #0f172a; /* Slate 900 */
+  --color-accent-soft: #f8fafc; /* Slate 50 */
+  --color-success: #059669; /* Emerald 600 */
+  --color-surface: #ffffff;
+  --color-bg: #fafafa;
+  --color-border: #e2e8f0;
+  
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--color-bg);
+  color: #1e293b; /* Slate 800 */
+}
+
+.refined-editorial-root .font-mono {
+  font-family: 'Space Mono', monospace;
+}
+
+.refined-editorial-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.02);
+  border-radius: 16px;
+}
+
+.refined-editorial-input {
+  background: var(--color-accent-soft);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.refined-editorial-input:focus-within {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.05);
+}
+
+.editorial-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: #64748b;
+}
+
+/* Custom scrollbar for table */
+.editorial-scroll::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.editorial-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.editorial-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}

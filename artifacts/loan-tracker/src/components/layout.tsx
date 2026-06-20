@@ -1,9 +1,8 @@
 import { Link, useLocation } from "wouter";
-import { useClerk, useUser } from "@clerk/react";
+import { useClerk } from "@clerk/react";
 import { cn } from "@/lib/utils";
-import { Wallet, LayoutDashboard, List, LogOut, Plus, Menu } from "lucide-react";
+import { Wallet, LayoutDashboard, List, LogOut, Plus, Menu, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -14,6 +13,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/loans", label: "All Loans", icon: List },
+    { href: "/amortization", label: "Amortization", icon: BarChart3 },
   ];
 
   const handleLogout = () => {

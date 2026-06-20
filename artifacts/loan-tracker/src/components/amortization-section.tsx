@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   PieChart,
   Pie,
@@ -9,15 +9,19 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { TrendingDown, Download, FileText, FileSpreadsheet } from "lucide-react";
+import { TrendingDown } from "lucide-react";
 import {
   calculateAmortization,
   calculateSavings,
-  currentScheduleMonth,
+  calculateBankStyleSchedule,
 } from "@/lib/amortization";
 import { formatRupees, formatDate } from "@/lib/loan-utils";
-import { exportToCSV, exportToPDF } from "@/lib/export";
+import { BankAmortizationTable } from "@/components/bank-amortization-table";
+
+interface Payment {
+  paymentDate: string;
+  amount: number;
+}
 
 interface Props {
   borrowerName: string;
@@ -27,6 +31,7 @@ interface Props {
   dueDate: string;
   totalPaid: number;
   remainingAmount: number;
+  payments?: Payment[];
 }
 
 const COLORS = {
@@ -65,10 +70,8 @@ export function AmortizationSection({
   dueDate,
   totalPaid,
   remainingAmount,
+  payments = [],
 }: Props) {
-  const [showAll, setShowAll] = useState(false);
-  const [pdfLoading, setPdfLoading] = useState(false);
-
   const amort = useMemo(
     () => calculateAmortization(principalAmount, interestRate, startDate, dueDate),
     [principalAmount, interestRate, startDate, dueDate]
@@ -87,7 +90,10 @@ export function AmortizationSection({
     [principalAmount, interestRate, startDate, dueDate, totalPaid, remainingAmount]
   );
 
-  const currentMonth = useMemo(() => currentScheduleMonth(startDate), [startDate]);
+  const bankResult = useMemo(
+    () => calculateBankStyleSchedule(principalAmount, interestRate, startDate, dueDate, payments),
+    [principalAmount, interestRate, startDate, dueDate, payments]
+  );
 
   const pieData = useMemo(() => {
     const data = [
@@ -109,8 +115,6 @@ export function AmortizationSection({
     ],
     [principalAmount, amort.totalInterest]
   );
-
-  const displayedRows = showAll ? amort.schedule : amort.schedule.slice(0, 12);
 
   if (amort.tenureMonths === 0) {
     return (
@@ -259,114 +263,24 @@ export function AmortizationSection({
         </Card>
       </div>
 
-      {/* Amortization Schedule Table */}
-      <Card className="border-border shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <CardTitle className="text-base font-bold">Amortization Schedule</CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                हर महीने कितना मूलधन और कितना ब्याज कटेगा — {amort.tenureMonths} महीने की योजना
-              </p>
-            </div>
-            <div className="flex gap-2 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 text-xs"
-                onClick={() =>
-                  exportToCSV(borrowerName, amort, savings, principalAmount, interestRate, startDate, dueDate)
-                }
-              >
-                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-700" />
-                CSV Download
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 text-xs"
-                disabled={pdfLoading}
-                onClick={async () => {
-                  setPdfLoading(true);
-                  try {
-                    await exportToPDF(borrowerName, amort, savings, principalAmount, interestRate, startDate, dueDate);
-                  } finally {
-                    setPdfLoading(false);
-                  }
-                }}
-              >
-                <FileText className="h-3.5 w-3.5 text-red-600" />
-                {pdfLoading ? "बन रहा है..." : "PDF Download"}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/40">
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground">माह</th>
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground">तारीख</th>
-                  <th className="text-right px-4 py-3 font-semibold text-muted-foreground">शुरू बैलेंस</th>
-                  <th className="text-right px-4 py-3 font-semibold text-muted-foreground">EMI</th>
-                  <th className="text-right px-4 py-3 font-semibold text-amber-700">ब्याज</th>
-                  <th className="text-right px-4 py-3 font-semibold text-primary">मूलधन</th>
-                  <th className="text-right px-4 py-3 font-semibold text-muted-foreground">बाकी</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {displayedRows.map((row) => {
-                  const isCurrent = row.month === currentMonth;
-                  const isPast = row.month < currentMonth;
-                  return (
-                    <tr
-                      key={row.month}
-                      className={`transition-colors ${
-                        isCurrent
-                          ? "bg-primary/5 font-semibold"
-                          : isPast
-                          ? "opacity-50"
-                          : "hover:bg-muted/30"
-                      }`}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span>{row.month}</span>
-                          {isCurrent && (
-                            <Badge className="bg-primary/10 text-primary border-primary/20 border text-xs py-0">
-                              आज
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">{formatDate(row.date)}</td>
-                      <td className="px-4 py-3 text-right">{formatRupees(row.openingBalance)}</td>
-                      <td className="px-4 py-3 text-right font-medium">{formatRupees(row.emi)}</td>
-                      <td className="px-4 py-3 text-right text-amber-700">{formatRupees(row.interestComponent)}</td>
-                      <td className="px-4 py-3 text-right text-primary">{formatRupees(row.principalComponent)}</td>
-                      <td className="px-4 py-3 text-right text-muted-foreground">{formatRupees(row.closingBalance)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {amort.schedule.length > 12 && (
-            <div className="px-4 py-4 border-t border-border text-center">
-              <button
-                onClick={() => setShowAll(!showAll)}
-                className="text-sm text-primary font-medium hover:underline"
-              >
-                {showAll
-                  ? "कम दिखाएं ▲"
-                  : `सभी ${amort.schedule.length} महीने देखें ▼`}
-              </button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Bank-Style Amortization Schedule */}
+      <div>
+        <div className="mb-3">
+          <h3 className="text-base font-bold">Amortization Schedule</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Bank statement format — {amort.tenureMonths} महीने की योजना
+            {payments.length > 0 && `, ${payments.length} prepayment${payments.length > 1 ? "s" : ""} inline`}
+          </p>
+        </div>
+        <BankAmortizationTable
+          borrowerName={borrowerName}
+          principalAmount={principalAmount}
+          interestRate={interestRate}
+          startDate={startDate}
+          dueDate={dueDate}
+          result={bankResult}
+        />
+      </div>
     </div>
   );
 }

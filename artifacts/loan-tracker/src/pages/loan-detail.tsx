@@ -379,6 +379,7 @@ export function LoanDetail() {
           dueDate={loan.dueDate}
           totalPaid={loan.totalPaid}
           remainingAmount={loan.remainingAmount}
+          payments={payments?.map((p) => ({ paymentDate: p.paymentDate, amount: p.amount }))}
         />
       )}
     </div>

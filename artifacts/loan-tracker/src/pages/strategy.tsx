@@ -190,156 +190,9 @@ export default function Strategy() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* ── Inputs ── */}
-        <div className="lg:col-span-5 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardDescription>Fill in your monthly figures — everything updates instantly.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <SectionTitle icon={Wallet}>Income</SectionTitle>
-                <div className="grid grid-cols-2 gap-3">
-                  <MoneyField label="Monthly Income" value={inputs.monthlyIncome} onChange={(n) => set("monthlyIncome", n)} />
-                  <MoneyField label="Additional Income" value={inputs.additionalIncome} onChange={(n) => set("additionalIncome", n)} />
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <SectionTitle icon={Receipt}>Fixed Expenses</SectionTitle>
-                <div className="grid grid-cols-2 gap-3">
-                  <MoneyField label="Rent" value={inputs.rent} onChange={(n) => set("rent", n)} />
-                  <DerivedField label="Loan EMI" value={formatRupees(derived.aggregateEmi)} hint="From your loans" />
-                  <MoneyField label="Insurance" value={inputs.insurance} onChange={(n) => set("insurance", n)} />
-                  <MoneyField label="Utilities" value={inputs.utilities} onChange={(n) => set("utilities", n)} />
-                  <MoneyField label="School Fees" value={inputs.schoolFees} onChange={(n) => set("schoolFees", n)} />
-                  <MoneyField label="Internet" value={inputs.internet} onChange={(n) => set("internet", n)} />
-                  <MoneyField label="Other Fixed" value={inputs.otherFixed} onChange={(n) => set("otherFixed", n)} />
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <SectionTitle icon={ShoppingBag}>Variable Expenses</SectionTitle>
-                <div className="grid grid-cols-2 gap-3">
-                  <MoneyField label="Food" value={inputs.food} onChange={(n) => set("food", n)} />
-                  <MoneyField label="Fuel" value={inputs.fuel} onChange={(n) => set("fuel", n)} />
-                  <MoneyField label="Travel" value={inputs.travel} onChange={(n) => set("travel", n)} />
-                  <MoneyField label="Entertainment" value={inputs.entertainment} onChange={(n) => set("entertainment", n)} />
-                  <MoneyField label="Shopping" value={inputs.shopping} onChange={(n) => set("shopping", n)} />
-                  <MoneyField label="Medical" value={inputs.medical} onChange={(n) => set("medical", n)} />
-                  <MoneyField label="Miscellaneous" value={inputs.miscellaneous} onChange={(n) => set("miscellaneous", n)} />
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <SectionTitle icon={Landmark}>Assets & Liabilities</SectionTitle>
-                <div className="grid grid-cols-2 gap-3">
-                  <MoneyField label="Current Savings" value={inputs.currentSavings} onChange={(n) => set("currentSavings", n)} />
-                  <MoneyField label="Existing Investments" value={inputs.existingInvestments} onChange={(n) => set("existingInvestments", n)} />
-                  <MoneyField label="Credit Card Debt" value={inputs.creditCardDebt} onChange={(n) => set("creditCardDebt", n)} />
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <SectionTitle icon={Receipt}>Outstanding Loans</SectionTitle>
-                  <Button asChild variant="ghost" size="sm" className="h-7 gap-1 text-xs text-indigo-600 dark:text-indigo-400">
-                    <Link href="/loans">Manage</Link>
-                  </Button>
-                </div>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                  Pulled live from your loan list — edit them on the Loans page so figures never disagree.
-                </p>
-                {inputs.loans.length === 0 ? (
-                  <p className="text-xs text-slate-400 dark:text-slate-500">No active loans yet. Add one on the Loans page to compare payoff strategies.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {inputs.loans.map((loan) => (
-                      <div key={loan.id} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{loan.name}</span>
-                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-50">{formatRupees(loan.balance)}</span>
-                        </div>
-                        <div className="mt-1 flex items-center gap-4 text-[11px] text-slate-500 dark:text-slate-400">
-                          <span>{loan.rate}% rate</span>
-                          <span>{loan.minPayment > 0 ? `${formatRupees(loan.minPayment)}/mo EMI` : "no fixed EMI"}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              <div className="space-y-3">
-                <SectionTitle icon={Target}>Financial Goals</SectionTitle>
-                <div className="flex flex-wrap gap-2">
-                  {GOAL_OPTIONS.map((g) => {
-                    const active = inputs.goals.includes(g);
-                    return (
-                      <button
-                        key={g}
-                        onClick={() => toggleGoal(g)}
-                        className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                          active
-                            ? "border-indigo-500 bg-indigo-600 text-white"
-                            : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-indigo-300"
-                        }`}
-                      >
-                        {g}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <SectionTitle icon={Gauge}>Risk Profile</SectionTitle>
-                  <div className="flex rounded-md border border-slate-200 dark:border-slate-700 overflow-hidden text-xs">
-                    {(["conservative", "moderate", "aggressive"] as RiskProfile[]).map((rp) => (
-                      <button
-                        key={rp}
-                        onClick={() => set("riskProfile", rp)}
-                        className={`flex-1 px-2 py-1.5 capitalize transition-colors ${
-                          inputs.riskProfile === rp
-                            ? "bg-indigo-600 text-white"
-                            : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400"
-                        }`}
-                      >
-                        {rp}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <MoneyField label="Age" value={inputs.age} onChange={(n) => set("age", n)} placeholder="30" />
-              </div>
-
-              <Button
-                variant="ghost"
-                className="w-full gap-2 text-slate-500 dark:text-slate-400"
-                onClick={resetInputs}
-              >
-                <RefreshCw className="h-4 w-4" /> Reset
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
+      <div className="grid grid-cols-1 gap-6">
         {/* ── Results ── */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="space-y-6">
           {!hasData ? (
             <Card>
               <CardContent className="py-16 flex flex-col items-center text-center gap-3">
@@ -348,7 +201,9 @@ export default function Strategy() {
                 </div>
                 <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">Your strategy appears here</p>
                 <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
-                  Enter your income and expenses on the left to generate a personalised financial health score, savings plan, debt strategy, and investment guidance.
+                  Add your income and expenses in your{" "}
+                  <Link href="/profile" className="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Financial Profile</Link>{" "}
+                  to generate a personalised financial health score, savings plan, debt strategy, and investment guidance.
                 </p>
               </CardContent>
             </Card>

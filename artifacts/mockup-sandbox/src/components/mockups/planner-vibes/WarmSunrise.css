@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+.warm-sunrise-theme {
+  font-family: 'Outfit', sans-serif;
+}
+
+.ws-gradient-text {
+  background: linear-gradient(135deg, #ea580c, #e11d48);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ws-gradient-bg {
+  background: linear-gradient(135deg, #fff7ed, #fff1f2);
+}
+
+.ws-shadow {
+  box-shadow: 0 10px 30px -5px rgba(234, 88, 12, 0.08), 0 8px 10px -6px rgba(234, 88, 12, 0.04);
+}
+
+.ws-shadow-sm {
+  box-shadow: 0 4px 15px -3px rgba(234, 88, 12, 0.05);
+}
+
+.ws-card-border {
+  border: 1px solid rgba(253, 186, 116, 0.4);
+}
+
+.ws-soft-glow {
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.15);
+}

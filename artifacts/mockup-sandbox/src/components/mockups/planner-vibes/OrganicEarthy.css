@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;500;600;700&family=Fraunces:opsz,wght@9..144,300;400;600;700&display=swap');
+
+.organic-earthy-wrapper {
+  font-family: 'DM Sans', sans-serif;
+  background-color: #f4f3ef; /* Warm off-white/sand */
+  color: #3d3b38; /* Soft dark brown/charcoal */
+}
+
+.organic-earthy-wrapper h1,
+.organic-earthy-wrapper h2,
+.organic-earthy-wrapper h3,
+.organic-earthy-wrapper .font-display {
+  font-family: 'Fraunces', serif;
+}
+
+.organic-earthy-wrapper .card-shadow {
+  box-shadow: 0 8px 30px rgba(110, 100, 85, 0.06);
+}
+
+.organic-earthy-wrapper .clay-border {
+  border-color: #e5ded5;
+}
+
+.organic-earthy-wrapper .sage-gradient {
+  background: linear-gradient(135deg, #7c8f72 0%, #5d6f54 100%);
+}
+
+.organic-earthy-wrapper .terracotta-gradient {
+  background: linear-gradient(135deg, #d37d6d 0%, #b55d4d 100%);
+}

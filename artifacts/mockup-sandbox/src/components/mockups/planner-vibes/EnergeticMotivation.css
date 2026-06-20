@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..800&display=swap');
+
+.vibe-energetic {
+  font-family: 'DM Sans', sans-serif;
+  background-color: #f0fdf4;
+  color: #064e3b;
+}
+
+.vibe-energetic h1, 
+.vibe-energetic h2, 
+.vibe-energetic h3, 
+.vibe-energetic h4, 
+.vibe-energetic h5, 
+.vibe-energetic h6,
+.vibe-energetic .font-display {
+  font-family: 'Bricolage Grotesque', sans-serif;
+}
+
+.vibe-energetic .glass-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border: 2px solid #bbf7d0;
+  box-shadow: 0 8px 32px -4px rgba(5, 150, 105, 0.1), 0 4px 12px -2px rgba(5, 150, 105, 0.05);
+}
+
+.vibe-energetic .btn-vivid {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.vibe-energetic .btn-vivid:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+}
+
+.vibe-energetic .slider-track-vivid {
+  background: #d1fae5;
+}
+.vibe-energetic .slider-range-vivid {
+  background: linear-gradient(90deg, #34d399, #10b981);
+}
+.vibe-energetic .slider-thumb-vivid {
+  border: 3px solid #10b981;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+}
+
+.vibe-energetic .chart-tooltip {
+  background: rgba(6, 78, 59, 0.95) !important;
+  border: 1px solid #10b981 !important;
+  border-radius: 12px !important;
+  color: #ecfdf5 !important;
+  box-shadow: 0 8px 24px rgba(6, 78, 59, 0.3) !important;
+  font-family: 'DM Sans', sans-serif !important;
+}
+
+.vibe-energetic .gamified-badge {
+  background: linear-gradient(135deg, #fde047 0%, #f59e0b 100%);
+  color: #78350f;
+  border: 1px solid #fef08a;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.vibe-energetic .progress-bg {
+  background: repeating-linear-gradient(
+    45deg,
+    #10b981,
+    #10b981 10px,
+    #059669 10px,
+    #059669 20px
+  );
+  background-size: 28px 28px;
+  animation: moveStripe 1s linear infinite;
+}
+
+@keyframes moveStripe {
+  0% { background-position: 0 0; }
+  100% { background-position: 28px 0; }
+}
+
+.vibe-energetic .animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}

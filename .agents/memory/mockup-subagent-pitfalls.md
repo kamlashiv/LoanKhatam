@@ -14,4 +14,7 @@ When generating canvas design variants via parallel DESIGN subagents (mockup-san
    **Why:** subagents copy brief numbers verbatim and also render the array; they don't reconcile.
    **How to apply:** make the brief's summary internally consistent with the loan array before launching, and run an architect `evaluate_task` review across the variant files focused on data-consistency, not just compilation.
 
+3. **Local redefinition of shared data instead of importing it.** When variants are told to import a canonical dataset from a shared `_Baseline` (e.g. `PIE_STANDARD`/`PIE_ACCELERATED`) and only override colors, subagents instead define their own local copy of the array (sometimes even re-exporting it). Values usually stay correct because they still reference the shared `DATA.*` fields, so output matches and typecheck passes — it's a contract/code-quality nit, not a functional bug.
+   **How to apply:** an architect `evaluate_task` review will (correctly) flag this as a contract violation. Verify the local arrays still use the right `DATA.*` values and slice structure; if they do, the rendered result is correct and rewriting all of them is low-value churn for throwaway exploration mockups. Only normalize if the mockups will be long-lived.
+
 **Verification path that works:** restart the mockup-sandbox workflow → grep for escaped literals → screenshot every variant → architect review for data consistency → fix → re-screenshot → `presentArtifact`. Do NOT `suggestDeploy` (mockup sandbox isn't deployable).

@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+.vibe-technical-dense {
+  font-family: 'Inter', sans-serif;
+  --bg-color: #030712; /* slate-950 */
+  --panel-bg: #0f172a; /* slate-900 */
+  --border-color: #1e293b; /* slate-800 */
+  --text-primary: #f8fafc; /* slate-50 */
+  --text-secondary: #94a3b8; /* slate-400 */
+  --text-muted: #64748b; /* slate-500 */
+  
+  --accent-cyan: #06b6d4;
+  --accent-emerald: #10b981;
+  --accent-blue: #3b82f6;
+  --accent-amber: #f59e0b;
+  --accent-rose: #f43f5e;
+}
+
+.vibe-technical-dense {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+.vibe-technical-dense .mono-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-feature-settings: "tnum", "zero";
+}
+
+.vibe-technical-dense .tech-panel {
+  background-color: var(--panel-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px; /* tight radii */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom Scrollbar for the table */
+.vibe-technical-dense ::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.vibe-technical-dense ::-webkit-scrollbar-track {
+  background: var(--bg-color);
+}
+.vibe-technical-dense ::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+.vibe-technical-dense ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

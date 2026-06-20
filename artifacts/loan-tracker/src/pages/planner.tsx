@@ -13,8 +13,14 @@ import { Slider } from "@/components/ui/slider";
 import {
   Upload, FileText, CheckCircle2, AlertCircle, Loader2,
   TrendingDown, Target, Zap, BarChart3, RefreshCw, Plus,
+  Download, Pencil, Save, X, Calculator, Sparkles, ChevronDown,
 } from "lucide-react";
 import { formatRupees } from "@/lib/loan-utils";
+import {
+  simulatePlan, reverseFromTargetMonths, STRATEGY_PRESETS,
+  type PlannerResult,
+} from "@/lib/planner-engine";
+import { exportPlannerCSV, exportPlannerPDF } from "@/lib/export";
 import { useAuth } from "@clerk/react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -26,6 +32,12 @@ interface LoanParams {
   extraEMI: number;
 }
 
+interface TopUpState {
+  amount: number;
+  rate: number;
+  month: number;
+}
+
 interface ExtractedData {
   borrowerName: string | null;
   principalAmount: number | null;
@@ -35,90 +47,6 @@ interface ExtractedData {
   description: string | null;
   confidence: "high" | "medium" | "low";
   notes: string;
-}
-
-// ─── Math helpers ───────────────────────────────────────────────────────────
-function calcEMI(principal: number, annualRate: number, months: number) {
-  if (months <= 0 || principal <= 0) return 0;
-  if (annualRate === 0) return principal / months;
-  const r = annualRate / 12 / 100;
-  const f = Math.pow(1 + r, months);
-  return (principal * r * f) / (f - 1);
-}
-
-function r2(n: number) { return Math.round(n * 100) / 100; }
-
-interface SchedulePoint {
-  label: string;
-  standard: number;
-  accelerated: number;
-  standardInterestPaid: number;
-  acceleratedInterestPaid: number;
-}
-
-function buildSchedules(params: LoanParams): {
-  schedule: SchedulePoint[];
-  stdMonths: number;
-  accMonths: number;
-  stdTotalInterest: number;
-  accTotalInterest: number;
-  stdEMI: number;
-  accEMI: number;
-} {
-  const { principal, rate, tenureMonths, extraEMI } = params;
-  const r = rate / 12 / 100;
-  const stdEMI = r2(calcEMI(principal, rate, tenureMonths));
-  const accPayment = stdEMI + extraEMI;
-
-  // build yearly snapshots
-  const points: SchedulePoint[] = [];
-  let stdBal = principal, accBal = principal;
-  let stdIntPaid = 0, accIntPaid = 0;
-  let stdDone = false, accDone = false;
-  let stdMonths = tenureMonths, accMonths = tenureMonths;
-
-  const maxYears = Math.ceil(tenureMonths / 12) + 1;
-
-  for (let yr = 0; yr <= maxYears; yr++) {
-    points.push({
-      label: yr === 0 ? "Start" : `Year ${yr}`,
-      standard: r2(Math.max(0, stdBal)),
-      accelerated: r2(Math.max(0, accBal)),
-      standardInterestPaid: r2(stdIntPaid),
-      acceleratedInterestPaid: r2(accIntPaid),
-    });
-
-    // simulate 12 months
-    for (let m = 0; m < 12; m++) {
-      if (!stdDone && stdBal > 0) {
-        const intC = stdBal * r;
-        const prinC = Math.min(stdBal, stdEMI - intC);
-        stdIntPaid += intC;
-        stdBal = Math.max(0, stdBal - prinC);
-        stdMonths = yr * 12 + m + 1;
-        if (stdBal <= 0) { stdDone = true; stdMonths = yr * 12 + m + 1; }
-      }
-      if (!accDone && accBal > 0) {
-        const intC = accBal * r;
-        const emi = Math.min(accPayment, accBal + intC);
-        const prinC = Math.min(accBal, emi - intC);
-        accIntPaid += intC;
-        accBal = Math.max(0, accBal - prinC);
-        if (accBal <= 0) { accDone = true; accMonths = yr * 12 + m + 1; }
-      }
-    }
-    if (stdDone && accDone) break;
-  }
-
-  return {
-    schedule: points,
-    stdMonths: stdDone ? stdMonths : tenureMonths,
-    accMonths: accDone ? accMonths : tenureMonths,
-    stdTotalInterest: r2(stdIntPaid),
-    accTotalInterest: r2(accIntPaid),
-    stdEMI,
-    accEMI: r2(accPayment),
-  };
 }
 
 function monthsToStr(m: number) {
@@ -140,7 +68,6 @@ function FileUploadZone({
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [fileName, setFileName] = useState("");
-  const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const processFile = useCallback(async (file: File) => {
@@ -158,7 +85,6 @@ function FileUploadZone({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Extraction failed");
-      setExtractedData(json.data);
       setStatus("success");
       onExtracted(json.data);
     } catch (e: any) {
@@ -174,102 +100,179 @@ function FileUploadZone({
     if (file) processFile(file);
   };
 
+  return (
+    <div
+      className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
+        dragOver
+          ? "border-primary bg-primary/5"
+          : status === "success"
+          ? "border-emerald-400 bg-emerald-50"
+          : status === "error"
+          ? "border-red-400 bg-red-50"
+          : "border-border hover:border-primary/50 hover:bg-muted/30"
+      }`}
+      onDrop={onDrop}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onClick={() => inputRef.current?.click()}
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".png,.jpg,.jpeg,.webp,.pdf,.json,.csv"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) processFile(f); }}
+      />
+
+      {status === "loading" && (
+        <div className="flex flex-col items-center gap-2 py-2">
+          <Loader2 className="h-8 w-8 text-primary animate-spin" />
+          <p className="text-sm font-medium text-primary">AI extract कर रहा है…</p>
+          <p className="text-xs text-muted-foreground">{fileName}</p>
+        </div>
+      )}
+
+      {status === "success" && (
+        <div className="flex flex-col items-center gap-2 py-2">
+          <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+          <p className="text-sm font-semibold text-emerald-800">Data निकाल लिया — नीचे check & edit करें</p>
+          <p className="text-xs text-muted-foreground">{fileName}</p>
+        </div>
+      )}
+
+      {status === "error" && (
+        <div className="flex flex-col items-center gap-2 py-2">
+          <AlertCircle className="h-8 w-8 text-red-500" />
+          <p className="text-sm font-semibold text-red-700">Error आया</p>
+          <p className="text-xs text-red-600">{errorMsg}</p>
+        </div>
+      )}
+
+      {status === "idle" && (
+        <div className="flex flex-col items-center gap-3 py-2">
+          <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Upload className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <p className="font-semibold text-sm">File upload करें या खींचें</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              PNG • JPG • PDF • JSON • CSV — AI data extract करेगा
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Editable extracted-data review ──────────────────────────────────────────
+function ExtractedReview({
+  draft,
+  onChange,
+  onApply,
+  onDiscard,
+}: {
+  draft: ExtractedData;
+  onChange: (d: ExtractedData) => void;
+  onApply: () => void;
+  onDiscard: () => void;
+}) {
   const confidenceColor = {
     high: "bg-emerald-100 text-emerald-800 border-emerald-300",
     medium: "bg-amber-100 text-amber-800 border-amber-300",
     low: "bg-red-100 text-red-800 border-red-300",
   };
 
+  const set = <K extends keyof ExtractedData>(k: K, v: ExtractedData[K]) =>
+    onChange({ ...draft, [k]: v });
+
+  const saveQuery = new URLSearchParams();
+  if (draft.borrowerName) saveQuery.set("borrowerName", draft.borrowerName);
+  if (draft.principalAmount) saveQuery.set("principalAmount", String(draft.principalAmount));
+  if (draft.interestRate) saveQuery.set("interestRate", String(draft.interestRate));
+  if (draft.startDate) saveQuery.set("startDate", draft.startDate);
+  if (draft.dueDate) saveQuery.set("dueDate", draft.dueDate);
+  if (draft.description) saveQuery.set("description", draft.description);
+
   return (
-    <div className="space-y-3">
-      <div
-        className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
-          dragOver
-            ? "border-primary bg-primary/5"
-            : status === "success"
-            ? "border-emerald-400 bg-emerald-50"
-            : status === "error"
-            ? "border-red-400 bg-red-50"
-            : "border-border hover:border-primary/50 hover:bg-muted/30"
-        }`}
-        onDrop={onDrop}
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
-        onClick={() => inputRef.current?.click()}
-      >
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".png,.jpg,.jpeg,.webp,.pdf,.json,.csv"
-          className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) processFile(f); }}
-        />
+    <div className="bg-slate-50 border border-border rounded-lg p-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="font-semibold text-sm flex items-center gap-1.5">
+          <Pencil className="h-3.5 w-3.5 text-primary" />
+          Extracted Data — Edit करें
+        </span>
+        <Badge className={`${confidenceColor[draft.confidence]} border text-xs`}>
+          Confidence: {draft.confidence}
+        </Badge>
+      </div>
+      {draft.notes && (
+        <p className="text-xs text-muted-foreground italic">{draft.notes}</p>
+      )}
 
-        {status === "loading" && (
-          <div className="flex flex-col items-center gap-2 py-2">
-            <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            <p className="text-sm font-medium text-primary">AI extract कर रहा है…</p>
-            <p className="text-xs text-muted-foreground">{fileName}</p>
-          </div>
-        )}
-
-        {status === "success" && (
-          <div className="flex flex-col items-center gap-2 py-2">
-            <CheckCircle2 className="h-8 w-8 text-emerald-600" />
-            <p className="text-sm font-semibold text-emerald-800">Data निकाल लिया!</p>
-            <p className="text-xs text-muted-foreground">{fileName}</p>
-          </div>
-        )}
-
-        {status === "error" && (
-          <div className="flex flex-col items-center gap-2 py-2">
-            <AlertCircle className="h-8 w-8 text-red-500" />
-            <p className="text-sm font-semibold text-red-700">Error आया</p>
-            <p className="text-xs text-red-600">{errorMsg}</p>
-          </div>
-        )}
-
-        {status === "idle" && (
-          <div className="flex flex-col items-center gap-3 py-2">
-            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Upload className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">File upload करें या खींचें</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                PNG • JPG • PDF • JSON • CSV — AI data extract करेगा
-              </p>
-            </div>
-          </div>
-        )}
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="col-span-2 space-y-1">
+          <Label className="text-xs">Borrower / Profile Name</Label>
+          <Input
+            className="h-8 text-xs"
+            value={draft.borrowerName ?? ""}
+            onChange={(e) => set("borrowerName", e.target.value || null)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Loan Amount (₹)</Label>
+          <Input
+            className="h-8 text-xs"
+            type="number"
+            value={draft.principalAmount ?? ""}
+            onChange={(e) => set("principalAmount", e.target.value ? Number(e.target.value) : null)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Interest Rate (%)</Label>
+          <Input
+            className="h-8 text-xs"
+            type="number"
+            step="0.1"
+            value={draft.interestRate ?? ""}
+            onChange={(e) => set("interestRate", e.target.value ? Number(e.target.value) : null)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Start Date</Label>
+          <Input
+            className="h-8 text-xs"
+            type="date"
+            value={draft.startDate ?? ""}
+            onChange={(e) => set("startDate", e.target.value || null)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Due Date</Label>
+          <Input
+            className="h-8 text-xs"
+            type="date"
+            value={draft.dueDate ?? ""}
+            onChange={(e) => set("dueDate", e.target.value || null)}
+          />
+        </div>
       </div>
 
-      {status === "success" && extractedData && (
-        <div className="bg-slate-50 border border-border rounded-lg p-3 text-xs space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="font-semibold text-sm">Extracted Data</span>
-            <Badge className={`${confidenceColor[extractedData.confidence]} border text-xs`}>
-              Confidence: {extractedData.confidence}
-            </Badge>
-          </div>
-          {extractedData.notes && (
-            <p className="text-muted-foreground italic">{extractedData.notes}</p>
-          )}
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
-            {extractedData.principalAmount && <span>💰 ₹{extractedData.principalAmount.toLocaleString("en-IN")}</span>}
-            {extractedData.interestRate && <span>📈 {extractedData.interestRate}% p.a.</span>}
-            {extractedData.startDate && <span>📅 Start: {extractedData.startDate}</span>}
-            {extractedData.dueDate && <span>📅 Due: {extractedData.dueDate}</span>}
-            {extractedData.borrowerName && <span className="col-span-2">👤 {extractedData.borrowerName}</span>}
-          </div>
-          <button
-            className="text-xs text-primary font-medium hover:underline mt-1"
-            onClick={(e) => { e.stopPropagation(); setStatus("idle"); setExtractedData(null); }}
-          >
-            दूसरी file upload करें
-          </button>
-        </div>
-      )}
+      <div className="flex flex-wrap gap-2 pt-1">
+        <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={onApply}>
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          Apply to Calculator
+        </Button>
+        <Link href={`/loans/new?${saveQuery.toString()}`}>
+          <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs">
+            <Save className="h-3.5 w-3.5" />
+            Save as Loan
+          </Button>
+        </Link>
+        <Button size="sm" variant="ghost" className="h-8 gap-1.5 text-xs" onClick={onDiscard}>
+          <X className="h-3.5 w-3.5" />
+          Discard
+        </Button>
+      </div>
     </div>
   );
 }
@@ -299,68 +302,211 @@ export function Planner() {
     startMonth: new Date().toISOString().slice(0, 7),
     extraEMI: 0,
   });
-
+  const [profileName, setProfileName] = useState("");
+  const [topUp, setTopUp] = useState<TopUpState>({ amount: 0, rate: 9, month: 12 });
+  const [yearLumps, setYearLumps] = useState<Record<number, number>>({});
+  const [targetYears, setTargetYears] = useState(10);
   const [view, setView] = useState<"balance" | "interest">("balance");
+  const [draft, setDraft] = useState<ExtractedData | null>(null);
+  const [ledgerOpen, setLedgerOpen] = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   const set = (k: keyof LoanParams, v: number | string) =>
     setParams((p) => ({ ...p, [k]: v }));
 
   const handleExtracted = useCallback((data: ExtractedData) => {
+    setDraft(data);
+    if (data.borrowerName) setProfileName(data.borrowerName);
+  }, []);
+
+  const applyDraft = useCallback(() => {
+    if (!draft) return;
     const updates: Partial<LoanParams> = {};
-    if (data.principalAmount) updates.principal = data.principalAmount;
-    if (data.interestRate) updates.rate = data.interestRate;
-    if (data.startDate && data.dueDate) {
-      const s = new Date(data.startDate);
-      const e = new Date(data.dueDate);
+    if (draft.principalAmount) updates.principal = draft.principalAmount;
+    if (draft.interestRate) updates.rate = draft.interestRate;
+    if (draft.startDate && draft.dueDate) {
+      const s = new Date(draft.startDate);
+      const e = new Date(draft.dueDate);
       const months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
       if (months > 0) updates.tenureMonths = months;
     }
-    if (data.startDate) updates.startMonth = data.startDate.slice(0, 7);
+    if (draft.startDate) updates.startMonth = draft.startDate.slice(0, 7);
+    if (draft.borrowerName) setProfileName(draft.borrowerName);
     setParams((p) => ({ ...p, ...updates }));
-  }, []);
+    setYearLumps({});
+    setDraft(null);
+  }, [draft]);
 
-  const result = useMemo(() => buildSchedules(params), [params]);
+  // Convert per-year lumps to month-indexed prepayments (end of each year).
+  const lumpPrepayments = useMemo(() => {
+    const out: Record<number, number> = {};
+    for (const [yr, amt] of Object.entries(yearLumps)) {
+      const n = Number(amt);
+      if (n > 0) out[Number(yr) * 12] = n;
+    }
+    return out;
+  }, [yearLumps]);
 
-  const monthsSaved = result.stdMonths - result.accMonths;
-  const interestSaved = result.stdTotalInterest - result.accTotalInterest;
+  const topUpInput = useMemo(
+    () =>
+      topUp.amount > 0
+        ? {
+            amount: topUp.amount,
+            rate: topUp.rate,
+            month: Math.min(params.tenureMonths, Math.max(1, topUp.month)),
+          }
+        : null,
+    [topUp.amount, topUp.rate, topUp.month, params.tenureMonths]
+  );
+
+  const plan: PlannerResult = useMemo(
+    () => simulatePlan({
+      principal: params.principal,
+      rate: params.rate,
+      tenureMonths: params.tenureMonths,
+      extraEMI: params.extraEMI,
+      lumpPrepayments,
+      topUp: topUpInput,
+    }),
+    [params, lumpPrepayments, topUpInput]
+  );
+
+  const baseline: PlannerResult = useMemo(
+    () => simulatePlan({
+      principal: params.principal,
+      rate: params.rate,
+      tenureMonths: params.tenureMonths,
+      extraEMI: 0,
+    }),
+    [params.principal, params.rate, params.tenureMonths]
+  );
+
+  const interestSaved = Math.max(0, baseline.totalInterest - plan.totalInterest);
+  const monthsSaved = Math.max(0, baseline.payoffMonths - plan.payoffMonths);
+  const totalMonthly = plan.baseEMI + params.extraEMI;
+  const tenureYears = Math.round(params.tenureMonths / 12 * 10) / 10;
+
+  const reverse = useMemo(
+    () => reverseFromTargetMonths(params.principal, params.rate, plan.baseEMI, targetYears * 12),
+    [params.principal, params.rate, plan.baseEMI, targetYears]
+  );
+
+  // Chart data: balance runoff or cumulative interest, year by year.
+  const chartData = useMemo(() => {
+    const maxYears = Math.max(baseline.years.length, plan.years.length);
+    let bc = 0, pc = 0;
+    const baseCum: number[] = [];
+    const planCum: number[] = [];
+    baseline.years.forEach((y) => { bc += y.interest; baseCum.push(bc); });
+    plan.years.forEach((y) => { pc += y.interest; planCum.push(pc); });
+
+    const data: Array<{ label: string; "Standard EMI": number; "Extra Payment": number }> = [{
+      label: "Start",
+      "Standard EMI": view === "balance" ? params.principal : 0,
+      "Extra Payment": view === "balance" ? params.principal : 0,
+    }];
+    for (let i = 0; i < maxYears; i++) {
+      data.push({
+        label: `Year ${i + 1}`,
+        "Standard EMI": view === "balance"
+          ? (baseline.years[i]?.closing ?? 0)
+          : (baseCum[i] ?? baseCum[baseCum.length - 1] ?? 0),
+        "Extra Payment": view === "balance"
+          ? (plan.years[i]?.closing ?? 0)
+          : (planCum[i] ?? planCum[planCum.length - 1] ?? 0),
+      });
+    }
+    return data;
+  }, [baseline, plan, view, params.principal]);
 
   const pieStandard = [
     { name: "मूलधन", value: params.principal, color: "#1d5c42" },
-    { name: "कुल ब्याज", value: result.stdTotalInterest, color: "#f59e0b" },
+    { name: "कुल ब्याज", value: baseline.totalInterest, color: "#f59e0b" },
   ];
   const pieAccelerated = [
-    { name: "मूलधन", value: params.principal, color: "#1d5c42" },
-    { name: "कुल ब्याज", value: result.accTotalInterest, color: "#34d399" },
+    { name: "मूलधन", value: plan.totalPrincipalBorrowed, color: "#1d5c42" },
+    { name: "कुल ब्याज", value: plan.totalInterest, color: "#34d399" },
     ...(interestSaved > 0 ? [{ name: "बचत", value: interestSaved, color: "#e5e7eb" }] : []),
   ];
 
-  const chartData = result.schedule.map((pt) => ({
-    label: pt.label,
-    "Standard EMI": view === "balance" ? pt.standard : pt.standardInterestPaid,
-    "Extra Payment": view === "balance" ? pt.accelerated : pt.acceleratedInterestPaid,
-  }));
+  const applyStrategy = (extraEMI: number, yearlyLump: number) => {
+    setParams((p) => ({ ...p, extraEMI: Math.round(extraEMI) }));
+    if (yearlyLump > 0) {
+      const totalYears = Math.ceil(params.tenureMonths / 12);
+      const next: Record<number, number> = {};
+      for (let y = 1; y <= totalYears; y++) next[y] = Math.round(yearlyLump);
+      setYearLumps(next);
+    } else {
+      setYearLumps({});
+    }
+  };
 
-  const tenureYears = Math.round(params.tenureMonths / 12 * 10) / 10;
+  const resetAll = () => {
+    setParams({ principal: 2500000, rate: 8.5, tenureMonths: 240, startMonth: new Date().toISOString().slice(0, 7), extraEMI: 0 });
+    setTopUp({ amount: 0, rate: 9, month: 12 });
+    setYearLumps({});
+    setProfileName("");
+  };
+
+  const exportMeta = {
+    borrowerName: profileName,
+    principal: params.principal,
+    rate: params.rate,
+    tenureMonths: params.tenureMonths,
+    extraEMI: params.extraEMI,
+    topUp: topUpInput,
+  };
+
+  const handlePDF = async () => {
+    setExporting(true);
+    try {
+      await exportPlannerPDF(exportMeta, baseline, plan);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-1">
-          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Target className="h-5 w-5 text-primary" />
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Target className="h-5 w-5 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">Loan Payoff Planner</h1>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Loan Payoff Planner</h1>
+          <p className="text-sm text-muted-foreground ml-12">
+            File upload करके data extract करें, edit करें, और amortization schedule देखें
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground ml-12">
-          देखें कि extra payment से कितना ब्याज बचेगा — या file upload करके loan data import करें
-        </p>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 text-xs"
+            onClick={() => exportPlannerCSV(exportMeta, baseline, plan)}
+          >
+            <Download className="h-3.5 w-3.5" />
+            CSV
+          </Button>
+          <Button
+            size="sm"
+            className="gap-2 text-xs"
+            onClick={handlePDF}
+            disabled={exporting}
+          >
+            {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            PDF Report
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── Left Panel: Inputs ── */}
         <div className="space-y-5">
-          {/* File upload */}
+          {/* File upload + review */}
           <Card className="border-border shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
@@ -368,8 +514,16 @@ export function Planner() {
                 File से Import करें
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
+            <CardContent className="pt-0 space-y-3">
               <FileUploadZone onExtracted={handleExtracted} />
+              {draft && (
+                <ExtractedReview
+                  draft={draft}
+                  onChange={setDraft}
+                  onApply={applyDraft}
+                  onDiscard={() => setDraft(null)}
+                />
+              )}
             </CardContent>
           </Card>
 
@@ -382,6 +536,17 @@ export function Planner() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5 pt-0">
+              {/* Profile name */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Profile Name</Label>
+                <Input
+                  className="h-8 text-xs"
+                  placeholder="e.g. Home Loan — SBI"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                />
+              </div>
+
               {/* Principal */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
@@ -402,7 +567,7 @@ export function Planner() {
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>₹1L</span><span>₹2.5Cr</span>
+                  <span>₹1L</span><span>₹1Cr</span>
                 </div>
               </div>
 
@@ -448,6 +613,17 @@ export function Planner() {
                 </div>
               </div>
 
+              {/* EMI start month */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">EMI Start Month</Label>
+                <Input
+                  className="h-8 text-xs"
+                  type="month"
+                  value={params.startMonth}
+                  onChange={(e) => set("startMonth", e.target.value)}
+                />
+              </div>
+
               {/* Extra EMI */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
@@ -464,14 +640,14 @@ export function Planner() {
                 </div>
                 <Slider
                   min={0}
-                  max={Math.round(result.stdEMI)}
+                  max={Math.max(1000, Math.round(plan.baseEMI))}
                   step={500}
                   value={[params.extraEMI]}
                   onValueChange={([v]) => set("extraEMI", v)}
                   className="[&_[role=slider]]:border-emerald-500 [&_[role=slider]]:bg-emerald-500"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Standard EMI: <span className="font-medium text-foreground">{formatRupees(result.stdEMI)}</span>/month
+                  Base EMI: <span className="font-medium text-foreground">{formatRupees(plan.baseEMI)}</span>/month
                 </p>
               </div>
 
@@ -479,10 +655,104 @@ export function Planner() {
                 variant="outline"
                 size="sm"
                 className="w-full gap-2 text-xs"
-                onClick={() => setParams({ principal: 2500000, rate: 8.5, tenureMonths: 240, startMonth: new Date().toISOString().slice(0, 7), extraEMI: 0 })}
+                onClick={resetAll}
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Reset
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Top-up loan */}
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Plus className="h-4 w-4 text-primary" />
+                Top-Up Loan (optional)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-0">
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-xs">Amount (₹)</Label>
+                  <Input
+                    className="h-8 text-xs"
+                    type="number"
+                    min={0}
+                    value={topUp.amount}
+                    onChange={(e) => setTopUp((t) => ({ ...t, amount: Math.max(0, Number(e.target.value)) }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Rate (%)</Label>
+                  <Input
+                    className="h-8 text-xs"
+                    type="number"
+                    step="0.1"
+                    value={topUp.rate}
+                    onChange={(e) => setTopUp((t) => ({ ...t, rate: Math.max(0, Number(e.target.value)) }))}
+                  />
+                </div>
+                <div className="space-y-1 col-span-2">
+                  <Label className="text-xs">Disbursed after (months from start)</Label>
+                  <Input
+                    className="h-8 text-xs"
+                    type="number"
+                    min={1}
+                    max={params.tenureMonths}
+                    value={topUp.month}
+                    onChange={(e) => setTopUp((t) => ({ ...t, month: Math.max(1, Number(e.target.value)) }))}
+                  />
+                </div>
+              </div>
+              {topUp.amount > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Month {topUp.month} पर ₹{topUp.amount.toLocaleString("en-IN")} जुड़ेगा — EMI recalculate होगी।
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Reverse calculator */}
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Calculator className="h-4 w-4 text-primary" />
+                Reverse Calculator
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-0">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label className="text-xs font-medium">Target payoff in</Label>
+                  <span className="text-xs font-semibold text-primary">{targetYears} Years</span>
+                </div>
+                <Slider
+                  min={1}
+                  max={Math.max(1, Math.round(params.tenureMonths / 12))}
+                  step={1}
+                  value={[targetYears]}
+                  onValueChange={([v]) => setTargetYears(v)}
+                />
+              </div>
+              <div className="rounded-lg bg-slate-50 border border-border p-3 text-xs space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Required monthly payment</span>
+                  <span className="font-semibold">{formatRupees(reverse.requiredPayment)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Extra over base EMI</span>
+                  <span className="font-semibold text-emerald-700">+{formatRupees(reverse.requiredExtra)}</span>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full gap-2 text-xs"
+                onClick={() => set("extraEMI", Math.round(reverse.requiredExtra))}
+              >
+                <Zap className="h-3.5 w-3.5" />
+                Apply to Calculator
               </Button>
             </CardContent>
           </Card>
@@ -490,42 +760,35 @@ export function Planner() {
 
         {/* ── Right Panel: Charts & Results ── */}
         <div className="lg:col-span-2 space-y-5">
-          {/* Comparison header */}
-          <div className="grid grid-cols-3 gap-3">
-            <Card className="border-border shadow-sm">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-xs text-muted-foreground">Standard Contract</p>
-                <p className="text-base font-bold mt-1">{formatRupees(params.principal + result.stdTotalInterest)}</p>
-                <p className="text-xs text-muted-foreground">Interest: {formatRupees(result.stdTotalInterest)}</p>
-                <Badge className="mt-2 bg-slate-100 text-slate-700 border-slate-300 border text-xs">
-                  {monthsToStr(result.stdMonths)}
-                </Badge>
-              </CardContent>
-            </Card>
-
-            <Card className="border-emerald-200 bg-emerald-50 shadow-sm">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-xs text-emerald-700 font-medium">Accelerated Plan</p>
-                <p className="text-base font-bold mt-1 text-emerald-800">
-                  {formatRupees(params.principal + result.accTotalInterest)}
-                </p>
-                <p className="text-xs text-emerald-700">Interest: {formatRupees(result.accTotalInterest)}</p>
-                <Badge className="mt-2 bg-emerald-200 text-emerald-800 border-emerald-400 border text-xs">
-                  {monthsToStr(result.accMonths)}
-                </Badge>
-              </CardContent>
-            </Card>
-
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <Card className={`shadow-sm ${interestSaved > 0 ? "border-amber-200 bg-amber-50" : "border-border"}`}>
               <CardContent className="pt-4 pb-3">
-                <p className="text-xs text-amber-700 font-medium">बचत</p>
+                <p className="text-xs text-amber-700 font-medium">Net Interest Saved</p>
                 <p className={`text-base font-bold mt-1 ${interestSaved > 0 ? "text-amber-800" : "text-muted-foreground"}`}>
                   {interestSaved > 0 ? formatRupees(interestSaved) : "₹0"}
                 </p>
-                <p className="text-xs text-amber-700">Interest saved</p>
-                <Badge className={`mt-2 text-xs border ${interestSaved > 0 ? "bg-amber-100 text-amber-800 border-amber-300" : "bg-muted text-muted-foreground border-border"}`}>
-                  {monthsSaved > 0 ? `${monthsSaved} महीने जल्दी` : "Same tenure"}
-                </Badge>
+              </CardContent>
+            </Card>
+            <Card className="border-emerald-200 bg-emerald-50 shadow-sm">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-xs text-emerald-700 font-medium">Accelerated Payoff</p>
+                <p className="text-base font-bold mt-1 text-emerald-800">{monthsToStr(plan.payoffMonths)}</p>
+                <p className="text-xs text-emerald-700">{monthsSaved > 0 ? `${monthsSaved} महीने जल्दी` : "Same tenure"}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-border shadow-sm">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-xs text-muted-foreground">Net Principal</p>
+                <p className="text-base font-bold mt-1">{formatRupees(plan.totalPrincipalBorrowed)}</p>
+                <p className="text-xs text-muted-foreground">{topUpInput ? "incl. top-up" : "borrowed"}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-border shadow-sm">
+              <CardContent className="pt-4 pb-3">
+                <p className="text-xs text-muted-foreground">Monthly Installment</p>
+                <p className="text-base font-bold mt-1">{formatRupees(totalMonthly)}</p>
+                <p className="text-xs text-muted-foreground">EMI {formatRupees(plan.baseEMI)} + {formatRupees(params.extraEMI)}</p>
               </CardContent>
             </Card>
           </div>
@@ -541,7 +804,7 @@ export function Planner() {
                   {formatRupees(interestSaved)} बचेगा — loan {monthsSaved} महीने पहले खत्म होगा!
                 </p>
                 <p className="text-xs text-emerald-700">
-                  सिर्फ {formatRupees(params.extraEMI)}/month extra देकर
+                  कुल {formatRupees(totalMonthly)}/month देकर
                 </p>
               </div>
               <TrendingDown className="h-6 w-6 text-emerald-600 shrink-0" />
@@ -617,6 +880,128 @@ export function Planner() {
             </CardContent>
           </Card>
 
+          {/* Editable amortization ledger */}
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Detailed Amortization & Repayment Ledger
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 text-xs"
+                  onClick={() => setLedgerOpen((o) => !o)}
+                >
+                  <ChevronDown className={`h-4 w-4 transition-transform ${ledgerOpen ? "rotate-180" : ""}`} />
+                  {ledgerOpen ? "Hide" : "Show"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                किसी भी साल का "Extra Prepaid" edit करें — schedule तुरंत recalculate होगा।
+              </p>
+            </CardHeader>
+            {ledgerOpen && (
+              <CardContent className="pt-0 overflow-x-auto">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-primary/5">
+                      {["Year", "Opening Balance", "EMI Paid", "Extra Prepaid (edit)", "Interest", "Principal", "Closing Balance"].map((h) => (
+                        <th key={h} className="px-2 py-2 text-right font-semibold border-b border-border whitespace-nowrap first:text-left">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {plan.years.map((y) => (
+                      <tr key={y.year} className="hover:bg-muted/30">
+                        <td className="px-2 py-1.5 text-left font-medium border-b border-border/50">Year {y.year}</td>
+                        <td className="px-2 py-1.5 text-right border-b border-border/50">{formatRupees(y.opening)}</td>
+                        <td className="px-2 py-1.5 text-right border-b border-border/50">{formatRupees(y.emiPaid)}</td>
+                        <td className="px-2 py-1.5 text-right border-b border-border/50">
+                          <Input
+                            className="h-7 w-28 ml-auto text-xs text-right border-emerald-200"
+                            type="number"
+                            min={0}
+                            placeholder="0"
+                            value={yearLumps[y.year] ?? ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              setYearLumps((prev) => {
+                                const next = { ...prev };
+                                if (!v || Number(v) <= 0) delete next[y.year];
+                                else next[y.year] = Number(v);
+                                return next;
+                              });
+                            }}
+                          />
+                        </td>
+                        <td className="px-2 py-1.5 text-right text-amber-700 border-b border-border/50">{formatRupees(y.interest)}</td>
+                        <td className="px-2 py-1.5 text-right text-primary border-b border-border/50">{formatRupees(y.principal)}</td>
+                        <td className="px-2 py-1.5 text-right font-medium border-b border-border/50">{formatRupees(y.closing)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-muted/40 font-semibold">
+                      <td className="px-2 py-2 text-left">Total</td>
+                      <td className="px-2 py-2 text-right">—</td>
+                      <td className="px-2 py-2 text-right">{formatRupees(plan.years.reduce((s, y) => s + y.emiPaid, 0))}</td>
+                      <td className="px-2 py-2 text-right">{formatRupees(plan.years.reduce((s, y) => s + y.extraPaid, 0))}</td>
+                      <td className="px-2 py-2 text-right text-amber-700">{formatRupees(plan.totalInterest)}</td>
+                      <td className="px-2 py-2 text-right text-primary">{formatRupees(plan.totalPrincipalBorrowed)}</td>
+                      <td className="px-2 py-2 text-right">₹0</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Smart payoff strategies */}
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Smart Payoff Leverage Strategies
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">एक click में calculator पर apply करें</p>
+            </CardHeader>
+            <CardContent className="pt-0 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {STRATEGY_PRESETS.map((s) => {
+                const res = s.compute(plan.baseEMI, params.principal);
+                return (
+                  <div key={s.id} className="rounded-xl border border-border p-3 flex flex-col gap-2 hover:border-primary/40 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Zap className="h-4 w-4 text-primary" />
+                      </div>
+                      <p className="font-semibold text-sm">{s.title}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground flex-1">{s.description}</p>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">
+                        {res.extraEMI > 0 && `+${formatRupees(res.extraEMI)}/mo`}
+                        {res.extraEMI > 0 && res.yearlyLump > 0 && " · "}
+                        {res.yearlyLump > 0 && `${formatRupees(res.yearlyLump)}/yr`}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => applyStrategy(res.extraEMI, res.yearlyLump)}
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+
           {/* Pie charts */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card className="border-border shadow-sm">
@@ -636,7 +1021,7 @@ export function Planner() {
                   </PieChart>
                 </ResponsiveContainer>
                 <p className="text-center text-xs text-muted-foreground">
-                  Total: <span className="font-semibold text-foreground">{formatRupees(params.principal + result.stdTotalInterest)}</span>
+                  Total: <span className="font-semibold text-foreground">{formatRupees(params.principal + baseline.totalInterest)}</span>
                 </p>
               </CardContent>
             </Card>
@@ -658,83 +1043,11 @@ export function Planner() {
                   </PieChart>
                 </ResponsiveContainer>
                 <p className="text-center text-xs text-muted-foreground">
-                  Total: <span className="font-semibold text-emerald-700">{formatRupees(params.principal + result.accTotalInterest)}</span>
+                  Total: <span className="font-semibold text-emerald-700">{formatRupees(plan.totalPaid)}</span>
                 </p>
               </CardContent>
             </Card>
           </div>
-
-          {/* Road map */}
-          <Card className="border-border shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
-                <Target className="h-4 w-4 text-primary" />
-                Road to Zero Debt
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="relative">
-                {/* track */}
-                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border" />
-                <div className="space-y-4 pl-10">
-                  {[
-                    {
-                      pct: 0,
-                      label: "Loan शुरू",
-                      sub: `${formatRupees(params.principal)} borrowed`,
-                      color: "bg-slate-400",
-                    },
-                    {
-                      pct: 25,
-                      label: "25% चुकाया",
-                      sub: `${formatRupees(params.principal * 0.25)} principal repaid`,
-                      color: "bg-amber-400",
-                    },
-                    {
-                      pct: 50,
-                      label: "Halfway!",
-                      sub: `${formatRupees(params.principal * 0.5)} remaining`,
-                      color: "bg-amber-500",
-                    },
-                    {
-                      pct: 75,
-                      label: "75% Done",
-                      sub: `Almost there — ${formatRupees(params.principal * 0.25)} left`,
-                      color: "bg-emerald-500",
-                    },
-                    {
-                      pct: 100,
-                      label: "🎉 Debt Free!",
-                      sub: params.extraEMI > 0
-                        ? `${monthsToStr(result.accMonths)} में — ${monthsSaved > 0 ? `${monthsSaved} महीने जल्दी` : "standard time"}`
-                        : `${monthsToStr(result.stdMonths)} में`,
-                      color: params.extraEMI > 0 ? "bg-primary" : "bg-slate-500",
-                    },
-                  ].map((step, i) => {
-                    const monthsAtPct = params.extraEMI > 0
-                      ? Math.round((step.pct / 100) * result.accMonths)
-                      : Math.round((step.pct / 100) * result.stdMonths);
-                    const yrs = Math.floor(monthsAtPct / 12);
-                    const mos = monthsAtPct % 12;
-                    const timeLabel = monthsAtPct === 0 ? "Day 1" : yrs > 0 ? `${yrs}y ${mos}m` : `${mos}m`;
-
-                    return (
-                      <div key={i} className="relative flex items-start gap-3">
-                        <div className={`absolute -left-[34px] mt-0.5 h-4 w-4 rounded-full ${step.color} border-2 border-white shadow-sm`} />
-                        <div className="flex-1 flex items-start justify-between gap-2">
-                          <div>
-                            <p className="text-sm font-semibold">{step.label}</p>
-                            <p className="text-xs text-muted-foreground">{step.sub}</p>
-                          </div>
-                          <Badge variant="outline" className="text-xs shrink-0">{timeLabel}</Badge>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* CTA */}
           <div className="flex gap-3 flex-wrap">

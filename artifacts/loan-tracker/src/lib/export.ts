@@ -1,7 +1,204 @@
 import type { AmortizationResult } from "./amortization";
 import type { InterestSavings } from "./amortization";
 import type { BankStyleResult } from "./amortization";
+import type { PlannerResult } from "./planner-engine";
 import { formatDate } from "./loan-utils";
+
+export interface PlannerExportMeta {
+  borrowerName: string;
+  principal: number;
+  rate: number;
+  tenureMonths: number;
+  extraEMI: number;
+  topUp?: { amount: number; rate: number; month: number } | null;
+}
+
+export function exportPlannerCSV(
+  meta: PlannerExportMeta,
+  baseline: PlannerResult,
+  plan: PlannerResult
+) {
+  const rows: string[][] = [];
+  rows.push(["LOAN PAYOFF PLANNER — AMORTIZATION & REPAYMENT LEDGER"]);
+  rows.push([]);
+  rows.push(["Profile", meta.borrowerName || "Untitled"]);
+  rows.push(["Loan Amount", `Rs ${meta.principal}`]);
+  rows.push(["Interest Rate", `${meta.rate}% p.a.`]);
+  rows.push(["Tenure (Months)", meta.tenureMonths.toString()]);
+  rows.push(["Base EMI", `Rs ${plan.baseEMI.toFixed(2)}`]);
+  rows.push(["Extra Monthly Payment", `Rs ${meta.extraEMI}`]);
+  if (meta.topUp && meta.topUp.amount > 0) {
+    rows.push([
+      "Top-Up Loan",
+      `Rs ${meta.topUp.amount} @ ${meta.topUp.rate}% (month ${meta.topUp.month})`,
+    ]);
+  }
+  rows.push([]);
+  rows.push(["Standard payoff (months)", baseline.payoffMonths.toString()]);
+  rows.push(["Accelerated payoff (months)", plan.payoffMonths.toString()]);
+  rows.push(["Standard total interest", `Rs ${baseline.totalInterest.toFixed(2)}`]);
+  rows.push(["Accelerated total interest", `Rs ${plan.totalInterest.toFixed(2)}`]);
+  rows.push([
+    "Interest saved",
+    `Rs ${Math.max(0, baseline.totalInterest - plan.totalInterest).toFixed(2)}`,
+  ]);
+  rows.push([]);
+  rows.push([
+    "Year",
+    "Opening Balance (Rs)",
+    "EMI Paid (Rs)",
+    "Extra Prepaid (Rs)",
+    "Interest (Rs)",
+    "Principal (Rs)",
+    "Closing Balance (Rs)",
+  ]);
+  for (const y of plan.years) {
+    rows.push([
+      `Year ${y.year}`,
+      y.opening.toFixed(2),
+      y.emiPaid.toFixed(2),
+      y.extraPaid.toFixed(2),
+      y.interest.toFixed(2),
+      y.principal.toFixed(2),
+      y.closing.toFixed(2),
+    ]);
+  }
+  triggerCSVDownload(
+    rows,
+    `payoff_plan_${(meta.borrowerName || "loan").replace(/\s+/g, "_")}.csv`
+  );
+}
+
+export async function exportPlannerPDF(
+  meta: PlannerExportMeta,
+  baseline: PlannerResult,
+  plan: PlannerResult
+) {
+  const { jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
+
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const PRIMARY = [29, 92, 66] as [number, number, number];
+  const AMBER = [217, 119, 6] as [number, number, number];
+  const DARK = [15, 23, 42] as [number, number, number];
+
+  doc.setFillColor(...PRIMARY);
+  doc.rect(0, 0, 297, 22, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text("Ledger — Loan Payoff Plan", 14, 14);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(
+    `Generated: ${formatDate(new Date().toISOString().split("T")[0])}`,
+    250,
+    14
+  );
+
+  let y = 30;
+  doc.setTextColor(...DARK);
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Profile: ${meta.borrowerName || "Untitled"}`, 14, y);
+
+  y += 8;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(80, 80, 80);
+  const infoLeft = [
+    ["Loan Amount", `Rs ${meta.principal.toLocaleString("en-IN")}`],
+    ["Interest Rate", `${meta.rate}% p.a.`],
+    ["Tenure", `${meta.tenureMonths} months`],
+  ];
+  const infoRight = [
+    ["Base EMI", `Rs ${plan.baseEMI.toFixed(2)}`],
+    ["Extra Monthly", `Rs ${meta.extraEMI.toLocaleString("en-IN")}`],
+    [
+      "Top-Up",
+      meta.topUp && meta.topUp.amount > 0
+        ? `Rs ${meta.topUp.amount.toLocaleString("en-IN")} @ ${meta.topUp.rate}%`
+        : "—",
+    ],
+  ];
+  infoLeft.forEach(([label, val], i) => {
+    doc.setFont("helvetica", "bold");
+    doc.text(label + ":", 14, y + i * 6);
+    doc.setFont("helvetica", "normal");
+    doc.text(val, 55, y + i * 6);
+  });
+  infoRight.forEach(([label, val], i) => {
+    doc.setFont("helvetica", "bold");
+    doc.text(label + ":", 110, y + i * 6);
+    doc.setFont("helvetica", "normal");
+    doc.text(val, 145, y + i * 6);
+  });
+  y += 22;
+
+  const interestSaved = Math.max(0, baseline.totalInterest - plan.totalInterest);
+  const monthsSaved = Math.max(0, baseline.payoffMonths - plan.payoffMonths);
+  autoTable(doc, {
+    startY: y,
+    head: [
+      [
+        "Standard Interest",
+        "Accelerated Interest",
+        "Interest Saved",
+        "Standard Tenure",
+        "Accelerated Tenure",
+        "Months Saved",
+      ],
+    ],
+    body: [
+      [
+        `Rs ${baseline.totalInterest.toFixed(2)}`,
+        `Rs ${plan.totalInterest.toFixed(2)}`,
+        `Rs ${interestSaved.toFixed(2)}`,
+        `${baseline.payoffMonths} mo`,
+        `${plan.payoffMonths} mo`,
+        `${monthsSaved} mo`,
+      ],
+    ],
+    theme: "grid",
+    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: "bold", fontSize: 9 },
+    bodyStyles: { fontSize: 9, textColor: DARK },
+    margin: { left: 14, right: 14 },
+  });
+
+  const afterSummary = (doc as any).lastAutoTable.finalY + 8;
+  autoTable(doc, {
+    startY: afterSummary,
+    head: [
+      [
+        "Year",
+        "Opening Balance",
+        "EMI Paid",
+        "Extra Prepaid",
+        "Interest",
+        "Principal",
+        "Closing Balance",
+      ],
+    ],
+    body: plan.years.map((yr) => [
+      `Year ${yr.year}`,
+      `Rs ${yr.opening.toFixed(2)}`,
+      `Rs ${yr.emiPaid.toFixed(2)}`,
+      `Rs ${yr.extraPaid.toFixed(2)}`,
+      `Rs ${yr.interest.toFixed(2)}`,
+      `Rs ${yr.principal.toFixed(2)}`,
+      `Rs ${yr.closing.toFixed(2)}`,
+    ]),
+    theme: "striped",
+    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: "bold", fontSize: 8 },
+    bodyStyles: { fontSize: 8, textColor: DARK },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: { 3: { textColor: AMBER }, 4: { textColor: AMBER } },
+    margin: { left: 14, right: 14 },
+  });
+
+  addPageNumbers(doc);
+  doc.save(`payoff_plan_${(meta.borrowerName || "loan").replace(/\s+/g, "_")}.pdf`);
+}
 
 export function exportToCSV(
   borrowerName: string,

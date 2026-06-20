@@ -2,3 +2,4 @@
 - [Expo package versions for expo@54](expo-54-package-versions.md) — expo-secure-store@~15.0.8, expo-auth-session@~7.0.11 required; pnpm add without version picks incompatible latest.
 - [Anthropic AI integration wiring](anthropic-wiring.md) — Anthropic integration requires tsconfig refs in both root and api-server, db schema barrel export for conversations+messages, and @workspace/integrations-anthropic-ai in api-server dependencies.
 - [OpenAI key is Replit proxy](openai-key-is-replit-proxy.md) — OPENAI_API_KEY is an AQ.* AI Integrations key; raw SDK 401s, must use AI_INTEGRATIONS_OPENAI_BASE_URL proxy.
+- [Loan Payoff Planner engine](planner-engine.md) — /planner runs its own amortization sim; record actual installment in payoff month so emi+extra==interest+principal; baseline excludes extra/top-up.

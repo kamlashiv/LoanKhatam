@@ -1,7 +1,9 @@
-import { useSignIn } from "@clerk/clerk-expo";
+import { useSSO, useSignIn } from "@clerk/clerk-expo";
 import { Feather } from "@expo/vector-icons";
+import * as AuthSession from "expo-auth-session";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import * as WebBrowser from "expo-web-browser";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -17,16 +19,32 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/useColors";
 
+WebBrowser.maybeCompleteAuthSession();
+
+function useWarmUpBrowser() {
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    void WebBrowser.warmUpAsync();
+    return () => {
+      void WebBrowser.coolDownAsync();
+    };
+  }, []);
+}
+
 export default function SignInScreen() {
+  useWarmUpBrowser();
+
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { signIn, setActive, isLoaded } = useSignIn();
+  const { startSSOFlow } = useSSO();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [ssoLoading, setSsoLoading] = useState<"google" | "apple" | null>(null);
 
   const handleSignIn = async () => {
     if (!isLoaded) return;
@@ -43,7 +61,7 @@ export default function SignInScreen() {
       });
       if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
-        router.replace("/(tabs)/");
+        router.replace("/(tabs)");
       }
     } catch (err: unknown) {
       const msg =
@@ -55,6 +73,33 @@ export default function SignInScreen() {
       setLoading(false);
     }
   };
+
+  const handleSSO = useCallback(
+    async (strategy: "oauth_google" | "oauth_apple") => {
+      const label = strategy === "oauth_google" ? "google" : "apple";
+      setSsoLoading(label);
+      try {
+        const { createdSessionId, setActive: ssoSetActive } = await startSSOFlow({
+          strategy,
+          redirectUrl: AuthSession.makeRedirectUri(),
+        });
+
+        if (createdSessionId) {
+          await ssoSetActive!({ session: createdSessionId });
+          router.replace("/(tabs)");
+        }
+      } catch (err: unknown) {
+        const msg =
+          err && typeof err === "object" && "errors" in err
+            ? (err as { errors: Array<{ message: string }> }).errors[0]?.message
+            : `${label === "google" ? "Google" : "Apple"} sign-in failed. Please try again.`;
+        Alert.alert("Sign-in Failed", msg);
+      } finally {
+        setSsoLoading(null);
+      }
+    },
+    [startSSOFlow, router],
+  );
 
   const styles = StyleSheet.create({
     container: {
@@ -138,6 +183,44 @@ export default function SignInScreen() {
       fontWeight: "600" as const,
       fontFamily: "Inter_600SemiBold",
     },
+    dividerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 24,
+      marginBottom: 16,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.border,
+    },
+    dividerText: {
+      fontSize: 12,
+      color: colors.mutedForeground,
+      marginHorizontal: 12,
+      fontFamily: "Inter_400Regular",
+    },
+    ssoBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: colors.radius,
+      height: 50,
+      marginBottom: 12,
+      gap: 10,
+    },
+    ssoBtnDisabled: {
+      opacity: 0.6,
+    },
+    ssoBtnText: {
+      fontSize: 15,
+      fontWeight: "500" as const,
+      color: colors.foreground,
+      fontFamily: "Inter_400Regular",
+    },
     footer: {
       alignItems: "center",
       marginTop: 32,
@@ -148,6 +231,8 @@ export default function SignInScreen() {
       fontFamily: "Inter_400Regular",
     },
   });
+
+  const anyLoading = loading || ssoLoading !== null;
 
   return (
     <KeyboardAvoidingView
@@ -203,9 +288,9 @@ export default function SignInScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.signInBtn, loading && styles.signInBtnDisabled]}
+          style={[styles.signInBtn, anyLoading && styles.signInBtnDisabled]}
           onPress={handleSignIn}
-          disabled={loading}
+          disabled={anyLoading}
           testID="sign-in-btn"
         >
           {loading ? (
@@ -215,12 +300,70 @@ export default function SignInScreen() {
           )}
         </TouchableOpacity>
 
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>ya phir</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <TouchableOpacity
+          style={[styles.ssoBtn, anyLoading && styles.ssoBtnDisabled]}
+          onPress={() => handleSSO("oauth_google")}
+          disabled={anyLoading}
+          testID="google-sign-in-btn"
+        >
+          {ssoLoading === "google" ? (
+            <ActivityIndicator size="small" color={colors.mutedForeground} />
+          ) : (
+            <>
+              <GoogleIcon size={20} />
+              <Text style={styles.ssoBtnText}>Google se sign in karein</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        {Platform.OS === "ios" && (
+          <TouchableOpacity
+            style={[styles.ssoBtn, anyLoading && styles.ssoBtnDisabled]}
+            onPress={() => handleSSO("oauth_apple")}
+            disabled={anyLoading}
+            testID="apple-sign-in-btn"
+          >
+            {ssoLoading === "apple" ? (
+              <ActivityIndicator size="small" color={colors.mutedForeground} />
+            ) : (
+              <>
+                <AppleIcon size={20} color={colors.foreground} />
+                <Text style={styles.ssoBtnText}>Apple se sign in karein</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            Don&apos;t have an account? Sign up on the web app.
+            Account nahi hai? Web app par sign up karein.
           </Text>
         </View>
       </View>
     </KeyboardAvoidingView>
+  );
+}
+
+function GoogleIcon({ size = 20 }: { size?: number }) {
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      <Text style={{ fontSize: size * 0.8, lineHeight: size, fontWeight: "700" }}>G</Text>
+    </View>
+  );
+}
+
+function AppleIcon({ size = 20, color = "#000" }: { size?: number; color?: string }) {
+  return (
+    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+      <Text style={{ fontSize: size * 0.85, lineHeight: size, color, fontWeight: "700" }}>
+        
+      </Text>
+    </View>
   );
 }

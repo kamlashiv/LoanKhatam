@@ -65,7 +65,7 @@ function AuthGuard() {
     return <Redirect href="/(auth)/sign-in" />;
   }
   if (isSignedIn && segments[0] === "(auth)") {
-    return <Redirect href="/(tabs)/" />;
+    return <Redirect href="/(tabs)" />;
   }
   return null;
 }

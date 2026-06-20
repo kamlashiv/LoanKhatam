@@ -14,6 +14,7 @@ import {
   Upload, FileText, CheckCircle2, AlertCircle, Loader2,
   TrendingDown, Target, Zap, BarChart3, RefreshCw, Plus,
   Download, Pencil, Save, X, Calculator, Sparkles, ChevronDown,
+  PiggyBank, CalendarClock, Banknote,
 } from "lucide-react";
 import { formatRupees } from "@/lib/loan-utils";
 import {
@@ -44,6 +45,13 @@ function monthsToStr(m: number) {
   if (y === 0) return `${mo} months`;
   if (mo === 0) return `${y} years`;
   return `${y} years ${mo} months`;
+}
+
+function payoffDate(startMonth: string, months: number) {
+  const [y, m] = startMonth.split("-").map(Number);
+  if (!y || !m || months <= 0) return "—";
+  const d = new Date(y, m - 1 + (months - 1), 1);
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
 // ─── File upload component ───────────────────────────────────────────────────
@@ -474,16 +482,7 @@ export function Planner() {
             onClick={() => exportPlannerCSV(exportMeta, baseline, plan)}
           >
             <Download className="h-3.5 w-3.5" />
-            CSV
-          </Button>
-          <Button
-            size="sm"
-            className="gap-2 text-xs"
-            onClick={handlePDF}
-            disabled={exporting}
-          >
-            {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            PDF Report
+            Export CSV
           </Button>
         </div>
       </div>
@@ -745,37 +744,126 @@ export function Planner() {
 
         {/* ── Right Panel: Charts & Results ── */}
         <div className="lg:col-span-2 space-y-5">
+          {/* Print-ready PDF report bar */}
+          <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-slate-800 to-slate-700 px-5 py-4 shadow-sm">
+            <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+              <FileText className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-white text-sm">Print-Ready Client PDF Report</p>
+              <p className="text-xs text-slate-300">Includes payoff roadmap and comparative graphs</p>
+            </div>
+            <Button
+              size="sm"
+              className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+              onClick={handlePDF}
+              disabled={exporting}
+            >
+              {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              Download PDF Summary
+            </Button>
+          </div>
+
           {/* Summary cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <Card className={`shadow-sm ${interestSaved > 0 ? "border-amber-200 bg-amber-50" : "border-border"}`}>
-              <CardContent className="pt-4 pb-3">
-                <p className="text-xs text-amber-700 font-medium">Net Interest Saved</p>
-                <p className={`text-base font-bold mt-1 ${interestSaved > 0 ? "text-amber-800" : "text-muted-foreground"}`}>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {/* Net interest saved */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-5 text-white shadow-md">
+              <PiggyBank className="absolute -right-3 -bottom-3 h-24 w-24 text-white/10" />
+              <div className="relative">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold">
+                  <Sparkles className="h-3 w-3" /> Total Net Interest Saved
+                </div>
+                <p className="mt-3 text-xs font-medium text-white/80">Your Net Cash Interest Savings:</p>
+                <p className="mt-0.5 text-3xl font-extrabold tracking-tight">
                   {interestSaved > 0 ? formatRupees(interestSaved) : "₹0"}
                 </p>
-              </CardContent>
-            </Card>
-            <Card className="border-emerald-200 bg-emerald-50 shadow-sm">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-xs text-emerald-700 font-medium">Accelerated Payoff</p>
-                <p className="text-base font-bold mt-1 text-emerald-800">{monthsToStr(plan.payoffMonths)}</p>
-                <p className="text-xs text-emerald-700">{monthsSaved > 0 ? `${monthsSaved} months earlier` : "Same tenure"}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-border shadow-sm">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-xs text-muted-foreground">Net Principal</p>
-                <p className="text-base font-bold mt-1">{formatRupees(plan.totalPrincipalBorrowed)}</p>
-                <p className="text-xs text-muted-foreground">{topUpInput ? "incl. top-up" : "borrowed"}</p>
-              </CardContent>
-            </Card>
-            <Card className="border-border shadow-sm">
-              <CardContent className="pt-4 pb-3">
-                <p className="text-xs text-muted-foreground">Monthly Installment</p>
-                <p className="text-base font-bold mt-1">{formatRupees(totalMonthly)}</p>
-                <p className="text-xs text-muted-foreground">EMI {formatRupees(plan.baseEMI)} + {formatRupees(params.extraEMI)}</p>
-              </CardContent>
-            </Card>
+                <p className="mt-1 text-[11px] leading-snug text-white/75">
+                  {interestSaved > 0
+                    ? "Prepayments cut your compound interest cost."
+                    : "Add prepayment parameters to simulate high compound interest savings here"}
+                </p>
+                <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/20 pt-3 text-[11px]">
+                  <div>
+                    <p className="text-white/70">Standard Cost:</p>
+                    <p className="font-semibold">{formatRupees(baseline.totalPaid)}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/70">Savings Plan Cost:</p>
+                    <p className="font-semibold">{formatRupees(plan.totalPaid)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Accelerated payoff */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-5 text-white shadow-md">
+              <CalendarClock className="absolute -right-3 -bottom-3 h-24 w-24 text-white/10" />
+              <div className="relative">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold">
+                  <Zap className="h-3 w-3" /> Accelerated Payoff Timeline
+                </div>
+                <p className="mt-3 text-xs font-medium text-white/80">Saves Time & Slashes Years:</p>
+                <p className="mt-0.5 text-3xl font-extrabold tracking-tight">
+                  {monthsSaved > 0 ? monthsToStr(monthsSaved) : "0 Months"}
+                </p>
+                <p className="mt-1 text-[11px] leading-snug text-white/75">
+                  {monthsSaved > 0 ? `Pays off ${monthsToStr(monthsSaved)} sooner.` : "Repaying on time as scheduled"}
+                </p>
+                <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/20 pt-3 text-[11px]">
+                  <div>
+                    <p className="text-white/70">Standard payoff date:</p>
+                    <p className="font-semibold">{payoffDate(params.startMonth, baseline.payoffMonths)}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/70">Savings plan date:</p>
+                    <p className="font-semibold">{payoffDate(params.startMonth, plan.payoffMonths)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Net principal */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 p-5 text-white shadow-md">
+              <Banknote className="absolute -right-3 -bottom-3 h-24 w-24 text-white/10" />
+              <div className="relative">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold">
+                  <Banknote className="h-3 w-3" /> Net Principal (Total)
+                </div>
+                <p className="mt-3 text-xs font-medium text-white/80">Total actual loan amount borrowed:</p>
+                <p className="mt-0.5 text-3xl font-extrabold tracking-tight">{formatRupees(plan.totalPrincipalBorrowed)}</p>
+                <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/20 pt-3 text-[11px]">
+                  <div>
+                    <p className="text-white/70">Base Principal</p>
+                    <p className="font-semibold">{formatRupees(params.principal)}</p>
+                  </div>
+                  <div>
+                    <p className="text-white/70">Top-Up Loan</p>
+                    <p className="font-semibold">{topUpInput ? formatRupees(topUpInput.amount) : "No Active Top-up"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Monthly installment breakdown */}
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                <BarChart3 className="h-3 w-3" /> Monthly Installment Breakdown
+              </div>
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Base Monthly EMI:</span>
+                  <span className="font-bold">{formatRupees(plan.baseEMI)}</span>
+                </div>
+                <div className="flex items-center justify-between border-t border-border pt-3">
+                  <span className="text-muted-foreground">Total Paid (Standard Path):</span>
+                  <span className="font-semibold">{formatRupees(baseline.totalPaid)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Total Paid (Savings Plan Path):</span>
+                  <span className="font-semibold text-emerald-600">{formatRupees(plan.totalPaid)}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Savings banner */}

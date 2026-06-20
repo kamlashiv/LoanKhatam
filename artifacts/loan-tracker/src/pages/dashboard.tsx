@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Plus, AlertCircle, CheckCircle2, Clock, TrendingUp,
+  Plus, AlertCircle, CheckCircle2, Clock,
   Upload, FileText, X, Loader2, CheckCircle, AlertTriangle,
+  HandCoins,
 } from "lucide-react";
 import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils";
 import { extractFromFile } from "@/lib/file-extract";
@@ -251,15 +252,33 @@ export function Dashboard() {
 
   const summaryCards = summary
     ? [
-        { label: "Total Lent", value: formatRupees(summary.totalLent), icon: TrendingUp, color: "text-primary", bg: "bg-primary/10" },
-        { label: "Outstanding", value: formatRupees(summary.totalOutstanding), icon: Clock, color: "text-amber-700", bg: "bg-amber-50" },
-        { label: "Collected", value: formatRupees(summary.totalCollected), icon: CheckCircle2, color: "text-emerald-700", bg: "bg-emerald-50" },
+        {
+          label: "Total Lent",
+          caption: "Across your portfolio",
+          value: formatRupees(summary.totalLent),
+          icon: HandCoins,
+          gradient: "from-emerald-500 to-teal-600",
+        },
+        {
+          label: "Outstanding",
+          caption: "Yet to be collected",
+          value: formatRupees(summary.totalOutstanding),
+          icon: Clock,
+          gradient: "from-blue-500 to-indigo-600",
+        },
+        {
+          label: "Collected",
+          caption: "Repaid so far",
+          value: formatRupees(summary.totalCollected),
+          icon: CheckCircle2,
+          gradient: "from-orange-500 to-red-500",
+        },
         {
           label: "Overdue Loans",
+          caption: summary.overdueLoans > 0 ? "Past their due date" : "All on track",
           value: summary.overdueLoans.toString(),
           icon: AlertCircle,
-          color: summary.overdueLoans > 0 ? "text-destructive" : "text-muted-foreground",
-          bg: summary.overdueLoans > 0 ? "bg-destructive/10" : "bg-muted",
+          gradient: summary.overdueLoans > 0 ? "from-rose-500 to-red-600" : "from-slate-500 to-slate-600",
         },
       ]
     : [];
@@ -301,17 +320,22 @@ export function Dashboard() {
                 </Card>
               ))
             : summaryCards.map((card) => (
-                <Card key={card.label} className="border-border shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-medium text-muted-foreground">{card.label}</p>
-                      <div className={`h-8 w-8 rounded-lg ${card.bg} flex items-center justify-center`}>
-                        <card.icon className={`h-4 w-4 ${card.color}`} />
+                <div
+                  key={card.label}
+                  className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${card.gradient} p-5 text-white shadow-md transition-shadow hover:shadow-lg`}
+                >
+                  <card.icon className="absolute -right-3 -bottom-3 h-24 w-24 text-white/10" />
+                  <div className="relative">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold">{card.label}</p>
+                      <div className="h-8 w-8 rounded-lg bg-white/15 flex items-center justify-center">
+                        <card.icon className="h-4 w-4 text-white" />
                       </div>
                     </div>
-                    <p className={`text-2xl font-bold tracking-tight ${card.color}`}>{card.value}</p>
-                  </CardContent>
-                </Card>
+                    <p className="mt-3 text-3xl font-extrabold tracking-tight">{card.value}</p>
+                    <p className="mt-1 text-[11px] text-white/80">{card.caption}</p>
+                  </div>
+                </div>
               ))}
         </div>
 

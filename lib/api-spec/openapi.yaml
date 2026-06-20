@@ -1,22 +1,27 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Loan Tracker API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: loans
+    description: Loan management
+  - name: payments
+    description: Payment tracking
+  - name: dashboard
+    description: Dashboard summaries
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +29,225 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /loans:
+    get:
+      operationId: listLoans
+      tags: [loans]
+      summary: List all loans for current user
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, paid, overdue]
+          required: false
+      responses:
+        "200":
+          description: List of loans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Loan"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: createLoan
+      tags: [loans]
+      summary: Create a new loan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanInput"
+      responses:
+        "201":
+          description: Loan created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+
+  /loans/{id}:
+    get:
+      operationId: getLoan
+      tags: [loans]
+      summary: Get a loan by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Loan details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+    patch:
+      operationId: updateLoan
+      tags: [loans]
+      summary: Update a loan
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanUpdate"
+      responses:
+        "200":
+          description: Updated loan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Loan"
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+    delete:
+      operationId: deleteLoan
+      tags: [loans]
+      summary: Delete a loan
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+
+  /loans/{id}/payments:
+    get:
+      operationId: listPayments
+      tags: [payments]
+      summary: List payments for a loan
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payment"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: addPayment
+      tags: [payments]
+      summary: Add a payment to a loan
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentInput"
+      responses:
+        "201":
+          description: Payment added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+
+  /loans/{id}/payments/{paymentId}:
+    delete:
+      operationId: deletePayment
+      tags: [payments]
+      summary: Delete a payment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: paymentId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+        "401":
+          description: Unauthorized
+
+  /loans/recent:
+    get:
+      operationId: getRecentLoans
+      tags: [loans]
+      summary: Get recent loans (last 5)
+      responses:
+        "200":
+          description: Recent loans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Loan"
+        "401":
+          description: Unauthorized
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +258,149 @@ components:
       required:
         - status
 
+    Loan:
+      type: object
+      required:
+        - id
+        - userId
+        - borrowerName
+        - principalAmount
+        - interestRate
+        - startDate
+        - dueDate
+        - status
+        - totalPaid
+        - remainingAmount
+        - createdAt
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        borrowerName:
+          type: string
+        principalAmount:
+          type: number
+        interestRate:
+          type: number
+        startDate:
+          type: string
+        dueDate:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, paid, overdue]
+        totalPaid:
+          type: number
+        remainingAmount:
+          type: number
+        createdAt:
+          type: string
+
+    LoanInput:
+      type: object
+      required:
+        - borrowerName
+        - principalAmount
+        - interestRate
+        - startDate
+        - dueDate
+      properties:
+        borrowerName:
+          type: string
+          minLength: 1
+        principalAmount:
+          type: number
+          minimum: 0
+        interestRate:
+          type: number
+          minimum: 0
+        startDate:
+          type: string
+        dueDate:
+          type: string
+        description:
+          type: string
+
+    LoanUpdate:
+      type: object
+      properties:
+        borrowerName:
+          type: string
+        principalAmount:
+          type: number
+        interestRate:
+          type: number
+        startDate:
+          type: string
+        dueDate:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, paid, overdue]
+
+    Payment:
+      type: object
+      required:
+        - id
+        - loanId
+        - amount
+        - paymentDate
+        - createdAt
+      properties:
+        id:
+          type: integer
+        loanId:
+          type: integer
+        amount:
+          type: number
+        paymentDate:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    PaymentInput:
+      type: object
+      required:
+        - amount
+        - paymentDate
+      properties:
+        amount:
+          type: number
+          minimum: 0
+        paymentDate:
+          type: string
+        notes:
+          type: string
+
+    DashboardSummary:
+      type: object
+      required:
+        - totalLoans
+        - activeLoans
+        - overdueLoans
+        - paidLoans
+        - totalLent
+        - totalCollected
+        - totalOutstanding
+      properties:
+        totalLoans:
+          type: integer
+        activeLoans:
+          type: integer
+        overdueLoans:
+          type: integer
+        paidLoans:
+          type: integer
+        totalLent:
+          type: number
+        totalCollected:
+          type: number
+        totalOutstanding:
+          type: number

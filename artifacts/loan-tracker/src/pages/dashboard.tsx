@@ -28,9 +28,9 @@ interface ExtractedLoan {
 type UploadStatus = "idle" | "loading" | "success" | "error";
 
 const confStyle = {
-  high: "bg-emerald-100 text-emerald-800 border-emerald-300",
-  medium: "bg-amber-100 text-amber-800 border-amber-300",
-  low: "bg-red-100 text-red-800 border-red-300",
+  high: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800",
+  medium: "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800",
+  low: "bg-red-100 text-red-800 border-red-300 dark:bg-red-950/50 dark:text-red-300 dark:border-red-800",
 };
 const confLabel = { high: "✓ High", medium: "~ Medium", low: "⚠ Low" };
 
@@ -175,16 +175,16 @@ function ImportModal({ onClose }: { onClose: () => void }) {
 
           {/* Error */}
           {status === "error" && (
-            <div className="border-2 border-red-300 border-dashed rounded-xl p-6 bg-red-50 text-center space-y-3">
-              <AlertTriangle className="h-8 w-8 text-red-500 mx-auto" />
+            <div className="border-2 border-red-300 dark:border-red-800 border-dashed rounded-xl p-6 bg-red-50 dark:bg-red-950/30 text-center space-y-3">
+              <AlertTriangle className="h-8 w-8 text-red-500 dark:text-red-400 mx-auto" />
               <div>
-                <p className="font-semibold text-red-800 text-sm">Extraction failed</p>
-                <p className="text-xs text-red-600 mt-1">{errorMsg}</p>
+                <p className="font-semibold text-red-800 dark:text-red-300 text-sm">Extraction failed</p>
+                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errorMsg}</p>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="border-red-300 text-red-700 hover:bg-red-100"
+                className="border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-950/50"
                 onClick={() => setStatus("idle")}
               >
                 Try again
@@ -195,11 +195,11 @@ function ImportModal({ onClose }: { onClose: () => void }) {
           {/* Success */}
           {status === "success" && data && (
             <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />
+              <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-emerald-800 truncate">{fileName}</p>
-                  {data.notes && <p className="text-xs text-emerald-600 line-clamp-2">{data.notes}</p>}
+                  <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 truncate">{fileName}</p>
+                  {data.notes && <p className="text-xs text-emerald-600 dark:text-emerald-400 line-clamp-2">{data.notes}</p>}
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded-full border font-medium shrink-0 ${confStyle[data.confidence]}`}>
                   {confLabel[data.confidence]}
@@ -223,9 +223,9 @@ function ImportModal({ onClose }: { onClose: () => void }) {
               </div>
 
               {data.confidence === "low" && (
-                <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
-                  <p className="text-xs text-amber-800">Confidence is low — please verify the details manually in the form</p>
+                <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                  <p className="text-xs text-amber-800 dark:text-amber-300">Confidence is low — please verify the details manually in the form</p>
                 </div>
               )}
 
@@ -248,9 +248,9 @@ function ImportModal({ onClose }: { onClose: () => void }) {
 }
 
 const statusPill: Record<string, string> = {
-  active: "bg-indigo-100 text-indigo-700",
-  paid: "bg-emerald-100 text-emerald-700",
-  overdue: "bg-rose-100 text-rose-700",
+  active: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300",
+  paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+  overdue: "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
 };
 const statusLabel: Record<string, string> = {
   active: "Active",
@@ -284,35 +284,35 @@ export function Dashboard() {
           icon: AlertCircle,
           title: "Needs your attention",
           text: `${overdue} ${overdue === 1 ? "loan is" : "loans are"} overdue. Follow up soon to keep your collections on track.`,
-          bg: "bg-rose-50",
-          border: "border-rose-100",
-          iconBg: "bg-rose-100",
-          iconText: "text-rose-600",
-          titleColor: "text-rose-900",
-          bodyColor: "text-rose-700/80",
+          bg: "bg-rose-50 dark:bg-rose-950/30",
+          border: "border-rose-100 dark:border-rose-900/50",
+          iconBg: "bg-rose-100 dark:bg-rose-900/40",
+          iconText: "text-rose-600 dark:text-rose-400",
+          titleColor: "text-rose-900 dark:text-rose-200",
+          bodyColor: "text-rose-700/80 dark:text-rose-300/80",
         }
       : (summary?.totalLoans ?? 0) === 0
         ? {
             icon: Wallet,
             title: "Welcome to Ledger",
             text: "Add your first loan to start tracking repayments, balances, and due dates.",
-            bg: "bg-indigo-50",
-            border: "border-indigo-100",
-            iconBg: "bg-indigo-100",
-            iconText: "text-indigo-600",
-            titleColor: "text-indigo-900",
-            bodyColor: "text-indigo-700/80",
+            bg: "bg-indigo-50 dark:bg-indigo-950/30",
+            border: "border-indigo-100 dark:border-indigo-900/50",
+            iconBg: "bg-indigo-100 dark:bg-indigo-900/40",
+            iconText: "text-indigo-600 dark:text-indigo-400",
+            titleColor: "text-indigo-900 dark:text-indigo-200",
+            bodyColor: "text-indigo-700/80 dark:text-indigo-300/80",
           }
         : {
             icon: CheckCircle,
             title: "You're on track",
             text: `No overdue loans. ${formatRupees(summary?.totalOutstanding ?? 0)} still to be collected across ${summary?.activeLoans ?? 0} active ${(summary?.activeLoans ?? 0) === 1 ? "loan" : "loans"}.`,
-            bg: "bg-emerald-50",
-            border: "border-emerald-100",
-            iconBg: "bg-emerald-100",
-            iconText: "text-emerald-600",
-            titleColor: "text-emerald-900",
-            bodyColor: "text-emerald-700/80",
+            bg: "bg-emerald-50 dark:bg-emerald-950/30",
+            border: "border-emerald-100 dark:border-emerald-900/50",
+            iconBg: "bg-emerald-100 dark:bg-emerald-900/40",
+            iconText: "text-emerald-600 dark:text-emerald-400",
+            titleColor: "text-emerald-900 dark:text-emerald-200",
+            bodyColor: "text-emerald-700/80 dark:text-emerald-300/80",
           };
 
   return (
@@ -322,15 +322,15 @@ export function Dashboard() {
       {/* Header */}
       <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 md:text-4xl">
             Portfolio Overview
           </h1>
-          <p className="mt-1 font-medium text-slate-500">As of {today}</p>
+          <p className="mt-1 font-medium text-slate-500 dark:text-slate-400">As of {today}</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button
             variant="outline"
-            className="gap-2 rounded-2xl border-slate-200 bg-white px-5 py-3 font-bold text-slate-700 shadow-sm hover:bg-slate-50"
+            className="gap-2 rounded-2xl border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-5 py-3 font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800/60"
             onClick={() => setShowImport(true)}
           >
             <Upload className="h-4 w-4" />
@@ -377,7 +377,7 @@ export function Dashboard() {
           </div>
           <div className="z-10">
             {summaryLoading ? (
-              <Skeleton className="h-12 w-48 bg-white/20" />
+              <Skeleton className="h-12 w-48 bg-white dark:bg-slate-900/20" />
             ) : (
               <div className="mb-1 text-4xl font-extrabold tracking-tight md:text-5xl">
                 {formatRupees(summary?.totalLent ?? 0)}
@@ -423,7 +423,7 @@ export function Dashboard() {
             overdue > 0 ? "bg-rose-500" : "bg-slate-600"
           }`}
         >
-          <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white dark:bg-slate-900/10 blur-2xl" />
           <div className="flex items-center gap-2 font-bold text-rose-100">
             <BellRing className={`h-5 w-5 ${overdue > 0 ? "animate-pulse" : ""}`} />
             {overdue > 0 ? "Urgent Attention" : "All Clear"}
@@ -437,8 +437,8 @@ export function Dashboard() {
         </div>
 
         {/* Loan status mix */}
-        <div className="flex flex-col gap-4 rounded-[2rem] border border-slate-100 bg-white p-6 bento-shadow bento-hover">
-          <div className="flex items-center gap-2 font-bold text-slate-500">
+        <div className="flex flex-col gap-4 rounded-[2rem] border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 bento-shadow bento-hover">
+          <div className="flex items-center gap-2 font-bold text-slate-500 dark:text-slate-400">
             <PieChart className="h-4 w-4" /> Loan Status Mix
           </div>
           <div className="flex items-center gap-4">
@@ -472,10 +472,10 @@ export function Dashboard() {
                   </RePieChart>
                 </ResponsiveContainer>
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-extrabold leading-none text-slate-900">
+                  <span className="text-xl font-extrabold leading-none text-slate-900 dark:text-slate-100">
                     {statusTotal}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     Loans
                   </span>
                 </div>
@@ -484,14 +484,14 @@ export function Dashboard() {
             <div className="flex-1 space-y-2">
               {statusData.map((row) => (
                 <div key={row.label} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
                     <span
                       className="h-3 w-3 rounded-full"
                       style={{ backgroundColor: row.color }}
                     />{" "}
                     {row.label}
                   </div>
-                  <span className="font-bold text-slate-900">
+                  <span className="font-bold text-slate-900 dark:text-slate-100">
                     {summaryLoading ? "—" : row.value}
                   </span>
                 </div>
@@ -501,10 +501,10 @@ export function Dashboard() {
         </div>
 
         {/* Recent loans — large */}
-        <div className="flex flex-col rounded-[2rem] border border-slate-100 bg-white p-6 bento-shadow md:col-span-2 md:row-span-2">
+        <div className="flex flex-col rounded-[2rem] border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 bento-shadow md:col-span-2 md:row-span-2">
           <div className="mb-6 flex items-center justify-between">
-            <h3 className="flex items-center gap-2 font-bold text-slate-800">
-              <List className="h-5 w-5 text-slate-400" /> Recent Loans
+            <h3 className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
+              <List className="h-5 w-5 text-slate-400 dark:text-slate-500" /> Recent Loans
             </h3>
             <Link href="/loans" className="text-sm font-bold text-indigo-600 hover:underline">
               View All
@@ -514,7 +514,7 @@ export function Dashboard() {
           <div className="-mr-2 flex-1 space-y-4 overflow-y-auto pr-2">
             {loansLoading ? (
               Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
+                <div key={i} className="flex items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-4">
                   <div className="flex items-center gap-4">
                     <Skeleton className="h-10 w-10 rounded-full" />
                     <div className="space-y-2">
@@ -528,28 +528,28 @@ export function Dashboard() {
             ) : recentLoans && recentLoans.length > 0 ? (
               recentLoans.map((loan) => (
                 <Link key={loan.id} href={`/loans/${loan.id}`} className="block">
-                  <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 transition-colors hover:bg-slate-100">
+                  <div className="flex items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-4 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">
                     <div className="flex min-w-0 items-center gap-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-700">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-950/50 font-bold text-indigo-700 dark:text-indigo-300">
                         {loan.borrowerName.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <div className="truncate font-bold text-slate-900">{loan.borrowerName}</div>
-                        <div className="text-sm font-medium text-slate-500">
+                        <div className="truncate font-bold text-slate-900 dark:text-slate-100">{loan.borrowerName}</div>
+                        <div className="text-sm font-medium text-slate-500 dark:text-slate-400">
                           {loan.dueDate ? `Due ${formatDate(loan.dueDate)} • ` : ""}{loan.interestRate}% rate
                         </div>
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-4">
                       <div className="text-right">
-                        <div className="font-bold text-slate-900">{formatRupees(loan.principalAmount)}</div>
-                        <div className="text-xs font-semibold text-slate-500">
+                        <div className="font-bold text-slate-900 dark:text-slate-100">{formatRupees(loan.principalAmount)}</div>
+                        <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                           {formatRupees(loan.remainingAmount)} left
                         </div>
                       </div>
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
-                          statusPill[loan.status] ?? "bg-slate-100 text-slate-600"
+                          statusPill[loan.status] ?? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
                         {statusLabel[loan.status] ?? loan.status}
@@ -560,7 +560,7 @@ export function Dashboard() {
               ))
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-4 py-10 text-center">
-                <p className="font-medium text-slate-500">No loans yet. Add your first loan to get started.</p>
+                <p className="font-medium text-slate-500 dark:text-slate-400">No loans yet. Add your first loan to get started.</p>
                 <div className="flex flex-wrap justify-center gap-3">
                   <Button asChild className="gap-2 rounded-xl">
                     <Link href="/loans/new">
@@ -581,14 +581,14 @@ export function Dashboard() {
         {/* Quick action — drop statements */}
         <button
           onClick={() => setShowImport(true)}
-          className="group flex items-center justify-center rounded-[2rem] border-2 border-dashed border-indigo-200 bg-indigo-50 p-6 text-center bento-hover md:col-span-2"
+          className="group flex items-center justify-center rounded-[2rem] border-2 border-dashed border-indigo-200 dark:border-indigo-900/60 bg-indigo-50 dark:bg-indigo-950/30 p-6 text-center bento-hover md:col-span-2"
         >
           <div>
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 transition-transform group-hover:scale-110">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 transition-transform group-hover:scale-110">
               <Upload className="h-6 w-6" />
             </div>
-            <h4 className="text-lg font-bold text-indigo-900">Drop statements here</h4>
-            <p className="mt-1 text-sm font-medium text-indigo-600/70">
+            <h4 className="text-lg font-bold text-indigo-900 dark:text-indigo-200">Drop statements here</h4>
+            <p className="mt-1 text-sm font-medium text-indigo-600/70 dark:text-indigo-300/70">
               PDF, CSV, or screenshots to auto-import
             </p>
           </div>

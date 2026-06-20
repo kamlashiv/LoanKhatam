@@ -1,12 +1,30 @@
 import { Link, useLocation } from "wouter";
 import { useClerk } from "@clerk/react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/lib/theme";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
 import {
   Wallet, LayoutDashboard, List, LogOut, Plus, Menu, BarChart3, Target, Flame,
+  Sun, Moon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+
+function ThemeToggle({ className }: { className?: string }) {
+  const { isDark, toggleTheme } = useTheme();
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={toggleTheme}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      className={cn("text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100", className)}
+    >
+      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+    </Button>
+  );
+}
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -22,7 +40,7 @@ function Brand() {
       <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/20">
         <Wallet className="h-5 w-5 text-white" />
       </div>
-      <span className="text-2xl font-extrabold tracking-tight text-slate-800">Ledger</span>
+      <span className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">Ledger</span>
     </div>
   );
 }
@@ -38,8 +56,8 @@ function NavLinks({ location }: { location: string }) {
               className={cn(
                 "flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200 cursor-pointer",
                 isActive
-                  ? "bg-white text-indigo-700 font-bold shadow-sm border border-slate-100"
-                  : "text-slate-500 font-semibold hover:bg-white/60 hover:text-slate-800"
+                  ? "bg-white text-indigo-700 font-bold shadow-sm border border-slate-100 dark:bg-slate-800 dark:text-indigo-300 dark:border-slate-700"
+                  : "text-slate-500 font-semibold hover:bg-white/60 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-slate-100"
               )}
             >
               <item.icon className="h-5 w-5" />
@@ -57,12 +75,12 @@ function StayOnTopCard() {
   const overdue = summary?.overdueLoans ?? 0;
 
   return (
-    <div className="rounded-3xl border border-indigo-100 bg-indigo-50 p-5">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-indigo-600 shadow-sm">
+    <div className="rounded-3xl border border-indigo-100 bg-indigo-50 p-5 dark:border-indigo-900/50 dark:bg-indigo-950/40">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-indigo-600 shadow-sm dark:bg-slate-800 dark:text-indigo-300">
         <Flame className="h-5 w-5" />
       </div>
-      <h4 className="mb-1 font-bold text-slate-800">Stay on top</h4>
-      <p className="mb-4 text-sm font-medium leading-relaxed text-slate-500">
+      <h4 className="mb-1 font-bold text-slate-800 dark:text-slate-100">Stay on top</h4>
+      <p className="mb-4 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-400">
         {overdue > 0
           ? `You have ${overdue} overdue loan${overdue === 1 ? "" : "s"} that need${overdue === 1 ? "s" : ""} your attention.`
           : "Every loan is on track. Nice work staying ahead."}
@@ -89,15 +107,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background md:flex-row">
       {/* Mobile Header */}
-      <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/80 p-4 backdrop-blur-xl md:hidden">
+      <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/80 p-4 backdrop-blur-xl md:hidden dark:border-slate-800 dark:bg-slate-900/80">
         <Brand />
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Open menu" className="text-slate-700">
-              <Menu className="h-6 w-6" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="flex w-72 flex-col border-r-slate-200 bg-white p-6 pt-10">
+        <div className="flex items-center gap-1">
+          <ThemeToggle className="text-slate-700 dark:text-slate-300" />
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Open menu" className="text-slate-700 dark:text-slate-300">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex w-72 flex-col border-r-slate-200 bg-white p-6 pt-10 dark:border-r-slate-800 dark:bg-slate-900">
             <div className="mb-8">
               <Brand />
             </div>
@@ -114,19 +134,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <StayOnTopCard />
               <Button
                 variant="ghost"
-                className="w-full justify-start gap-3 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                className="w-full justify-start gap-3 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
                 onClick={handleLogout}
               >
                 <LogOut className="h-5 w-5" />
                 Log out
               </Button>
             </div>
-          </SheetContent>
-        </Sheet>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
 
       {/* Desktop Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col justify-between border-r border-slate-200/60 bg-white/60 p-6 backdrop-blur-xl md:flex">
+      <div className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col justify-between border-r border-slate-200/60 bg-white/60 p-6 backdrop-blur-xl md:flex dark:border-slate-800 dark:bg-slate-900/60">
         <div>
           <div className="mb-10">
             <Brand />
@@ -143,14 +164,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
         <div className="space-y-3">
           <StayOnTopCard />
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-5 w-5" />
-            Log out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              className="flex-1 justify-start gap-3 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-5 w-5" />
+              Log out
+            </Button>
+            <ThemeToggle className="shrink-0 hover:bg-slate-100 dark:hover:bg-slate-800" />
+          </div>
         </div>
       </div>
 

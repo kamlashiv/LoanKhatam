@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
 import { ChartTooltip } from "@/lib/chart-theme";
+import { useTheme } from "@/lib/theme";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -136,12 +137,12 @@ function FileUploadZone({
     <div
       className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
         dragOver
-          ? "border-indigo-500 bg-indigo-50"
+          ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40"
           : status === "success"
-          ? "border-emerald-400 bg-emerald-50"
+          ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/40"
           : status === "error"
-          ? "border-red-400 bg-red-50"
-          : "border-slate-200 hover:border-indigo-400 hover:bg-slate-50"
+          ? "border-red-400 bg-red-50 dark:bg-red-950/40"
+          : "border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800/60"
       }`}
       onDrop={onDrop}
       onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -158,38 +159,38 @@ function FileUploadZone({
 
       {status === "loading" && (
         <div className="flex flex-col items-center gap-2 py-2">
-          <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
-          <p className="text-sm font-medium text-indigo-600">
+          <Loader2 className="h-8 w-8 text-indigo-600 dark:text-indigo-400 animate-spin" />
+          <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
             {progress != null ? `Reading file… ${progress}%` : "Reading file…"}
           </p>
-          <p className="text-xs text-slate-500">{fileName}</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{fileName}</p>
         </div>
       )}
 
       {status === "success" && (
         <div className="flex flex-col items-center gap-2 py-2">
-          <CheckCircle2 className="h-8 w-8 text-emerald-600" />
-          <p className="text-sm font-semibold text-emerald-800">Data extracted — review &amp; edit below</p>
-          <p className="text-xs text-slate-500">{fileName}</p>
+          <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+          <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Data extracted — review &amp; edit below</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{fileName}</p>
         </div>
       )}
 
       {status === "error" && (
         <div className="flex flex-col items-center gap-2 py-2">
-          <AlertCircle className="h-8 w-8 text-red-500" />
-          <p className="text-sm font-semibold text-red-700">Something went wrong</p>
-          <p className="text-xs text-red-600">{errorMsg}</p>
+          <AlertCircle className="h-8 w-8 text-red-500 dark:text-red-400" />
+          <p className="text-sm font-semibold text-red-700 dark:text-red-300">Something went wrong</p>
+          <p className="text-xs text-red-600 dark:text-red-400">{errorMsg}</p>
         </div>
       )}
 
       {status === "idle" && (
         <div className="flex flex-col items-center gap-3 py-2">
-          <div className="h-12 w-12 rounded-xl bg-indigo-100 flex items-center justify-center">
-            <Upload className="h-6 w-6 text-indigo-600" />
+          <div className="h-12 w-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
+            <Upload className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
             <p className="font-semibold text-sm">Upload or drag a file</p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               PNG • JPG • PDF • JSON • CSV — data fills in automatically
             </p>
           </div>
@@ -212,9 +213,9 @@ function ExtractedReview({
   onDiscard: () => void;
 }) {
   const confidenceColor = {
-    high: "bg-emerald-100 text-emerald-800 border-emerald-300",
-    medium: "bg-amber-100 text-amber-800 border-amber-300",
-    low: "bg-red-100 text-red-800 border-red-300",
+    high: "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800",
+    medium: "bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800",
+    low: "bg-red-100 dark:bg-red-950/50 text-red-800 dark:text-red-300 border-red-300 dark:border-red-800",
   };
 
   const set = <K extends keyof ExtractedData>(k: K, v: ExtractedData[K]) =>
@@ -229,10 +230,10 @@ function ExtractedReview({
   if (draft.description) saveQuery.set("description", draft.description);
 
   return (
-    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-3">
+    <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg p-3 space-y-3">
       <div className="flex items-center justify-between">
         <span className="font-semibold text-sm flex items-center gap-1.5">
-          <Pencil className="h-3.5 w-3.5 text-indigo-600" />
+          <Pencil className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
           Extracted Data — Edit
         </span>
         <Badge className={`${confidenceColor[draft.confidence]} border text-xs`}>
@@ -240,7 +241,7 @@ function ExtractedReview({
         </Badge>
       </div>
       {draft.notes && (
-        <p className="text-xs text-slate-500 italic">{draft.notes}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 italic">{draft.notes}</p>
       )}
 
       <div className="grid grid-cols-2 gap-2.5">
@@ -318,14 +319,20 @@ function ExtractedReview({
 
 // Visual config for the 4 strategy cards (RinMukti palette).
 const STRAT_VISUAL = [
-  { icon: TrendingUp, card: "from-blue-50 to-indigo-100 border-blue-200", iconColor: "text-blue-600" },
-  { icon: Award, card: "from-emerald-50 to-teal-100 border-emerald-200", iconColor: "text-emerald-600" },
-  { icon: PiggyBank, card: "from-amber-50 to-orange-100 border-amber-200", iconColor: "text-amber-600" },
-  { icon: Flame, card: "from-rose-50 to-pink-100 border-rose-200", iconColor: "text-rose-600" },
+  { icon: TrendingUp, card: "from-blue-50 to-indigo-100 border-blue-200 dark:from-blue-950/40 dark:to-indigo-950/40 dark:border-blue-900/60", iconColor: "text-blue-600 dark:text-blue-400" },
+  { icon: Award, card: "from-emerald-50 to-teal-100 border-emerald-200 dark:from-emerald-950/40 dark:to-teal-950/40 dark:border-emerald-900/60", iconColor: "text-emerald-600 dark:text-emerald-400" },
+  { icon: PiggyBank, card: "from-amber-50 to-orange-100 border-amber-200 dark:from-amber-950/40 dark:to-orange-950/40 dark:border-amber-900/60", iconColor: "text-amber-600 dark:text-amber-400" },
+  { icon: Flame, card: "from-rose-50 to-pink-100 border-rose-200 dark:from-rose-950/40 dark:to-pink-950/40 dark:border-rose-900/60", iconColor: "text-rose-600 dark:text-rose-400" },
 ];
 
 // ─── Main page ───────────────────────────────────────────────────────────────
 export function Planner() {
+  const { isDark } = useTheme();
+  // Theme-aware chart styling so grids, axes, and slice borders stay legible.
+  const gridStroke = isDark ? "#1e293b" : "#f1f5f9";
+  const axisTick = { fontSize: 11, fill: isDark ? "#94a3b8" : "#64748b" };
+  const pieStroke = isDark ? "#0f172a" : "#fff";
+
   const [params, setParams] = useState<LoanParams>({
     principal: 2500000,
     rate: 8.5,
@@ -598,7 +605,7 @@ export function Planner() {
         { name: "Interest", value: stdMoneyInterest, color: "#f59e0b" },
       ],
       caption: `For every ₹100 you repay, about ₹${stdIntShare} is just interest.`,
-      captionColor: "text-amber-600",
+      captionColor: "text-amber-600 dark:text-amber-400",
       total: moneyLoanAmt + stdMoneyInterest,
     },
     {
@@ -608,7 +615,7 @@ export function Planner() {
         { name: "Interest", value: planMoneyInterest, color: "#10b981" },
       ],
       caption: `With smart payments, only about ₹${planIntShare} of every ₹100 is interest.`,
-      captionColor: "text-emerald-600",
+      captionColor: "text-emerald-600 dark:text-emerald-400",
       total: moneyLoanAmt + planMoneyInterest,
     },
   ];
@@ -620,12 +627,12 @@ export function Planner() {
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-start gap-3">
-          <div className="h-12 w-12 rounded-2xl bg-indigo-100 flex items-center justify-center shrink-0">
-            <Target className="h-6 w-6 text-indigo-600" />
+          <div className="h-12 w-12 rounded-2xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
+            <Target className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">SMART Strategy</h1>
-            <p className="text-sm text-slate-500 mt-1 max-w-xl">
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">SMART Strategy</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
               Plan prepayments, compare strategies, and see exactly how much interest and time you save.
             </p>
           </div>
@@ -636,25 +643,25 @@ export function Planner() {
             <ChevronDown className="h-3.5 w-3.5 opacity-60" />
           </Button>
           {exportOpen && (
-            <div className="absolute right-0 mt-1 z-20 w-44 rounded-lg border border-slate-200 bg-white shadow-lg p-1">
+            <div className="absolute right-0 mt-1 z-20 w-44 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg p-1">
               <button
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-50 text-left"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left"
                 onClick={() => { exportPlannerCSV(exportMeta, baseline, plan); setExportOpen(false); }}
               >
-                <FileSpreadsheet className="h-4 w-4 text-emerald-600" /> CSV Ledger
+                <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> CSV Ledger
               </button>
               <button
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-50 text-left disabled:opacity-60"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left disabled:opacity-60"
                 disabled={exporting}
                 onClick={handlePDF}
               >
-                {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 text-rose-600" />} PDF Report
+                {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 text-rose-600 dark:text-rose-400" />} PDF Report
               </button>
               <button
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-50 text-left"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left"
                 onClick={exportJSON}
               >
-                <FileCode className="h-4 w-4 text-indigo-600" /> JSON Data
+                <FileCode className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> JSON Data
               </button>
             </div>
           )}
@@ -712,19 +719,19 @@ export function Planner() {
       <Card>
         <CardContent className="pt-6">
           <div className="text-center mb-4">
-            <h2 className="text-xl font-bold text-slate-900">Where Does Your Money Go?</h2>
-            <p className="text-sm text-slate-500">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-50">Where Does Your Money Go?</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               A simple look at how much you pay back as the loan amount vs. extra interest
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {moneyPies.map((p) => (
               <div key={p.label} className="flex flex-col items-center">
-                <p className="font-semibold text-slate-700 mb-3">{p.label}</p>
+                <p className="font-semibold text-slate-700 dark:text-slate-200 mb-3">{p.label}</p>
                 <div className="w-full h-[240px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={p.data} cx="50%" cy="50%" outerRadius={90} dataKey="value" labelLine={false} label={renderSliceLabel} stroke="#fff" strokeWidth={2} isAnimationActive={false}>
+                      <Pie data={p.data} cx="50%" cy="50%" outerRadius={90} dataKey="value" labelLine={false} label={renderSliceLabel} stroke={pieStroke} strokeWidth={2} isAnimationActive={false}>
                         {p.data.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
@@ -737,13 +744,13 @@ export function Planner() {
                   {p.data.map((entry) => (
                     <div key={entry.name} className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                      <span className="text-sm text-slate-600">{entry.name}</span>
-                      <span className="text-sm font-bold text-slate-900">{compactRupees(entry.value)}</span>
+                      <span className="text-sm text-slate-600 dark:text-slate-300">{entry.name}</span>
+                      <span className="text-sm font-bold text-slate-900 dark:text-slate-50">{compactRupees(entry.value)}</span>
                     </div>
                   ))}
                 </div>
                 <p className={`text-sm font-semibold mt-3 text-center ${p.captionColor}`}>{p.caption}</p>
-                <p className="text-xs text-slate-400 mt-1">Total repaid: {formatRupees(p.total)}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Total repaid: {formatRupees(p.total)}</p>
               </div>
             ))}
           </div>
@@ -782,7 +789,7 @@ export function Planner() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="planner-principal">Principal (₹)</Label>
-                  <span className="text-sm font-bold text-slate-900">{compactRupees(params.principal)}</span>
+                  <span className="text-sm font-bold text-slate-900 dark:text-slate-50">{compactRupees(params.principal)}</span>
                 </div>
                 <Input
                   id="planner-principal"
@@ -813,17 +820,17 @@ export function Planner() {
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="planner-tenure">Tenure</Label>
-                    <div className="flex rounded-md border border-slate-200 overflow-hidden text-[11px]">
+                    <div className="flex rounded-md border border-slate-200 dark:border-slate-700 overflow-hidden text-[11px]">
                       <button
                         type="button"
-                        className={`px-2 py-0.5 ${tenureUnit === "years" ? "bg-indigo-600 text-white" : "bg-white text-slate-500"}`}
+                        className={`px-2 py-0.5 ${tenureUnit === "years" ? "bg-indigo-600 text-white" : "bg-white text-slate-500 dark:text-slate-400"}`}
                         onClick={() => setTenureUnit("years")}
                       >
                         Yr
                       </button>
                       <button
                         type="button"
-                        className={`px-2 py-0.5 ${tenureUnit === "months" ? "bg-indigo-600 text-white" : "bg-white text-slate-500"}`}
+                        className={`px-2 py-0.5 ${tenureUnit === "months" ? "bg-indigo-600 text-white" : "bg-white text-slate-500 dark:text-slate-400"}`}
                         onClick={() => setTenureUnit("months")}
                       >
                         Mo
@@ -853,10 +860,10 @@ export function Planner() {
                 />
               </div>
 
-              <div className="space-y-2 rounded-lg bg-emerald-50/60 border border-emerald-100 p-3">
+              <div className="space-y-2 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 p-3">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="planner-extra-emi" className="text-emerald-800">Extra Monthly Payment (₹)</Label>
-                  <span className="text-sm font-bold text-emerald-700">{formatRupees(params.extraEMI)}</span>
+                  <Label htmlFor="planner-extra-emi" className="text-emerald-800 dark:text-emerald-300">Extra Monthly Payment (₹)</Label>
+                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{formatRupees(params.extraEMI)}</span>
                 </div>
                 <Input
                   id="planner-extra-emi"
@@ -871,7 +878,7 @@ export function Planner() {
                   step={500}
                   onValueChange={([v]) => { set("extraEMI", v); setActiveStrategy(null); }}
                 />
-                <p className="text-xs text-slate-500">Base EMI is {compactRupees(plan.baseEMI)}/month before extras.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Base EMI is {compactRupees(plan.baseEMI)}/month before extras.</p>
               </div>
 
               <div className="space-y-1.5">
@@ -888,7 +895,7 @@ export function Planner() {
                 <Label>Top-up Loan</Label>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="space-y-1">
-                    <Label htmlFor="topup-amount" className="text-xs text-slate-500">Amount (₹)</Label>
+                    <Label htmlFor="topup-amount" className="text-xs text-slate-500 dark:text-slate-400">Amount (₹)</Label>
                     <Input
                       id="topup-amount"
                       type="number"
@@ -897,7 +904,7 @@ export function Planner() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="topup-rate" className="text-xs text-slate-500">Rate (%)</Label>
+                    <Label htmlFor="topup-rate" className="text-xs text-slate-500 dark:text-slate-400">Rate (%)</Label>
                     <Input
                       id="topup-rate"
                       type="number"
@@ -907,7 +914,7 @@ export function Planner() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="topup-month" className="text-xs text-slate-500">Month</Label>
+                    <Label htmlFor="topup-month" className="text-xs text-slate-500 dark:text-slate-400">Month</Label>
                     <Input
                       id="topup-month"
                       type="number"
@@ -917,18 +924,18 @@ export function Planner() {
                   </div>
                 </div>
                 {topUp.amount > 0 && (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {formatRupees(topUp.amount)} will be added in month {topUp.month} — the EMI will be recalculated.
                   </p>
                 )}
               </div>
 
-              <div className="space-y-2 rounded-lg bg-slate-50 border border-slate-200 p-3">
+              <div className="space-y-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-3">
                 <div className="flex items-center justify-between">
                   <Label className="flex items-center gap-1.5">
-                    <Calculator className="h-3.5 w-3.5 text-indigo-600" /> Reverse Calculator: Target Yrs
+                    <Calculator className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" /> Reverse Calculator: Target Yrs
                   </Label>
-                  <span className="text-sm font-bold text-indigo-700">{targetYears} yrs</span>
+                  <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300">{targetYears} yrs</span>
                 </div>
                 <Slider
                   value={[targetYears]}
@@ -937,26 +944,26 @@ export function Planner() {
                   step={1}
                   onValueChange={([v]) => setTargetYears(v)}
                 />
-                <p className="text-xs text-slate-600">
+                <p className="text-xs text-slate-600 dark:text-slate-300">
                   To finish in {targetYears} years, pay {formatRupees(reverse.requiredPayment)}/mo
                   {reverse.requiredExtra > 0 && (
-                    <> (<span className="font-semibold text-emerald-700">+{formatRupees(reverse.requiredExtra)}</span> extra)</>
+                    <> (<span className="font-semibold text-emerald-700 dark:text-emerald-400">+{formatRupees(reverse.requiredExtra)}</span> extra)</>
                   )}.
                 </p>
                 {reverse.requiredExtra > 0 && (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="w-full h-8 gap-1.5 text-xs bg-white"
+                    className="w-full h-8 gap-1.5 text-xs bg-white dark:bg-slate-800"
                     onClick={() => { setActiveStrategy(null); set("extraEMI", Math.round(reverse.requiredExtra)); }}
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Apply to Calculator
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Apply to Calculator
                   </Button>
                 )}
               </div>
             </CardContent>
             <CardFooter>
-              <Button variant="ghost" className="w-full gap-2 text-slate-500 hover:text-slate-700" onClick={resetAll}>
+              <Button variant="ghost" className="w-full gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" onClick={resetAll}>
                 <RefreshCw className="h-4 w-4" /> Reset All
               </Button>
             </CardFooter>
@@ -969,46 +976,46 @@ export function Planner() {
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             <Card>
               <CardContent className="pt-5">
-                <div className="flex items-center gap-2 text-slate-500">
-                  <TrendingDown className="h-4 w-4 text-emerald-600" />
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                  <TrendingDown className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   <p className="text-xs font-semibold uppercase tracking-wide">Interest Saved</p>
                 </div>
-                <FitAmount value={interestSaved} className="font-black text-slate-900 mt-2" maxFontSize={24} />
-                <p className="text-xs text-slate-500 mt-1">≈{Math.round(interestSavingPct)}% of standard interest</p>
+                <FitAmount value={interestSaved} className="font-black text-slate-900 dark:text-slate-50 mt-2" maxFontSize={24} />
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">≈{Math.round(interestSavingPct)}% of standard interest</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="pt-5">
-                <div className="flex items-center gap-2 text-slate-500">
-                  <CalendarRange className="h-4 w-4 text-emerald-600" />
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                  <CalendarRange className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   <p className="text-xs font-semibold uppercase tracking-wide">Tenure Saved</p>
                 </div>
-                <p className="text-2xl font-black text-slate-900 mt-2">
+                <p className="text-2xl font-black text-slate-900 dark:text-slate-50 mt-2">
                   {monthsSaved > 0 ? savedTimeLabel(monthsSaved) : "0 Months"}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   {monthsSaved > 0 ? `Clears ${Math.round(timeSavingPct)}% sooner` : "Repaying on time as scheduled"}
                 </p>
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-2">
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500 mt-2">
                   <span>{payoffDate(params.startMonth, baseline.payoffMonths)}</span>
                   <span>→</span>
-                  <span className="text-emerald-600 font-semibold">{payoffDate(params.startMonth, plan.payoffMonths)}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{payoffDate(params.startMonth, plan.payoffMonths)}</span>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="pt-5 pb-[20px]">
-                <div className="flex items-center gap-2 text-slate-500">
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
                   <Scale className="h-4 w-4" />
                   <p className="text-xs font-semibold uppercase tracking-wide">Net Principal</p>
                 </div>
-                <FitAmount value={netPrincipal} className="font-black text-slate-900 mt-2" maxFontSize={23} />
-                <p className="text-xs text-slate-500 mt-1">
+                <FitAmount value={netPrincipal} className="font-black text-slate-900 dark:text-slate-50 mt-2" maxFontSize={23} />
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   Borrowed amount
                   {disbursedTopUp > 0 && (
-                    <span className="text-indigo-600 font-semibold"> + {formatRupees(disbursedTopUp)}</span>
+                    <span className="text-indigo-600 dark:text-indigo-400 font-semibold"> + {formatRupees(disbursedTopUp)}</span>
                   )}
                 </p>
               </CardContent>
@@ -1016,15 +1023,15 @@ export function Planner() {
 
             <Card>
               <CardContent className="pt-5">
-                <div className="flex items-center gap-2 text-slate-500">
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
                   <Coins className="h-4 w-4" />
                   <p className="text-xs font-semibold uppercase tracking-wide">Monthly EMI</p>
                 </div>
-                <FitAmount value={plan.baseEMI} className="font-black text-slate-900 mt-2" maxFontSize={24} />
+                <FitAmount value={plan.baseEMI} className="font-black text-slate-900 dark:text-slate-50 mt-2" maxFontSize={24} />
                 <p className="text-xs mt-1">
                   {params.extraEMI > 0
-                    ? <span className="text-emerald-600 font-semibold">+{formatRupees(params.extraEMI)} extra</span>
-                    : <span className="text-slate-500">No extra payment yet</span>}
+                    ? <span className="text-emerald-600 dark:text-emerald-400 font-semibold">+{formatRupees(params.extraEMI)} extra</span>
+                    : <span className="text-slate-500 dark:text-slate-400">No extra payment yet</span>}
                 </p>
               </CardContent>
             </Card>
@@ -1035,17 +1042,17 @@ export function Planner() {
             <Card>
               <CardHeader className="flex-row items-center justify-between space-y-0">
                 <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-indigo-600" /> Projection
+                  <BarChart3 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> Projection
                 </CardTitle>
-                <div className="flex rounded-md border border-slate-200 overflow-hidden text-xs">
+                <div className="flex rounded-md border border-slate-200 dark:border-slate-700 overflow-hidden text-xs">
                   <button
-                    className={`px-3 py-1 ${chartTab === "balance" ? "bg-indigo-600 text-white" : "bg-white text-slate-500"}`}
+                    className={`px-3 py-1 ${chartTab === "balance" ? "bg-indigo-600 text-white" : "bg-white text-slate-500 dark:text-slate-400"}`}
                     onClick={() => setChartTab("balance")}
                   >
                     Balance
                   </button>
                   <button
-                    className={`px-3 py-1 ${chartTab === "costs" ? "bg-indigo-600 text-white" : "bg-white text-slate-500"}`}
+                    className={`px-3 py-1 ${chartTab === "costs" ? "bg-indigo-600 text-white" : "bg-white text-slate-500 dark:text-slate-400"}`}
                     onClick={() => setChartTab("costs")}
                   >
                     Costs
@@ -1067,9 +1074,9 @@ export function Planner() {
                             <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                        <XAxis dataKey="year" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
-                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => compactRupees(v)} width={60} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                        <XAxis dataKey="year" tick={axisTick} interval="preserveStartEnd" />
+                        <YAxis tick={axisTick} tickFormatter={(v) => compactRupees(v)} width={60} />
                         <Tooltip content={<ChartTooltip />} />
                         <Legend />
                         <Area type="monotone" dataKey="Standard Balance" stroke="#f43f5e" fill="url(#gStd)" strokeWidth={2} />
@@ -1077,9 +1084,9 @@ export function Planner() {
                       </AreaChart>
                     ) : (
                       <BarChart data={costData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => compactRupees(v)} width={60} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                        <XAxis dataKey="name" tick={axisTick} />
+                        <YAxis tick={axisTick} tickFormatter={(v) => compactRupees(v)} width={60} />
                         <Tooltip content={<ChartTooltip />} />
                         <Legend />
                         <Bar dataKey="Principal" stackId="a" fill="#6366f1" radius={[0, 0, 0, 0]} />
@@ -1094,7 +1101,7 @@ export function Planner() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-indigo-600" /> Smart Payoff Leverage Strategies
+                  <Zap className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> Smart Payoff Leverage Strategies
                 </CardTitle>
                 <CardDescription>Select a strategy to instantly load it into the calculator</CardDescription>
               </CardHeader>
@@ -1110,15 +1117,15 @@ export function Planner() {
                       >
                         <div className="flex items-center gap-2">
                           <Icon className={`h-4 w-4 ${s.iconColor}`} />
-                          <p className="font-semibold text-sm text-slate-800 leading-tight">{s.title}</p>
+                          <p className="font-semibold text-sm text-slate-800 dark:text-slate-100 leading-tight">{s.title}</p>
                         </div>
-                        <p className="text-[11px] text-slate-600 mt-1">
+                        <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1">
                           Saves {compactRupees(s.saved)} &amp; {savedTimeLabel(s.mSaved)}
                         </p>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="w-full mt-2 h-7 text-[11px] bg-white/70"
+                          className="w-full mt-2 h-7 text-[11px] bg-white/70 dark:bg-slate-800/70"
                           onClick={() => applyStrategy(s.id, s.res.extraEMI, s.res.yearlyLump)}
                         >
                           Apply to Calculator
@@ -1127,12 +1134,12 @@ export function Planner() {
                     );
                   })}
                 </div>
-                <div className="flex items-start gap-2 rounded-lg bg-indigo-50 border border-indigo-100 p-3">
-                  <div className="h-8 w-8 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
-                    <ArrowUpRight className="h-4 w-4 text-indigo-600" />
+                <div className="flex items-start gap-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 p-3">
+                  <div className="h-8 w-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
+                    <ArrowUpRight className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                   </div>
-                  <p className="text-[11px] text-slate-600 leading-relaxed">
-                    <span className="font-semibold text-slate-800">The Prepayment Acceleration Magic</span> — In the early
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                    <span className="font-semibold text-slate-800 dark:text-slate-100">The Prepayment Acceleration Magic</span> — In the early
                     years of a loan, 70–80% of your EMI goes to interest while principal falls slowly. Any extra prepayment
                     attacks the core principal directly.
                   </p>
@@ -1145,7 +1152,7 @@ export function Planner() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <PiggyBank className="h-4 w-4 text-indigo-600" /> Comparison Breakdown
+                <PiggyBank className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> Comparison Breakdown
               </CardTitle>
               <CardDescription>Principal vs. interest, standard path vs. your savings plan</CardDescription>
             </CardHeader>
@@ -1156,11 +1163,11 @@ export function Planner() {
                   { label: "Savings Plan", data: pieAccelerated, total: plan.totalPaid },
                 ].map((d) => (
                   <div key={d.label} className="flex flex-col items-center">
-                    <p className="font-semibold text-slate-700 text-sm mb-2">{d.label}</p>
+                    <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm mb-2">{d.label}</p>
                     <div className="w-full h-[200px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                          <Pie data={d.data} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" stroke="#fff" strokeWidth={2}>
+                          <Pie data={d.data} cx="50%" cy="50%" innerRadius={55} outerRadius={85} dataKey="value" stroke={pieStroke} strokeWidth={2}>
                             {d.data.map((entry, index) => (
                               <Cell key={`donut-${index}`} fill={entry.color} />
                             ))}
@@ -1169,12 +1176,12 @@ export function Planner() {
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">Total: {formatRupees(d.total)}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Total: {formatRupees(d.total)}</p>
                     <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
                       {d.data.map((entry) => (
                         <div key={entry.name} className="flex items-center gap-1.5">
                           <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                          <span className="text-[11px] text-slate-600">{entry.name}</span>
+                          <span className="text-[11px] text-slate-600 dark:text-slate-300">{entry.name}</span>
                         </div>
                       ))}
                     </div>
@@ -1190,7 +1197,7 @@ export function Planner() {
         <CardHeader className="flex-row items-center justify-between space-y-0 gap-4 flex-wrap">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <TableIcon className="h-4 w-4 text-indigo-600" /> Repayment Ledger
+              <TableIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> Repayment Ledger
             </CardTitle>
             <CardDescription>
               {viewMode === "yearly" ? "Yearly summary — edit a year's extra prepayment inline" : "Month-by-month schedule"}
@@ -1198,7 +1205,7 @@ export function Planner() {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
               <Input
                 className="h-8 w-40 pl-8 text-xs"
                 aria-label="Search ledger rows"
@@ -1207,15 +1214,15 @@ export function Planner() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <div className="flex rounded-md border border-slate-200 overflow-hidden text-xs">
+            <div className="flex rounded-md border border-slate-200 dark:border-slate-700 overflow-hidden text-xs">
               <button
-                className={`px-3 py-1 ${viewMode === "yearly" ? "bg-indigo-600 text-white" : "bg-white text-slate-500"}`}
+                className={`px-3 py-1 ${viewMode === "yearly" ? "bg-indigo-600 text-white" : "bg-white text-slate-500 dark:text-slate-400"}`}
                 onClick={() => setViewMode("yearly")}
               >
                 Yearly
               </button>
               <button
-                className={`px-3 py-1 ${viewMode === "monthly" ? "bg-indigo-600 text-white" : "bg-white text-slate-500"}`}
+                className={`px-3 py-1 ${viewMode === "monthly" ? "bg-indigo-600 text-white" : "bg-white text-slate-500 dark:text-slate-400"}`}
                 onClick={() => setViewMode("monthly")}
               >
                 Monthly
@@ -1232,7 +1239,7 @@ export function Planner() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+                  <tr className="border-b border-slate-200 dark:border-slate-700 text-left text-xs text-slate-500 dark:text-slate-400">
                     <th className="py-2 pr-3 font-medium">{viewMode === "yearly" ? "Year" : "Month"}</th>
                     <th className="py-2 px-3 font-medium text-right">Opening</th>
                     <th className="py-2 px-3 font-medium text-right">Interest</th>
@@ -1244,10 +1251,10 @@ export function Planner() {
                 <tbody>
                   {viewMode === "yearly"
                     ? yearlyRows.map((y) => (
-                        <tr key={y.year} className="border-b border-slate-100 last:border-0">
-                          <td className="py-2 pr-3 font-medium text-slate-800">Year {y.year}</td>
+                        <tr key={y.year} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                          <td className="py-2 pr-3 font-medium text-slate-800 dark:text-slate-100">Year {y.year}</td>
                           <td className="py-2 px-3 text-right tabular-nums">{formatRupees(y.opening)}</td>
-                          <td className="py-2 px-3 text-right tabular-nums text-amber-600">{formatRupees(y.interest)}</td>
+                          <td className="py-2 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">{formatRupees(y.interest)}</td>
                           <td className="py-2 px-3 text-right tabular-nums">{formatRupees(y.principal)}</td>
                           <td className="py-2 px-3 text-right">
                             <Input
@@ -1262,24 +1269,24 @@ export function Planner() {
                               }}
                             />
                           </td>
-                          <td className="py-2 pl-3 text-right tabular-nums font-semibold text-slate-900">{formatRupees(y.closing)}</td>
+                          <td className="py-2 pl-3 text-right tabular-nums font-semibold text-slate-900 dark:text-slate-50">{formatRupees(y.closing)}</td>
                         </tr>
                       ))
                     : monthlyRows.map((m) => (
-                        <tr key={m.month} className="border-b border-slate-100 last:border-0">
-                          <td className="py-2 pr-3 font-medium text-slate-800">{m.label}</td>
+                        <tr key={m.month} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                          <td className="py-2 pr-3 font-medium text-slate-800 dark:text-slate-100">{m.label}</td>
                           <td className="py-2 px-3 text-right tabular-nums">{formatRupees(m.opening)}</td>
-                          <td className="py-2 px-3 text-right tabular-nums text-amber-600">{formatRupees(m.interest)}</td>
+                          <td className="py-2 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">{formatRupees(m.interest)}</td>
                           <td className="py-2 px-3 text-right tabular-nums">{formatRupees(m.principal)}</td>
-                          <td className="py-2 pl-3 text-right tabular-nums font-semibold text-slate-900">{formatRupees(m.closing)}</td>
+                          <td className="py-2 pl-3 text-right tabular-nums font-semibold text-slate-900 dark:text-slate-50">{formatRupees(m.closing)}</td>
                         </tr>
                       ))}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t-2 border-slate-200 font-semibold text-slate-900">
+                  <tr className="border-t-2 border-slate-200 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-50">
                     <td className="py-2 pr-3">Total Interest</td>
                     <td className="py-2 px-3" />
-                    <td className="py-2 px-3 text-right tabular-nums text-amber-600">{formatRupees(plan.totalInterest)}</td>
+                    <td className="py-2 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">{formatRupees(plan.totalInterest)}</td>
                     <td className="py-2 px-3" />
                     {viewMode === "yearly" && <td className="py-2 px-3" />}
                     <td className="py-2 pl-3" />
@@ -1287,7 +1294,7 @@ export function Planner() {
                 </tfoot>
               </table>
               {rows.length === 0 && (
-                <p className="text-center text-sm text-slate-400 py-6">No rows match your search.</p>
+                <p className="text-center text-sm text-slate-400 dark:text-slate-500 py-6">No rows match your search.</p>
               )}
             </div>
           </CardContent>

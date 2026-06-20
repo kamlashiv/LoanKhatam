@@ -112,6 +112,49 @@
   --radius: 0.85rem;
 }
 
+.dark {
+  --background: 222 47% 7%; /* deep slate canvas */
+  --foreground: 210 40% 96%; /* slate-100 */
+  --border: 217 33% 20%; /* slate-700-ish */
+  --input: 217 33% 22%;
+  --ring: 243 75% 66%; /* indigo accent */
+
+  --card: 222 40% 11%; /* slate-900 panel */
+  --card-foreground: 210 40% 96%;
+  --card-border: 217 33% 20%;
+
+  --popover: 222 40% 13%;
+  --popover-foreground: 210 40% 96%;
+  --popover-border: 217 33% 20%;
+
+  --primary: 243 75% 66%; /* indigo-400/500 */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 96%;
+
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%; /* slate-400 */
+
+  --accent: 243 47% 22%; /* deep indigo */
+  --accent-foreground: 226 70% 85%;
+
+  --destructive: 0 72% 55%;
+  --destructive-foreground: 0 0% 100%;
+
+  --success: 160 70% 45%;
+  --success-foreground: 0 0% 100%;
+
+  --sidebar: 222 40% 11%;
+  --sidebar-foreground: 210 40% 96%;
+  --sidebar-border: 217 33% 20%;
+  --sidebar-primary: 243 75% 66%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 217 33% 17%;
+  --sidebar-accent-foreground: 210 40% 96%;
+  --sidebar-ring: 243 75% 66%;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -125,11 +168,17 @@
   .bento-shadow {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
   }
+  .dark .bento-shadow {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  }
   .bento-hover {
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
   .bento-hover:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+  }
+  .dark .bento-hover:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   }
 }

@@ -10,7 +10,7 @@ import {
   Upload, FileText, X, Loader2, CheckCircle, AlertTriangle,
 } from "lucide-react";
 import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils";
-import { useAuth } from "@clerk/react";
+import { extractFromFile } from "@/lib/file-extract";
 
 interface ExtractedLoan {
   borrowerName: string | null;
@@ -33,12 +33,12 @@ const confStyle = {
 const confLabel = { high: "✓ High", medium: "~ Medium", low: "⚠ Low" };
 
 function ImportModal({ onClose }: { onClose: () => void }) {
-  const { getToken } = useAuth();
   const [, setLocation] = useLocation();
   const [status, setStatus] = useState<UploadStatus>("idle");
   const [fileName, setFileName] = useState("");
   const [data, setData] = useState<ExtractedLoan | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [progress, setProgress] = useState<number | null>(null);
   const [drag, setDrag] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -46,24 +46,18 @@ function ImportModal({ onClose }: { onClose: () => void }) {
     setFileName(file.name);
     setStatus("loading");
     setErrorMsg("");
+    setProgress(null);
     try {
-      const token = await getToken();
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/extract-loan", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
+      const extracted = await extractFromFile(file, (info) => {
+        if (info.stage === "ocr" && info.percent != null) setProgress(info.percent);
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Extraction failed");
-      setData(json.data);
+      setData(extracted);
       setStatus("success");
     } catch (e: any) {
-      setErrorMsg(e.message ?? "Upload failed");
+      setErrorMsg(e.message ?? "File पढ़ नहीं पाए");
       setStatus("error");
     }
-  }, [getToken]);
+  }, []);
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -139,7 +133,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
                   <div>
                     <p className="font-semibold text-sm">File upload करें या खींचें</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      AI automatically loan data extract करेगा
+                      Loan data अपने आप पढ़कर भर जाएगा
                     </p>
                   </div>
                   <div className="flex gap-2 flex-wrap justify-center">
@@ -152,7 +146,7 @@ function ImportModal({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
               <p className="text-center text-xs text-muted-foreground">
-                🔒 Data secure — AI extract करके Add Loan form में auto-fill होगा
+                🔒 Data आपके device पर ही पढ़ा जाता है — Add Loan form में auto-fill होगा
               </p>
             </>
           )}
@@ -163,9 +157,11 @@ function ImportModal({ onClose }: { onClose: () => void }) {
               <div className="flex flex-col items-center gap-3">
                 <Loader2 className="h-10 w-10 text-primary animate-spin" />
                 <div>
-                  <p className="font-semibold text-sm text-primary">AI extract कर रहा है…</p>
+                  <p className="font-semibold text-sm text-primary">
+                    {progress != null ? `File पढ़ रहे हैं… ${progress}%` : "File पढ़ रहे हैं…"}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-1">{fileName}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Loan data document से निकाल रहा है</p>
+                  <p className="text-xs text-muted-foreground mt-1">Loan data document से निकाल रहे हैं</p>
                 </div>
                 <div className="w-full bg-primary/20 rounded-full h-1.5 overflow-hidden">
                   <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: "65%" }} />

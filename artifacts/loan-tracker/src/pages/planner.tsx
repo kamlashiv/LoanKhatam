@@ -21,7 +21,7 @@ import {
   type PlannerResult,
 } from "@/lib/planner-engine";
 import { exportPlannerCSV, exportPlannerPDF } from "@/lib/export";
-import { useAuth } from "@clerk/react";
+import { extractFromFile, type ExtractedData } from "@/lib/file-extract";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface LoanParams {
@@ -38,17 +38,6 @@ interface TopUpState {
   month: number;
 }
 
-interface ExtractedData {
-  borrowerName: string | null;
-  principalAmount: number | null;
-  interestRate: number | null;
-  startDate: string | null;
-  dueDate: string | null;
-  description: string | null;
-  confidence: "high" | "medium" | "low";
-  notes: string;
-}
-
 function monthsToStr(m: number) {
   const y = Math.floor(m / 12);
   const mo = m % 12;
@@ -63,35 +52,29 @@ function FileUploadZone({
 }: {
   onExtracted: (data: ExtractedData) => void;
 }) {
-  const { getToken } = useAuth();
   const [dragOver, setDragOver] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [fileName, setFileName] = useState("");
+  const [progress, setProgress] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const processFile = useCallback(async (file: File) => {
     setFileName(file.name);
     setStatus("loading");
     setErrorMsg("");
+    setProgress(null);
     try {
-      const token = await getToken();
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/extract-loan", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
+      const data = await extractFromFile(file, (info) => {
+        if (info.stage === "ocr" && info.percent != null) setProgress(info.percent);
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Extraction failed");
       setStatus("success");
-      onExtracted(json.data);
+      onExtracted(data);
     } catch (e: any) {
-      setErrorMsg(e.message);
+      setErrorMsg(e.message ?? "File पढ़ नहीं पाए");
       setStatus("error");
     }
-  }, [getToken, onExtracted]);
+  }, [onExtracted]);
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -127,7 +110,9 @@ function FileUploadZone({
       {status === "loading" && (
         <div className="flex flex-col items-center gap-2 py-2">
           <Loader2 className="h-8 w-8 text-primary animate-spin" />
-          <p className="text-sm font-medium text-primary">AI extract कर रहा है…</p>
+          <p className="text-sm font-medium text-primary">
+            {progress != null ? `File पढ़ रहे हैं… ${progress}%` : "File पढ़ रहे हैं…"}
+          </p>
           <p className="text-xs text-muted-foreground">{fileName}</p>
         </div>
       )}
@@ -156,7 +141,7 @@ function FileUploadZone({
           <div>
             <p className="font-semibold text-sm">File upload करें या खींचें</p>
             <p className="text-xs text-muted-foreground mt-1">
-              PNG • JPG • PDF • JSON • CSV — AI data extract करेगा
+              PNG • JPG • PDF • JSON • CSV — data अपने आप भर जाएगा
             </p>
           </div>
         </div>

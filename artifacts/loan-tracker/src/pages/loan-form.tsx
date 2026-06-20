@@ -15,8 +15,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+interface RateChangeEntry {
+  effectiveDate: string;
+  newRate: string;
+}
 
 export function LoanForm() {
   const params = useParams<{ id: string }>();
@@ -40,6 +45,8 @@ export function LoanForm() {
     description: urlParams.get("description") ?? "",
   });
 
+  const [rateChanges, setRateChanges] = useState<RateChangeEntry[]>([]);
+
   const { data: existingLoan } = useGetLoan(id ?? 0, {
     query: { enabled: isEditing, queryKey: getGetLoanQueryKey(id ?? 0) },
   });
@@ -54,6 +61,14 @@ export function LoanForm() {
         dueDate: existingLoan.dueDate,
         description: existingLoan.description ?? "",
       });
+      if (existingLoan.rateChanges && existingLoan.rateChanges.length > 0) {
+        setRateChanges(
+          existingLoan.rateChanges.map((rc) => ({
+            effectiveDate: rc.effectiveDate,
+            newRate: rc.newRate.toString(),
+          }))
+        );
+      }
     }
   }, [existingLoan, isEditing]);
 
@@ -87,8 +102,34 @@ export function LoanForm() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const addRateChange = () => {
+    setRateChanges((prev) => [
+      ...prev,
+      { effectiveDate: new Date().toISOString().split("T")[0], newRate: "" },
+    ]);
+  };
+
+  const removeRateChange = (index: number) => {
+    setRateChanges((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateRateChange = (index: number, field: keyof RateChangeEntry, value: string) => {
+    setRateChanges((prev) =>
+      prev.map((rc, i) => (i === index ? { ...rc, [field]: value } : rc))
+    );
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const validRateChanges = rateChanges
+      .filter((rc) => rc.effectiveDate && rc.newRate !== "")
+      .map((rc) => ({
+        effectiveDate: rc.effectiveDate,
+        newRate: parseFloat(rc.newRate),
+      }))
+      .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
+
     const data = {
       borrowerName: form.borrowerName,
       principalAmount: parseFloat(form.principalAmount),
@@ -96,6 +137,7 @@ export function LoanForm() {
       startDate: form.startDate,
       dueDate: form.dueDate,
       description: form.description || undefined,
+      rateChanges: validRateChanges,
     };
 
     if (isEditing && id) {
@@ -223,6 +265,69 @@ export function LoanForm() {
                 onChange={handleChange}
                 rows={3}
               />
+            </div>
+
+            {/* Rate Change Events */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-semibold">Rate Change Events</Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Add dates when the interest rate changed (e.g. due to RBI rate revision)
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs h-8"
+                  onClick={addRateChange}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add
+                </Button>
+              </div>
+
+              {rateChanges.length > 0 && (
+                <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                  {rateChanges.map((rc, index) => (
+                    <div key={index} className="flex items-end gap-2">
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-xs text-muted-foreground">Effective Date</Label>
+                        <Input
+                          type="date"
+                          value={rc.effectiveDate}
+                          onChange={(e) => updateRateChange(index, "effectiveDate", e.target.value)}
+                          className="h-8 text-sm"
+                          required
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <Label className="text-xs text-muted-foreground">New Rate (% p.a.)</Label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          min="0"
+                          step="any"
+                          value={rc.newRate}
+                          onChange={(e) => updateRateChange(index, "newRate", e.target.value)}
+                          className="h-8 text-sm"
+                          required
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                        onClick={() => removeRateChange(index)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 pt-2">

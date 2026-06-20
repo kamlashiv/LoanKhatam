@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { LoanStatus } from './loanStatus';
+import type { RateChange } from './rateChange';
 
 export interface Loan {
   id: number;
@@ -21,4 +22,5 @@ export interface Loan {
   totalPaid: number;
   remainingAmount: number;
   createdAt: string;
+  rateChanges: RateChange[];
 }

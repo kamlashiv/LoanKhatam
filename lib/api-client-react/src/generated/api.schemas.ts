@@ -9,6 +9,12 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface RateChange {
+  effectiveDate: string;
+  /** @minimum 0 */
+  newRate: number;
+}
+
 export type LoanStatus = typeof LoanStatus[keyof typeof LoanStatus];
 
 
@@ -32,6 +38,7 @@ export interface Loan {
   totalPaid: number;
   remainingAmount: number;
   createdAt: string;
+  rateChanges: RateChange[];
 }
 
 export interface LoanInput {
@@ -44,6 +51,7 @@ export interface LoanInput {
   startDate: string;
   dueDate: string;
   description?: string;
+  rateChanges?: RateChange[];
 }
 
 export type LoanUpdateStatus = typeof LoanUpdateStatus[keyof typeof LoanUpdateStatus];
@@ -63,6 +71,7 @@ export interface LoanUpdate {
   dueDate?: string;
   description?: string;
   status?: LoanUpdateStatus;
+  rateChanges?: RateChange[];
 }
 
 export interface Payment {

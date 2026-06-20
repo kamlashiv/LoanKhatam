@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileSpreadsheet, FileText } from "lucide-react";
-import type { BankStyleResult } from "@/lib/amortization";
+import type { BankStyleResult, RateChange } from "@/lib/amortization";
 import { formatDate } from "@/lib/loan-utils";
 import { exportBankCSV, exportBankPDF } from "@/lib/export";
 
@@ -13,6 +13,7 @@ interface Props {
   startDate: string;
   dueDate: string;
   result: BankStyleResult;
+  rateChanges?: RateChange[];
 }
 
 function fmt(n: number, decimals = 2): string {
@@ -32,6 +33,7 @@ export function BankAmortizationTable({
   startDate,
   dueDate,
   result,
+  rateChanges,
 }: Props) {
   const [showAll, setShowAll] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -160,8 +162,11 @@ export function BankAmortizationTable({
             <tbody>
               {displayedRows.map((row, idx) => {
                 const isPrepayment = row.rowType === "prepayment";
+                const isRateChange = row.rowType === "rate_change";
                 const rowCls = isPrepayment
                   ? "bg-amber-50 border-b border-amber-200"
+                  : isRateChange
+                  ? "bg-blue-50 border-b border-blue-200"
                   : row.isCurrent
                   ? "bg-emerald-50 border-b border-border font-semibold"
                   : row.isPast
@@ -174,6 +179,10 @@ export function BankAmortizationTable({
                       {isPrepayment ? (
                         <Badge className="bg-amber-100 text-amber-800 border-amber-300 border text-[10px] py-0 px-1.5">
                           Prepayment
+                        </Badge>
+                      ) : isRateChange ? (
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-300 border text-[10px] py-0 px-1.5">
+                          Rate Change
                         </Badge>
                       ) : (
                         <span className="text-primary font-medium">

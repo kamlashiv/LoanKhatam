@@ -48,6 +48,7 @@ function computeLoanFields(loan: any, payments: any[]) {
     totalPaid,
     remainingAmount: remaining,
     createdAt: loan.createdAt.toISOString(),
+    rateChanges: (loan.rateChanges as any[]) ?? [],
   };
 }
 
@@ -102,7 +103,7 @@ router.post("/", requireAuth, async (req: any, res) => {
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid input" });
     }
-    const { borrowerName, principalAmount, interestRate, startDate, dueDate, description } =
+    const { borrowerName, principalAmount, interestRate, startDate, dueDate, description, rateChanges } =
       parsed.data;
     const [loan] = await db
       .insert(loansTable)
@@ -115,6 +116,7 @@ router.post("/", requireAuth, async (req: any, res) => {
         dueDate,
         description: description ?? null,
         status: "active",
+        rateChanges: (rateChanges ?? []) as any,
       })
       .returning();
     res.status(201).json(computeLoanFields(loan, []));
@@ -203,6 +205,7 @@ router.patch("/:id", requireAuth, async (req: any, res) => {
     if (d.dueDate !== undefined) updates.dueDate = d.dueDate;
     if (d.description !== undefined) updates.description = d.description;
     if (d.status !== undefined) updates.status = d.status;
+    if (d.rateChanges !== undefined) updates.rateChanges = d.rateChanges;
 
     const [updated] = await db
       .update(loansTable)

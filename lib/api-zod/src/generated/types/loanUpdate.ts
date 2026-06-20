@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { LoanUpdateStatus } from './loanUpdateStatus';
+import type { RateChange } from './rateChange';
 
 export interface LoanUpdate {
   borrowerName?: string;
@@ -15,4 +16,5 @@ export interface LoanUpdate {
   dueDate?: string;
   description?: string;
   status?: LoanUpdateStatus;
+  rateChanges?: RateChange[];
 }

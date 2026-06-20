@@ -5,6 +5,7 @@
  * Loan Tracker API
  * OpenAPI spec version: 0.1.0
  */
+import type { RateChange } from './rateChange';
 
 export interface LoanInput {
   /** @minLength 1 */
@@ -16,4 +17,5 @@ export interface LoanInput {
   startDate: string;
   dueDate: string;
   description?: string;
+  rateChanges?: RateChange[];
 }

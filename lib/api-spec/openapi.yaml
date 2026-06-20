@@ -258,6 +258,18 @@ components:
       required:
         - status
 
+    RateChange:
+      type: object
+      required:
+        - effectiveDate
+        - newRate
+      properties:
+        effectiveDate:
+          type: string
+        newRate:
+          type: number
+          minimum: 0
+
     Loan:
       type: object
       required:
@@ -272,6 +284,7 @@ components:
         - totalPaid
         - remainingAmount
         - createdAt
+        - rateChanges
       properties:
         id:
           type: integer
@@ -298,6 +311,10 @@ components:
           type: number
         createdAt:
           type: string
+        rateChanges:
+          type: array
+          items:
+            $ref: "#/components/schemas/RateChange"
 
     LoanInput:
       type: object
@@ -323,6 +340,10 @@ components:
           type: string
         description:
           type: string
+        rateChanges:
+          type: array
+          items:
+            $ref: "#/components/schemas/RateChange"
 
     LoanUpdate:
       type: object
@@ -342,6 +363,10 @@ components:
         status:
           type: string
           enum: [active, paid, overdue]
+        rateChanges:
+          type: array
+          items:
+            $ref: "#/components/schemas/RateChange"
 
     Payment:
       type: object

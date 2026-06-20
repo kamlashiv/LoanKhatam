@@ -14,6 +14,7 @@ import {
   calculateAmortization,
   calculateSavings,
   calculateBankStyleSchedule,
+  type RateChange,
 } from "@/lib/amortization";
 import { formatRupees, formatDate } from "@/lib/loan-utils";
 import { BankAmortizationTable } from "@/components/bank-amortization-table";
@@ -32,6 +33,7 @@ interface Props {
   totalPaid: number;
   remainingAmount: number;
   payments?: Payment[];
+  rateChanges?: RateChange[];
 }
 
 const COLORS = {
@@ -71,6 +73,7 @@ export function AmortizationSection({
   totalPaid,
   remainingAmount,
   payments = [],
+  rateChanges = [],
 }: Props) {
   const amort = useMemo(
     () => calculateAmortization(principalAmount, interestRate, startDate, dueDate),
@@ -91,8 +94,8 @@ export function AmortizationSection({
   );
 
   const bankResult = useMemo(
-    () => calculateBankStyleSchedule(principalAmount, interestRate, startDate, dueDate, payments),
-    [principalAmount, interestRate, startDate, dueDate, payments]
+    () => calculateBankStyleSchedule(principalAmount, interestRate, startDate, dueDate, payments, rateChanges),
+    [principalAmount, interestRate, startDate, dueDate, payments, rateChanges]
   );
 
   const pieData = useMemo(() => {
@@ -279,6 +282,7 @@ export function AmortizationSection({
           startDate={startDate}
           dueDate={dueDate}
           result={bankResult}
+          rateChanges={rateChanges}
         />
       </div>
     </div>

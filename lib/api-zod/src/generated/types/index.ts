@@ -17,3 +17,4 @@ export * from './loanUpdate';
 export * from './loanUpdateStatus';
 export * from './payment';
 export * from './paymentInput';
+export * from './rateChange';

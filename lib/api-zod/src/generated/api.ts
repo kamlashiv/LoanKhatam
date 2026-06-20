@@ -23,6 +23,10 @@ export const ListLoansQueryParams = zod.object({
   "status": zod.enum(['active', 'paid', 'overdue']).optional()
 })
 
+export const listLoansResponseRateChangesItemNewRateMin = 0;
+
+
+
 export const ListLoansResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.string(),
@@ -35,7 +39,11 @@ export const ListLoansResponseItem = zod.object({
   "status": zod.enum(['active', 'paid', 'overdue']),
   "totalPaid": zod.number(),
   "remainingAmount": zod.number(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "rateChanges": zod.array(zod.object({
+  "effectiveDate": zod.string(),
+  "newRate": zod.number().min(listLoansResponseRateChangesItemNewRateMin)
+}))
 })
 export const ListLoansResponse = zod.array(ListLoansResponseItem)
 
@@ -48,6 +56,8 @@ export const createLoanBodyPrincipalAmountMin = 0;
 
 export const createLoanBodyInterestRateMin = 0;
 
+export const createLoanBodyRateChangesItemNewRateMin = 0;
+
 
 
 export const CreateLoanBody = zod.object({
@@ -56,7 +66,11 @@ export const CreateLoanBody = zod.object({
   "interestRate": zod.number().min(createLoanBodyInterestRateMin),
   "startDate": zod.string(),
   "dueDate": zod.string(),
-  "description": zod.string().optional()
+  "description": zod.string().optional(),
+  "rateChanges": zod.array(zod.object({
+  "effectiveDate": zod.string(),
+  "newRate": zod.number().min(createLoanBodyRateChangesItemNewRateMin)
+})).optional()
 })
 
 
@@ -66,6 +80,10 @@ export const CreateLoanBody = zod.object({
 export const GetLoanParams = zod.object({
   "id": zod.coerce.number()
 })
+
+export const getLoanResponseRateChangesItemNewRateMin = 0;
+
+
 
 export const GetLoanResponse = zod.object({
   "id": zod.number(),
@@ -79,7 +97,11 @@ export const GetLoanResponse = zod.object({
   "status": zod.enum(['active', 'paid', 'overdue']),
   "totalPaid": zod.number(),
   "remainingAmount": zod.number(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "rateChanges": zod.array(zod.object({
+  "effectiveDate": zod.string(),
+  "newRate": zod.number().min(getLoanResponseRateChangesItemNewRateMin)
+}))
 })
 
 
@@ -90,6 +112,10 @@ export const UpdateLoanParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const updateLoanBodyRateChangesItemNewRateMin = 0;
+
+
+
 export const UpdateLoanBody = zod.object({
   "borrowerName": zod.string().optional(),
   "principalAmount": zod.number().optional(),
@@ -97,8 +123,16 @@ export const UpdateLoanBody = zod.object({
   "startDate": zod.string().optional(),
   "dueDate": zod.string().optional(),
   "description": zod.string().optional(),
-  "status": zod.enum(['active', 'paid', 'overdue']).optional()
+  "status": zod.enum(['active', 'paid', 'overdue']).optional(),
+  "rateChanges": zod.array(zod.object({
+  "effectiveDate": zod.string(),
+  "newRate": zod.number().min(updateLoanBodyRateChangesItemNewRateMin)
+})).optional()
 })
+
+export const updateLoanResponseRateChangesItemNewRateMin = 0;
+
+
 
 export const UpdateLoanResponse = zod.object({
   "id": zod.number(),
@@ -112,7 +146,11 @@ export const UpdateLoanResponse = zod.object({
   "status": zod.enum(['active', 'paid', 'overdue']),
   "totalPaid": zod.number(),
   "remainingAmount": zod.number(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "rateChanges": zod.array(zod.object({
+  "effectiveDate": zod.string(),
+  "newRate": zod.number().min(updateLoanResponseRateChangesItemNewRateMin)
+}))
 })
 
 
@@ -186,6 +224,10 @@ export const GetDashboardSummaryResponse = zod.object({
 /**
  * @summary Get recent loans (last 5)
  */
+export const getRecentLoansResponseRateChangesItemNewRateMin = 0;
+
+
+
 export const GetRecentLoansResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.string(),
@@ -198,7 +240,11 @@ export const GetRecentLoansResponseItem = zod.object({
   "status": zod.enum(['active', 'paid', 'overdue']),
   "totalPaid": zod.number(),
   "remainingAmount": zod.number(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "rateChanges": zod.array(zod.object({
+  "effectiveDate": zod.string(),
+  "newRate": zod.number().min(getRecentLoansResponseRateChangesItemNewRateMin)
+}))
 })
 export const GetRecentLoansResponse = zod.array(GetRecentLoansResponseItem)
 

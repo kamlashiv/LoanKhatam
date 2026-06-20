@@ -25,8 +25,13 @@ export interface InterestSavings {
   remainingPrincipal: number;
 }
 
+export interface RateChange {
+  effectiveDate: string;
+  newRate: number;
+}
+
 export interface BankStyleRow {
-  rowType: "amrt" | "prepayment";
+  rowType: "amrt" | "prepayment" | "rate_change";
   tranType: string;
   fromDate: string;
   toDate: string;
@@ -177,7 +182,8 @@ export function calculateBankStyleSchedule(
   annualRate: number,
   startDate: string,
   dueDate: string,
-  payments: Array<{ paymentDate: string; amount: number }>
+  payments: Array<{ paymentDate: string; amount: number }>,
+  rateChanges: RateChange[] = []
 ): BankStyleResult {
   const tenureMonths = monthsBetween(startDate, dueDate);
   if (tenureMonths <= 0 || principal <= 0) {
@@ -185,28 +191,71 @@ export function calculateBankStyleSchedule(
   }
 
   const today = new Date().toISOString().split("T")[0];
-  const monthlyRate = annualRate / 12 / 100;
   const initialEMI = r2(calcEMI(principal, annualRate, tenureMonths));
 
   const sortedPayments = [...payments].sort((a, b) =>
     a.paymentDate.localeCompare(b.paymentDate)
   );
 
+  // Sort rate changes chronologically; filter those outside the loan range.
+  // A rate change is applied from the START of the first monthly period whose
+  // periodStart >= rc.effectiveDate (i.e. the month that begins on or after the
+  // effective date).  That way ANY date — mid-month, first-of-month, etc. —
+  // is handled consistently: the new rate kicks in from the next full period.
+  const sortedRateChanges = [...rateChanges]
+    .filter((rc) => rc.effectiveDate > startDate && rc.effectiveDate < dueDate)
+    .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
+
   const rows: BankStyleRow[] = [];
   let balance = principal;
   let currentEMI = initialEMI;
   let paymentIdx = 0;
+  let rateChangeIdx = 0;
   let totalInterest = 0;
+  let activeRate = annualRate;
 
   for (let month = 1; month <= tenureMonths; month++) {
     const periodStart = firstOfMonth(addMonths(startDate, month - 1));
     const periodEnd = lastOfMonth(periodStart);
 
-    const remainingMonthsIncludingThis = tenureMonths - month + 1;
-    currentEMI = r2(calcEMI(balance, annualRate, remainingMonthsIncludingThis));
-
     const isPast = periodEnd < today;
     const isCurrent = periodStart <= today && today <= periodEnd;
+
+    // Apply all rate changes whose effectiveDate <= periodStart (they have
+    // already taken effect by the beginning of this period).  Multiple events
+    // between the previous periodStart and this one are applied in order.
+    while (
+      rateChangeIdx < sortedRateChanges.length &&
+      sortedRateChanges[rateChangeIdx].effectiveDate <= periodStart
+    ) {
+      const rc = sortedRateChanges[rateChangeIdx];
+      activeRate = rc.newRate;
+      const isRcPast = rc.effectiveDate < today;
+      const isRcCurrent = rc.effectiveDate === today;
+      const moLeft = tenureMonths - month + 1;
+      const newEMI = moLeft > 0 ? r2(calcEMI(balance, activeRate, moLeft)) : 0;
+      rows.push({
+        rowType: "rate_change",
+        tranType: "Rate Change",
+        fromDate: rc.effectiveDate,
+        toDate: rc.effectiveDate,
+        openingPrincipal: r2(balance),
+        prepAdjDisb: 0,
+        roi: activeRate,
+        emi: newEMI,
+        months: 0,
+        emiRcble: 0,
+        intComp: 0,
+        prinComp: 0,
+        closingPrincipal: r2(balance),
+        isPast: isRcPast,
+        isCurrent: isRcCurrent,
+      });
+      rateChangeIdx++;
+    }
+
+    const remainingMonthsIncludingThis = tenureMonths - month + 1;
+    currentEMI = r2(calcEMI(balance, activeRate, remainingMonthsIncludingThis));
 
     while (
       paymentIdx < sortedPayments.length &&
@@ -234,13 +283,13 @@ export function calculateBankStyleSchedule(
       });
       balance = Math.max(0, pmtClosing);
       const moLeft = tenureMonths - month + 1;
-      currentEMI = r2(calcEMI(balance, annualRate, moLeft));
+      currentEMI = r2(calcEMI(balance, activeRate, moLeft));
       paymentIdx++;
     }
 
     if (balance <= 0) break;
 
-    const intComp = r2(balance * monthlyRate);
+    const intComp = r2(balance * (activeRate / 12 / 100));
     let prinComp = r2(currentEMI - intComp);
     if (month === tenureMonths || prinComp >= balance) {
       prinComp = r2(balance);
@@ -254,7 +303,7 @@ export function calculateBankStyleSchedule(
       toDate: periodEnd,
       openingPrincipal: r2(balance),
       prepAdjDisb: 0,
-      roi: annualRate,
+      roi: activeRate,
       emi: currentEMI,
       months: 1,
       emiRcble: currentEMI,

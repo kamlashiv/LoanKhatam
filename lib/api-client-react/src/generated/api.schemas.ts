@@ -35,6 +35,8 @@ export interface Loan {
   startDate: string;
   dueDate: string;
   /** @nullable */
+  bank?: string | null;
+  /** @nullable */
   description?: string | null;
   status: LoanStatus;
   totalPaid: number;
@@ -52,8 +54,9 @@ export interface LoanInput {
   interestRate: number;
   /** @minimum 1 */
   tenureMonths?: number;
-  startDate: string;
-  dueDate: string;
+  startDate?: string;
+  dueDate?: string;
+  bank?: string;
   description?: string;
   rateChanges?: RateChange[];
 }
@@ -75,6 +78,7 @@ export interface LoanUpdate {
   tenureMonths?: number;
   startDate?: string;
   dueDate?: string;
+  bank?: string;
   description?: string;
   status?: LoanUpdateStatus;
   rateChanges?: RateChange[];

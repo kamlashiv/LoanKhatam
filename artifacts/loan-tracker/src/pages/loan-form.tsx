@@ -15,6 +15,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowLeft, Calculator, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatRupees } from "@/lib/loan-utils";
@@ -23,6 +30,26 @@ interface RateChangeEntry {
   effectiveDate: string;
   newRate: string;
 }
+
+const BANK_OPTIONS = [
+  "State Bank of India (SBI)",
+  "HDFC Bank",
+  "ICICI Bank",
+  "Axis Bank",
+  "Kotak Mahindra Bank",
+  "Punjab National Bank (PNB)",
+  "Bank of Baroda",
+  "Canara Bank",
+  "Union Bank of India",
+  "Bank of India",
+  "IndusInd Bank",
+  "Yes Bank",
+  "IDFC First Bank",
+  "Indian Bank",
+  "Central Bank of India",
+  "Bajaj Finserv",
+  "Other",
+];
 
 export function LoanForm() {
   const params = useParams<{ id: string }>();
@@ -44,6 +71,7 @@ export function LoanForm() {
     tenureMonths: urlParams.get("tenureMonths") ?? "",
     startDate: urlParams.get("startDate") ?? new Date().toISOString().split("T")[0],
     dueDate: urlParams.get("dueDate") ?? "",
+    bank: urlParams.get("bank") ?? "",
     description: urlParams.get("description") ?? "",
   });
 
@@ -62,6 +90,7 @@ export function LoanForm() {
         tenureMonths: existingLoan.tenureMonths?.toString() ?? "",
         startDate: existingLoan.startDate,
         dueDate: existingLoan.dueDate,
+        bank: existingLoan.bank ?? "",
         description: existingLoan.description ?? "",
       });
       if (existingLoan.rateChanges && existingLoan.rateChanges.length > 0) {
@@ -138,8 +167,9 @@ export function LoanForm() {
       principalAmount: parseFloat(form.principalAmount),
       interestRate: parseFloat(form.interestRate),
       tenureMonths: form.tenureMonths ? parseInt(form.tenureMonths) : undefined,
-      startDate: form.startDate,
-      dueDate: form.dueDate,
+      startDate: form.startDate || undefined,
+      dueDate: form.dueDate || undefined,
+      bank: form.bank || undefined,
       description: form.description || undefined,
       rateChanges: validRateChanges,
     };
@@ -219,6 +249,27 @@ export function LoanForm() {
                 onChange={handleChange}
                 required
               />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="bank">Bank (optional)</Label>
+              <Select
+                value={form.bank}
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, bank: value }))
+                }
+              >
+                <SelectTrigger id="bank" aria-label="Select bank">
+                  <SelectValue placeholder="Select a bank" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BANK_OPTIONS.map((bank) => (
+                    <SelectItem key={bank} value={bank}>
+                      {bank}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -308,25 +359,23 @@ export function LoanForm() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="startDate">Start Date</Label>
+                <Label htmlFor="startDate">Start Date (optional)</Label>
                 <Input
                   id="startDate"
                   name="startDate"
                   type="date"
                   value={form.startDate}
                   onChange={handleChange}
-                  required
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="dueDate">Due Date</Label>
+                <Label htmlFor="dueDate">Due Date (optional)</Label>
                 <Input
                   id="dueDate"
                   name="dueDate"
                   type="date"
                   value={form.dueDate}
                   onChange={handleChange}
-                  required
                 />
               </div>
             </div>

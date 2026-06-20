@@ -20,6 +20,7 @@ import {
   FileSpreadsheet, FileCode,
 } from "lucide-react";
 import { formatRupees } from "@/lib/loan-utils";
+import { FitAmount } from "@/components/fit-amount";
 import {
   simulatePlan, reverseFromTargetMonths, STRATEGY_PRESETS,
   type PlannerResult,
@@ -972,7 +973,7 @@ export function Planner() {
                   <TrendingDown className="h-4 w-4 text-emerald-600" />
                   <p className="text-xs font-semibold uppercase tracking-wide">Interest Saved</p>
                 </div>
-                <p className="text-2xl font-black text-slate-900 mt-2">{formatRupees(interestSaved)}</p>
+                <FitAmount value={interestSaved} className="font-black text-slate-900 mt-2" maxFontSize={24} />
                 <p className="text-xs text-slate-500 mt-1">≈{Math.round(interestSavingPct)}% of standard interest</p>
               </CardContent>
             </Card>
@@ -1003,7 +1004,7 @@ export function Planner() {
                   <Scale className="h-4 w-4" />
                   <p className="text-xs font-semibold uppercase tracking-wide">Net Principal</p>
                 </div>
-                <p className="font-black text-slate-900 mt-2 text-[23px]">{formatRupees(netPrincipal)}</p>
+                <FitAmount value={netPrincipal} className="font-black text-slate-900 mt-2" maxFontSize={23} />
                 <p className="text-xs text-slate-500 mt-1">
                   Borrowed amount
                   {disbursedTopUp > 0 && (
@@ -1019,7 +1020,7 @@ export function Planner() {
                   <Coins className="h-4 w-4" />
                   <p className="text-xs font-semibold uppercase tracking-wide">Monthly EMI</p>
                 </div>
-                <p className="text-2xl font-black text-slate-900 mt-2">{formatRupees(plan.baseEMI)}</p>
+                <FitAmount value={plan.baseEMI} className="font-black text-slate-900 mt-2" maxFontSize={24} />
                 <p className="text-xs mt-1">
                   {params.extraEMI > 0
                     ? <span className="text-emerald-600 font-semibold">+{formatRupees(params.extraEMI)} extra</span>

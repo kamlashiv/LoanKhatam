@@ -16,6 +16,7 @@ export interface LoanUpdate {
   tenureMonths?: number;
   startDate?: string;
   dueDate?: string;
+  bank?: string;
   description?: string;
   status?: LoanUpdateStatus;
   rateChanges?: RateChange[];

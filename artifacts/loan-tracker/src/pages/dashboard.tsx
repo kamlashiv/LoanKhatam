@@ -536,7 +536,7 @@ export function Dashboard() {
                       <div className="min-w-0">
                         <div className="truncate font-bold text-slate-900">{loan.borrowerName}</div>
                         <div className="text-sm font-medium text-slate-500">
-                          Due {formatDate(loan.dueDate)} • {loan.interestRate}% rate
+                          {loan.dueDate ? `Due ${formatDate(loan.dueDate)} • ` : ""}{loan.interestRate}% rate
                         </div>
                       </div>
                     </div>

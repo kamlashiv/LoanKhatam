@@ -6,18 +6,25 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronDown, ChevronUp, BarChart3 } from "lucide-react";
 import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils";
-import { calculateBankStyleSchedule } from "@/lib/amortization";
+import { calculateBankStyleSchedule, resolveScheduleDates } from "@/lib/amortization";
 import { BankAmortizationTable } from "@/components/bank-amortization-table";
 
 function LoanAmortizationBody({ loan }: { loan: any }) {
   const { data: payments, isLoading: paymentsLoading } = useListPayments(loan.id);
 
+  const { startDate: effStart, dueDate: effDue } = resolveScheduleDates(
+    loan.startDate,
+    loan.dueDate,
+    loan.tenureMonths,
+    loan.createdAt
+  );
+
   const bankResult = payments
     ? calculateBankStyleSchedule(
         loan.principalAmount,
         loan.interestRate,
-        loan.startDate,
-        loan.dueDate,
+        effStart,
+        effDue,
         payments.map((p) => ({ paymentDate: p.paymentDate, amount: p.amount }))
       )
     : null;
@@ -37,8 +44,8 @@ function LoanAmortizationBody({ loan }: { loan: any }) {
       borrowerName={loan.borrowerName}
       principalAmount={loan.principalAmount}
       interestRate={loan.interestRate}
-      startDate={loan.startDate}
-      dueDate={loan.dueDate}
+      startDate={effStart}
+      dueDate={effDue}
       result={bankResult}
     />
   );
@@ -72,9 +79,11 @@ function LoanAmortizationAccordion({ loan }: { loan: any }) {
                 {" "}@{" "}
                 <span className="font-medium text-foreground">{loan.interestRate}%</span> p.a.
               </span>
-              <span className="text-xs text-muted-foreground">
-                {formatDate(loan.startDate)} — {formatDate(loan.dueDate)}
-              </span>
+              {(loan.startDate || loan.dueDate) && (
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(loan.startDate) || "—"} — {formatDate(loan.dueDate) || "—"}
+                </span>
+              )}
               {loan.remainingAmount > 0 && (
                 <span className="text-xs text-muted-foreground">
                   Remaining:{" "}

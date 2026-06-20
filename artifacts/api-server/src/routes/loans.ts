@@ -32,7 +32,7 @@ function computeLoanFields(loan: any, payments: any[]) {
   );
   const today = new Date().toISOString().split("T")[0];
   let status = loan.status;
-  if (status === "active" && loan.dueDate < today && remaining > 0) {
+  if (status === "active" && loan.dueDate && loan.dueDate < today && remaining > 0) {
     status = "overdue";
   }
   return {
@@ -42,8 +42,9 @@ function computeLoanFields(loan: any, payments: any[]) {
     principalAmount: parseFloat(loan.principalAmount),
     interestRate: parseFloat(loan.interestRate),
     tenureMonths: loan.tenureMonths ?? null,
-    startDate: loan.startDate,
-    dueDate: loan.dueDate,
+    startDate: loan.startDate ?? "",
+    dueDate: loan.dueDate ?? "",
+    bank: loan.bank ?? null,
     description: loan.description ?? null,
     status,
     totalPaid,
@@ -104,7 +105,7 @@ router.post("/", requireAuth, async (req: any, res) => {
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid input" });
     }
-    const { borrowerName, principalAmount, interestRate, tenureMonths, startDate, dueDate, description, rateChanges } =
+    const { borrowerName, principalAmount, interestRate, tenureMonths, startDate, dueDate, bank, description, rateChanges } =
       parsed.data;
     const [loan] = await db
       .insert(loansTable)
@@ -114,8 +115,9 @@ router.post("/", requireAuth, async (req: any, res) => {
         principalAmount: principalAmount.toString(),
         interestRate: interestRate.toString(),
         tenureMonths: tenureMonths ?? null,
-        startDate,
-        dueDate,
+        startDate: startDate || null,
+        dueDate: dueDate || null,
+        bank: bank || null,
         description: description ?? null,
         status: "active",
         rateChanges: (rateChanges ?? []) as any,
@@ -204,8 +206,9 @@ router.patch("/:id", requireAuth, async (req: any, res) => {
     if (d.interestRate !== undefined)
       updates.interestRate = d.interestRate.toString();
     if (d.tenureMonths !== undefined) updates.tenureMonths = d.tenureMonths;
-    if (d.startDate !== undefined) updates.startDate = d.startDate;
-    if (d.dueDate !== undefined) updates.dueDate = d.dueDate;
+    if (d.startDate !== undefined) updates.startDate = d.startDate || null;
+    if (d.dueDate !== undefined) updates.dueDate = d.dueDate || null;
+    if (d.bank !== undefined) updates.bank = d.bank || null;
     if (d.description !== undefined) updates.description = d.description;
     if (d.status !== undefined) updates.status = d.status;
     if (d.rateChanges !== undefined) updates.rateChanges = d.rateChanges;

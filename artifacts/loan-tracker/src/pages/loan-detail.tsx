@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Edit, Trash2, Plus, Calendar, Clock, Calculator, ChevronDown, TrendingUp } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Plus, Calendar, Clock, Calculator, ChevronDown, TrendingUp, Landmark } from "lucide-react";
 import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils";
 import { useToast } from "@/hooks/use-toast";
 import { AmortizationSection } from "@/components/amortization-section";
@@ -246,7 +246,7 @@ export function LoanDetail() {
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">
-                    Original rate · from {formatDate(loan.startDate)}
+                    Original rate{loan.startDate ? ` · from ${formatDate(loan.startDate)}` : ""}
                   </span>
                   <span className="font-medium">{loan.interestRate}% p.a.</span>
                 </div>
@@ -286,11 +286,11 @@ export function LoanDetail() {
           <div className="grid grid-cols-2 gap-4 text-sm border-t border-border pt-4">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              <span>Start: <span className="font-medium text-foreground">{formatDate(loan.startDate)}</span></span>
+              <span>Start: <span className="font-medium text-foreground">{formatDate(loan.startDate) || "—"}</span></span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              <span>Due: <span className="font-medium text-foreground">{formatDate(loan.dueDate)}</span></span>
+              <span>Due: <span className="font-medium text-foreground">{formatDate(loan.dueDate) || "—"}</span></span>
             </div>
             {loan.tenureMonths != null && (
               <div className="flex items-center gap-2 text-muted-foreground">
@@ -302,6 +302,12 @@ export function LoanDetail() {
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Calculator className="h-4 w-4" />
                 <span>EMI: <span className="font-medium text-foreground">{formatRupees(computeEmi(loan.principalAmount, loan.interestRate, loan.tenureMonths))}/mo</span></span>
+              </div>
+            )}
+            {loan.bank && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Landmark className="h-4 w-4" />
+                <span>Bank: <span className="font-medium text-foreground">{loan.bank}</span></span>
               </div>
             )}
           </div>
@@ -453,6 +459,8 @@ export function LoanDetail() {
           interestRate={loan.interestRate}
           startDate={loan.startDate}
           dueDate={loan.dueDate}
+          tenureMonths={loan.tenureMonths}
+          createdAt={loan.createdAt}
           totalPaid={loan.totalPaid}
           remainingAmount={loan.remainingAmount}
           payments={payments?.map((p) => ({ paymentDate: p.paymentDate, amount: p.amount }))}

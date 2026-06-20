@@ -146,7 +146,7 @@ export function LoansList() {
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>{progress.toFixed(0)}% paid</span>
-                      <span>Due {formatDate(loan.dueDate)}</span>
+                      {loan.dueDate && <span>Due {formatDate(loan.dueDate)}</span>}
                     </div>
                     <Progress value={progress} className="h-1.5" />
                   </div>

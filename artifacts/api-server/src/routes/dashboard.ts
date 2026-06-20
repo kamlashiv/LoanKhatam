@@ -44,7 +44,7 @@ router.get("/summary", requireAuth, async (req: any, res) => {
 
       if (loan.status === "paid") {
         paidLoans++;
-      } else if (loan.status === "overdue" || (loan.status === "active" && loan.dueDate < today)) {
+      } else if (loan.status === "overdue" || (loan.status === "active" && loan.dueDate != null && loan.dueDate < today)) {
         overdueLoans++;
       } else {
         activeLoans++;

@@ -15,6 +15,7 @@ import {
   calculateAmortization,
   calculateSavings,
   calculateBankStyleSchedule,
+  resolveScheduleDates,
   type RateChange,
 } from "@/lib/amortization";
 import { formatRupees, formatDate } from "@/lib/loan-utils";
@@ -29,8 +30,10 @@ interface Props {
   borrowerName: string;
   principalAmount: number;
   interestRate: number;
-  startDate: string;
-  dueDate: string;
+  startDate?: string | null;
+  dueDate?: string | null;
+  tenureMonths?: number | null;
+  createdAt?: string | null;
   totalPaid: number;
   remainingAmount: number;
   payments?: Payment[];
@@ -51,21 +54,28 @@ export function AmortizationSection({
   interestRate,
   startDate,
   dueDate,
+  tenureMonths,
+  createdAt,
   totalPaid,
   remainingAmount,
   payments = [],
   rateChanges = [],
 }: Props) {
+  const { startDate: effStart, dueDate: effDue } = useMemo(
+    () => resolveScheduleDates(startDate, dueDate, tenureMonths, createdAt),
+    [startDate, dueDate, tenureMonths, createdAt]
+  );
+
   const amort = useMemo(
     () =>
       calculateAmortization(
         principalAmount,
         interestRate,
-        startDate,
-        dueDate,
+        effStart,
+        effDue,
         rateChanges
       ),
-    [principalAmount, interestRate, startDate, dueDate, rateChanges]
+    [principalAmount, interestRate, effStart, effDue, rateChanges]
   );
 
   const savings = useMemo(
@@ -73,8 +83,8 @@ export function AmortizationSection({
       calculateSavings(
         principalAmount,
         interestRate,
-        startDate,
-        dueDate,
+        effStart,
+        effDue,
         totalPaid,
         remainingAmount,
         rateChanges
@@ -82,8 +92,8 @@ export function AmortizationSection({
     [
       principalAmount,
       interestRate,
-      startDate,
-      dueDate,
+      effStart,
+      effDue,
       totalPaid,
       remainingAmount,
       rateChanges,
@@ -91,8 +101,8 @@ export function AmortizationSection({
   );
 
   const bankResult = useMemo(
-    () => calculateBankStyleSchedule(principalAmount, interestRate, startDate, dueDate, payments, rateChanges),
-    [principalAmount, interestRate, startDate, dueDate, payments, rateChanges]
+    () => calculateBankStyleSchedule(principalAmount, interestRate, effStart, effDue, payments, rateChanges),
+    [principalAmount, interestRate, effStart, effDue, payments, rateChanges]
   );
 
   const pieData = useMemo(() => {
@@ -276,8 +286,8 @@ export function AmortizationSection({
           borrowerName={borrowerName}
           principalAmount={principalAmount}
           interestRate={interestRate}
-          startDate={startDate}
-          dueDate={dueDate}
+          startDate={effStart}
+          dueDate={effDue}
           result={bankResult}
           rateChanges={rateChanges}
         />

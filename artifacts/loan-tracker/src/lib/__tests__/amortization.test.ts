@@ -139,6 +139,19 @@ describe("calculateAmortization — zero tenure (start equals due)", () => {
   });
 });
 
+describe("calculateAmortization — missing due date (optional dates)", () => {
+  it("returns an empty result instead of NaN when the due date is absent", () => {
+    const result = calculateAmortization(100_000, 12, "2026-01-01", "");
+    expect(result).toEqual({
+      emi: 0,
+      schedule: [],
+      totalInterest: 0,
+      totalPayment: 0,
+      tenureMonths: 0,
+    });
+  });
+});
+
 describe("calculateBankStyleSchedule — prepayment mid-loan", () => {
   // ₹1,00,000 at 12% for 12 months, a ₹20,000 prepayment on 2025-04-15.
   const result = calculateBankStyleSchedule(

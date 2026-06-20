@@ -92,8 +92,8 @@ describe("Loan form", () => {
     await user.type(screen.getByLabelText("Borrower Name"), "Ramesh Kumar");
     await user.type(screen.getByLabelText("Principal Amount (₹)"), "250000");
     await user.type(screen.getByLabelText("Interest Rate (% p.a.)"), "9.5");
-    setDate("Start Date", "2026-02-01");
-    setDate("Due Date", "2026-11-01");
+    setDate("Start Date (optional)", "2026-02-01");
+    setDate("Due Date (optional)", "2026-11-01");
     await user.type(screen.getByLabelText("Description (optional)"), "Car loan");
 
     await user.click(screen.getByRole("button", { name: "Create Loan" }));
@@ -120,8 +120,8 @@ describe("Loan form", () => {
     await user.type(screen.getByLabelText("Borrower Name"), "Sita Devi");
     await user.type(screen.getByLabelText("Principal Amount (₹)"), "100000");
     await user.type(screen.getByLabelText("Interest Rate (% p.a.)"), "7");
-    setDate("Start Date", "2026-03-01");
-    setDate("Due Date", "2026-09-01");
+    setDate("Start Date (optional)", "2026-03-01");
+    setDate("Due Date (optional)", "2026-09-01");
 
     await user.click(screen.getByRole("button", { name: "Create Loan" }));
 
@@ -139,8 +139,8 @@ describe("Loan form", () => {
     await user.type(screen.getByLabelText("Borrower Name"), "Mohan Lal");
     await user.type(screen.getByLabelText("Principal Amount (₹)"), "50000");
     await user.type(screen.getByLabelText("Interest Rate (% p.a.)"), "6");
-    setDate("Start Date", "2026-04-01");
-    setDate("Due Date", "2026-10-01");
+    setDate("Start Date (optional)", "2026-04-01");
+    setDate("Due Date (optional)", "2026-10-01");
 
     await user.click(screen.getByRole("button", { name: "Create Loan" }));
 
@@ -154,8 +154,8 @@ describe("Loan form", () => {
     await user.type(screen.getByLabelText("Borrower Name"), "Geeta Rao");
     await user.type(screen.getByLabelText("Principal Amount (₹)"), "300000");
     await user.type(screen.getByLabelText("Interest Rate (% p.a.)"), "8");
-    setDate("Start Date", "2026-01-01");
-    setDate("Due Date", "2026-12-01");
+    setDate("Start Date (optional)", "2026-01-01");
+    setDate("Due Date (optional)", "2026-12-01");
 
     await user.click(screen.getByRole("button", { name: "Add" }));
     // Rate-change row inputs are associated with their labels, so target them
@@ -181,8 +181,8 @@ describe("Loan form", () => {
     expect(screen.getByLabelText("Borrower Name")).toHaveValue("Asha Patel");
     expect(screen.getByLabelText("Principal Amount (₹)")).toHaveValue(500_000);
     expect(screen.getByLabelText("Interest Rate (% p.a.)")).toHaveValue(8.5);
-    expect(screen.getByLabelText("Start Date")).toHaveValue("2026-01-15");
-    expect(screen.getByLabelText("Due Date")).toHaveValue("2026-12-15");
+    expect(screen.getByLabelText("Start Date (optional)")).toHaveValue("2026-01-15");
+    expect(screen.getByLabelText("Due Date (optional)")).toHaveValue("2026-12-15");
     expect(screen.getByLabelText("Description (optional)")).toHaveValue("Home renovation");
   });
 

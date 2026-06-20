@@ -17,6 +17,7 @@ import userEvent from "@testing-library/user-event";
 // wouter ships untranspiled ESM; the page only needs Link to render.
 jest.mock("wouter", () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
+  useSearch: () => "",
 }));
 
 // Control the list hook. It is called with `{ status }` (or undefined for

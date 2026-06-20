@@ -16,8 +16,9 @@ export interface LoanInput {
   interestRate: number;
   /** @minimum 1 */
   tenureMonths?: number;
-  startDate: string;
-  dueDate: string;
+  startDate?: string;
+  dueDate?: string;
+  bank?: string;
   description?: string;
   rateChanges?: RateChange[];
 }

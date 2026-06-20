@@ -19,6 +19,8 @@ export interface Loan {
   startDate: string;
   dueDate: string;
   /** @nullable */
+  bank?: string | null;
+  /** @nullable */
   description?: string | null;
   status: LoanStatus;
   totalPaid: number;

@@ -302,6 +302,8 @@ components:
           type: string
         dueDate:
           type: string
+        bank:
+          type: ["string", "null"]
         description:
           type: ["string", "null"]
         status:
@@ -324,8 +326,6 @@ components:
         - borrowerName
         - principalAmount
         - interestRate
-        - startDate
-        - dueDate
       properties:
         borrowerName:
           type: string
@@ -342,6 +342,8 @@ components:
         startDate:
           type: string
         dueDate:
+          type: string
+        bank:
           type: string
         description:
           type: string
@@ -365,6 +367,8 @@ components:
         startDate:
           type: string
         dueDate:
+          type: string
+        bank:
           type: string
         description:
           type: string

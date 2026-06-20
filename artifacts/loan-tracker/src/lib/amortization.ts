@@ -59,6 +59,7 @@ export interface BankStyleResult {
 function monthsBetween(from: string, to: string): number {
   const a = new Date(from);
   const b = new Date(to);
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return 0;
   return Math.max(
     0,
     (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth())
@@ -79,6 +80,28 @@ function firstOfMonth(dateStr: string): string {
 function lastOfMonth(dateStr: string): string {
   const d = new Date(dateStr);
   return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split("T")[0];
+}
+
+/**
+ * Resolve an effective start/due date pair for schedule math when the user did
+ * not supply dates. Falls back to the loan's creation date (or today) for the
+ * start, and derives the due date from tenureMonths when only the tenure is
+ * known. Returns an empty dueDate when there is no way to bound the schedule.
+ */
+export function resolveScheduleDates(
+  startDate?: string | null,
+  dueDate?: string | null,
+  tenureMonths?: number | null,
+  createdAt?: string | null,
+): { startDate: string; dueDate: string } {
+  const start =
+    startDate ||
+    (createdAt ? createdAt.split("T")[0] : new Date().toISOString().split("T")[0]);
+  let due = dueDate || "";
+  if (!due && tenureMonths && tenureMonths > 0) {
+    due = addMonths(start, tenureMonths);
+  }
+  return { startDate: start, dueDate: due };
 }
 
 function calcEMI(principal: number, annualRate: number, months: number): number {

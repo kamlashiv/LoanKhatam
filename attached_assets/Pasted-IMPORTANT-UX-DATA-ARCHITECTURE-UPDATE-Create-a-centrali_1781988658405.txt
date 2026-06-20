@@ -1,0 +1,137 @@
+IMPORTANT UX & DATA ARCHITECTURE UPDATE
+
+Create a centralized financial data system.
+
+The user should NEVER have to enter the same information multiple times.
+
+====================================================
+SINGLE SOURCE OF TRUTH
+====================================================
+
+Create a Global Financial Profile.
+
+Store:
+
+- Name
+- Age
+- Occupation
+- Monthly Income
+- Additional Income
+- Fixed Expenses
+- Variable Expenses
+- Loan Amount
+- Interest Rate
+- EMI
+- Loan Tenure
+- Savings
+- Investments
+- Financial Goals
+- Risk Profile
+
+This profile becomes the master data source for the entire application.
+
+====================================================
+AUTO-FILL SYSTEM
+====================================================
+
+When a user enters data anywhere in the app:
+
+Automatically update the Global Financial Profile.
+
+All other screens, tabs, reports, calculators, dashboards, charts, and strategies must instantly use the updated values.
+
+Example:
+
+If user updates Monthly Income from ₹50,000 to ₹60,000:
+
+Automatically update:
+
+- Savings Calculator
+- Investment Planner
+- Loan Strategy
+- Debt Analyzer
+- Financial Health Score
+- Wealth Projection
+- Dashboard Cards
+- Reports
+- Charts
+
+without asking the user to re-enter data.
+
+====================================================
+SMART DATA DETECTION
+====================================================
+
+If Loan Amount already exists:
+
+Auto-populate Loan Calculator.
+
+If Income already exists:
+
+Auto-populate Savings Planner.
+
+If Expenses already exist:
+
+Auto-populate Budget Planner.
+
+If Risk Profile already exists:
+
+Auto-populate Investment Strategy.
+
+====================================================
+DATA ENTRY UX
+====================================================
+
+Show a single master financial profile page.
+
+All important data should be editable from one location.
+
+Changes should automatically sync everywhere.
+
+====================================================
+LIVE SYNCHRONIZATION
+====================================================
+
+Use real-time state management.
+
+When any value changes:
+
+- Update all calculations instantly.
+- Update all charts instantly.
+- Update all recommendations instantly.
+- Update all reports instantly.
+
+No page refresh required.
+
+====================================================
+SMART FIELD LINKING
+====================================================
+
+Loan Amount
+Interest Rate
+EMI
+Loan Tenure
+
+must remain mathematically connected.
+
+Changing one value should automatically recalculate all dependent values.
+
+====================================================
+AUTO SAVE
+====================================================
+
+Every change should be automatically saved.
+
+No manual save button required.
+
+Show:
+
+"Last updated: Just now"
+
+====================================================
+USER EXPERIENCE GOAL
+====================================================
+
+The app should feel like a premium fintech platform where the user enters information once and the entire application intelligently uses it everywhere.
+
+The user should never feel that they are filling the same information twice.

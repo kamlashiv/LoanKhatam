@@ -166,6 +166,18 @@ export default function SignInScreen() {
     eyeBtn: {
       padding: 4,
     },
+    forgotBtn: {
+      alignSelf: "flex-end",
+      paddingVertical: 4,
+      marginTop: -4,
+      marginBottom: 4,
+    },
+    forgotText: {
+      fontSize: 13,
+      fontWeight: "600" as const,
+      color: colors.primary,
+      fontFamily: "Inter_600SemiBold",
+    },
     signInBtn: {
       backgroundColor: colors.primary,
       borderRadius: colors.radius,
@@ -286,6 +298,15 @@ export default function SignInScreen() {
             />
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={styles.forgotBtn}
+          onPress={() => router.push("/(auth)/forgot-password")}
+          disabled={anyLoading}
+          testID="forgot-password-link"
+        >
+          <Text style={styles.forgotText}>Forgot password?</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.signInBtn, anyLoading && styles.signInBtnDisabled]}

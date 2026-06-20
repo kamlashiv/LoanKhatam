@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { useListLoans } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,16 @@ import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils"
 
 type StatusFilter = "all" | "active" | "overdue" | "paid";
 
+const STATUS_VALUES: StatusFilter[] = ["all", "active", "overdue", "paid"];
+
 export function LoansList() {
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const queryString = useSearch();
+  const statusParam = new URLSearchParams(queryString).get("status");
+  const initialStatus: StatusFilter =
+    statusParam && STATUS_VALUES.includes(statusParam as StatusFilter)
+      ? (statusParam as StatusFilter)
+      : "all";
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus);
   const [search, setSearch] = useState("");
 
   const { data: loans, isLoading } = useListLoans(
@@ -40,12 +48,12 @@ export function LoansList() {
             {loans ? `${loans.length} loan${loans.length !== 1 ? "s" : ""}` : "Loading..."}
           </p>
         </div>
-        <Link href="/loans/new">
-          <Button className="gap-2 shadow-sm">
+        <Button asChild className="gap-2 shadow-sm">
+          <Link href="/loans/new">
             <Plus className="h-4 w-4" />
             Add Loan
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       {/* Filters */}
@@ -152,12 +160,12 @@ export function LoansList() {
             {search ? `No loans found for "${search}"` : "No loans in this category."}
           </p>
           {!search && (
-            <Link href="/loans/new">
-              <Button className="gap-2">
+            <Button asChild className="gap-2">
+              <Link href="/loans/new">
                 <Plus className="h-4 w-4" />
                 Add a loan
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           )}
         </div>
       )}

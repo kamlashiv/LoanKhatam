@@ -2,15 +2,14 @@ import { useState, useRef, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useGetDashboardSummary, useGetRecentLoans } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Plus, AlertCircle, CheckCircle2, Clock,
   Upload, FileText, X, Loader2, CheckCircle, AlertTriangle,
-  HandCoins,
+  HandCoins, Wallet, Activity, ArrowUpRight, ArrowDownRight,
+  PieChart, List, BellRing,
 } from "lucide-react";
-import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils";
+import { formatRupees, formatDate } from "@/lib/loan-utils";
 import { extractFromFile } from "@/lib/file-extract";
 
 interface ExtractedLoan {
@@ -245,192 +244,243 @@ function ImportModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+const statusPill: Record<string, string> = {
+  active: "bg-blue-100 text-blue-700",
+  paid: "bg-emerald-100 text-emerald-700",
+  overdue: "bg-rose-100 text-rose-700",
+};
+const statusLabel: Record<string, string> = {
+  active: "Active",
+  paid: "Paid",
+  overdue: "Overdue",
+};
+
 export function Dashboard() {
   const { data: summary, isLoading: summaryLoading } = useGetDashboardSummary();
   const { data: recentLoans, isLoading: loansLoading } = useGetRecentLoans();
   const [showImport, setShowImport] = useState(false);
 
-  const summaryCards = summary
-    ? [
-        {
-          label: "Total Lent",
-          caption: "Across your portfolio",
-          value: formatRupees(summary.totalLent),
-          icon: HandCoins,
-          gradient: "from-emerald-500 to-teal-600",
-        },
-        {
-          label: "Outstanding",
-          caption: "Yet to be collected",
-          value: formatRupees(summary.totalOutstanding),
-          icon: Clock,
-          gradient: "from-blue-500 to-indigo-600",
-        },
-        {
-          label: "Collected",
-          caption: "Repaid so far",
-          value: formatRupees(summary.totalCollected),
-          icon: CheckCircle2,
-          gradient: "from-orange-500 to-red-500",
-        },
-        {
-          label: "Overdue Loans",
-          caption: summary.overdueLoans > 0 ? "Past their due date" : "All on track",
-          value: summary.overdueLoans.toString(),
-          icon: AlertCircle,
-          gradient: summary.overdueLoans > 0 ? "from-rose-500 to-red-600" : "from-slate-500 to-slate-600",
-        },
-      ]
-    : [];
+  const today = new Date().toLocaleDateString("en-GB");
+  const overdue = summary?.overdueLoans ?? 0;
 
   return (
     <>
       {showImport && <ImportModal onClose={() => setShowImport(false)} />}
 
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Your loan portfolio at a glance</p>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" className="gap-2 shadow-sm" onClick={() => setShowImport(true)}>
-              <Upload className="h-4 w-4" />
-              File Import
-            </Button>
+      {/* Header */}
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
+            Portfolio Overview
+          </h1>
+          <p className="mt-1 font-medium text-slate-500">As of {today}</p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Button
+            variant="outline"
+            className="gap-2 rounded-2xl border-slate-200 bg-white px-5 py-3 font-bold text-slate-700 shadow-sm hover:bg-slate-50"
+            onClick={() => setShowImport(true)}
+          >
+            <Upload className="h-4 w-4" />
+            Import Data
+          </Button>
+          <Button
+            asChild
+            className="gap-2 rounded-2xl bg-indigo-600 px-5 py-3 font-bold text-white shadow-lg shadow-indigo-600/20 hover:bg-indigo-700"
+          >
             <Link href="/loans/new">
-              <Button className="gap-2 shadow-sm">
-                <Plus className="h-4 w-4" />
-                Add Loan
-              </Button>
+              <Plus className="h-4 w-4" />
+              New Loan
             </Link>
+          </Button>
+        </div>
+      </header>
+
+      {/* Bento Grid */}
+      <div className="grid auto-rows-[minmax(160px,auto)] grid-cols-1 gap-5 md:grid-cols-4">
+        {/* Total Lent — large */}
+        <div className="relative flex flex-col justify-between overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 to-indigo-950 p-8 text-white bento-shadow bento-hover md:col-span-2">
+          <div className="pointer-events-none absolute right-0 top-0 p-8 opacity-10">
+            <Wallet className="h-32 w-32" />
+          </div>
+          <div className="z-10 flex items-center gap-3 font-semibold text-indigo-200">
+            <HandCoins className="h-5 w-5" /> Total Lent
+          </div>
+          <div className="z-10">
+            {summaryLoading ? (
+              <Skeleton className="h-12 w-48 bg-white/20" />
+            ) : (
+              <div className="mb-1 text-4xl font-extrabold tracking-tight md:text-5xl">
+                {formatRupees(summary?.totalLent ?? 0)}
+              </div>
+            )}
+            <div className="flex items-center gap-2 font-medium text-indigo-200">
+              <Activity className="h-4 w-4" /> Across {summary?.totalLoans ?? 0} total loans
+            </div>
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {summaryLoading
-            ? Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i} className="border-border shadow-sm">
-                  <CardContent className="pt-6">
-                    <Skeleton className="h-8 w-24 mb-2" />
-                    <Skeleton className="h-4 w-16" />
-                  </CardContent>
-                </Card>
-              ))
-            : summaryCards.map((card) => (
-                <div
-                  key={card.label}
-                  className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${card.gradient} p-5 text-white shadow-md transition-shadow hover:shadow-lg`}
-                >
-                  <card.icon className="absolute -right-3 -bottom-3 h-24 w-24 text-white/10" />
-                  <div className="relative">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold">{card.label}</p>
-                      <div className="h-8 w-8 rounded-lg bg-white/15 flex items-center justify-center">
-                        <card.icon className="h-4 w-4 text-white" />
-                      </div>
-                    </div>
-                    <p className="mt-3 text-3xl font-extrabold tracking-tight">{card.value}</p>
-                    <p className="mt-1 text-[11px] text-white/80">{card.caption}</p>
-                  </div>
+        {/* Outstanding */}
+        <div className="flex flex-col justify-between rounded-[2rem] bg-gradient-to-b from-blue-400 to-indigo-500 p-6 text-white bento-shadow bento-hover">
+          <div className="flex items-center justify-between font-semibold text-blue-100">
+            <span className="flex items-center gap-2"><Clock className="h-4 w-4" /> Outstanding</span>
+            <ArrowUpRight className="h-4 w-4 text-blue-200" />
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold tracking-tight">
+              {summaryLoading ? "—" : formatRupees(summary?.totalOutstanding ?? 0)}
+            </div>
+            <div className="mt-1 text-sm font-medium text-blue-100/80">To be collected</div>
+          </div>
+        </div>
+
+        {/* Collected */}
+        <div className="flex flex-col justify-between rounded-[2rem] bg-gradient-to-br from-emerald-400 to-teal-500 p-6 text-white bento-shadow bento-hover">
+          <div className="flex items-center justify-between font-semibold text-emerald-100">
+            <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Collected</span>
+            <ArrowDownRight className="h-4 w-4 text-emerald-200" />
+          </div>
+          <div>
+            <div className="text-3xl font-extrabold tracking-tight">
+              {summaryLoading ? "—" : formatRupees(summary?.totalCollected ?? 0)}
+            </div>
+            <div className="mt-1 text-sm font-medium text-emerald-100/80">Safely returned</div>
+          </div>
+        </div>
+
+        {/* Overdue alert */}
+        <div
+          className={`relative flex flex-col justify-between overflow-hidden rounded-[2rem] p-6 text-white bento-shadow bento-hover ${
+            overdue > 0 ? "bg-rose-500" : "bg-slate-600"
+          }`}
+        >
+          <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/10 blur-2xl" />
+          <div className="flex items-center gap-2 font-bold text-rose-100">
+            <BellRing className={`h-5 w-5 ${overdue > 0 ? "animate-pulse" : ""}`} />
+            {overdue > 0 ? "Urgent Attention" : "All Clear"}
+          </div>
+          <div>
+            <div className="text-5xl font-extrabold">{overdue}</div>
+            <div className="mt-1 font-semibold text-rose-100">
+              {overdue === 1 ? "Loan Overdue" : "Loans Overdue"}
+            </div>
+          </div>
+        </div>
+
+        {/* Loan status mix */}
+        <div className="flex flex-col justify-between rounded-[2rem] border border-slate-100 bg-white p-6 bento-shadow bento-hover">
+          <div className="flex items-center gap-2 font-bold text-slate-500">
+            <PieChart className="h-4 w-4" /> Loan Status Mix
+          </div>
+          <div className="space-y-3">
+            {[
+              { dot: "bg-blue-500", label: "Active", value: summary?.activeLoans ?? 0 },
+              { dot: "bg-emerald-500", label: "Paid", value: summary?.paidLoans ?? 0 },
+              { dot: "bg-rose-500", label: "Overdue", value: summary?.overdueLoans ?? 0 },
+            ].map((row) => (
+              <div key={row.label} className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                  <span className={`h-3 w-3 rounded-full ${row.dot}`} /> {row.label}
                 </div>
-              ))}
+                <span className="font-bold text-slate-900">{row.value}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Stats Row */}
-        {summary && (
-          <div className="flex gap-3 flex-wrap">
-            <div className="bg-card rounded-lg border border-border px-4 py-3 flex items-center gap-3">
-              <span className="text-2xl font-bold text-primary">{summary.totalLoans}</span>
-              <span className="text-sm text-muted-foreground">Total Loans</span>
-            </div>
-            <div className="bg-card rounded-lg border border-border px-4 py-3 flex items-center gap-3">
-              <span className="text-2xl font-bold text-foreground">{summary.activeLoans}</span>
-              <span className="text-sm text-muted-foreground">Active</span>
-            </div>
-            <div className="bg-card rounded-lg border border-border px-4 py-3 flex items-center gap-3">
-              <span className="text-2xl font-bold text-emerald-700">{summary.paidLoans}</span>
-              <span className="text-sm text-muted-foreground">Fully Paid</span>
-            </div>
-            <button
-              onClick={() => setShowImport(true)}
-              className="bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-lg px-4 py-3 flex items-center gap-2 transition-colors"
-            >
-              <Upload className="h-4 w-4 text-primary" />
-              <span className="text-sm text-primary font-medium">Import from File</span>
-            </button>
-          </div>
-        )}
-
-        {/* Recent Loans */}
-        <Card className="border-border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-4">
-            <CardTitle className="text-lg font-bold">Recent Loans</CardTitle>
-            <Link href="/loans">
-              <Button variant="ghost" size="sm" className="text-primary font-medium">
-                View all
-              </Button>
+        {/* Recent loans — large */}
+        <div className="flex flex-col rounded-[2rem] border border-slate-100 bg-white p-6 bento-shadow md:col-span-2 md:row-span-2">
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="flex items-center gap-2 font-bold text-slate-800">
+              <List className="h-5 w-5 text-slate-400" /> Recent Loans
+            </h3>
+            <Link href="/loans" className="text-sm font-bold text-indigo-600 hover:underline">
+              View All
             </Link>
-          </CardHeader>
-          <CardContent className="p-0">
+          </div>
+
+          <div className="-mr-2 flex-1 space-y-4 overflow-y-auto pr-2">
             {loansLoading ? (
-              <div className="divide-y divide-border">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="px-6 py-4 flex items-center justify-between">
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-10 w-10 rounded-full" />
                     <div className="space-y-2">
                       <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-3 w-24" />
                     </div>
-                    <Skeleton className="h-6 w-20" />
                   </div>
-                ))}
-              </div>
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              ))
             ) : recentLoans && recentLoans.length > 0 ? (
-              <div className="divide-y divide-border">
-                {recentLoans.map((loan) => {
-                  const statusConfig = getLoanStatusConfig(loan.status);
-                  return (
-                    <Link key={loan.id} href={`/loans/${loan.id}`}>
-                      <div className="px-6 py-4 flex items-center justify-between hover:bg-muted/40 transition-colors cursor-pointer">
-                        <div>
-                          <p className="font-semibold text-foreground">{loan.borrowerName}</p>
-                          <p className="text-sm text-muted-foreground mt-0.5">Due {formatDate(loan.dueDate)}</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <p className="font-bold text-foreground">{formatRupees(loan.principalAmount)}</p>
-                            <p className="text-xs text-muted-foreground">{formatRupees(loan.remainingAmount)} remaining</p>
-                          </div>
-                          <Badge className={`${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border font-medium text-xs`}>
-                            {statusConfig.label}
-                          </Badge>
+              recentLoans.map((loan) => (
+                <Link key={loan.id} href={`/loans/${loan.id}`} className="block">
+                  <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4 transition-colors hover:bg-slate-100">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 font-bold text-indigo-700">
+                        {loan.borrowerName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="truncate font-bold text-slate-900">{loan.borrowerName}</div>
+                        <div className="text-sm font-medium text-slate-500">
+                          Due {formatDate(loan.dueDate)} • {loan.interestRate}% rate
                         </div>
                       </div>
-                    </Link>
-                  );
-                })}
-              </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-4">
+                      <div className="text-right">
+                        <div className="font-bold text-slate-900">{formatRupees(loan.principalAmount)}</div>
+                        <div className="text-xs font-semibold text-slate-500">
+                          {formatRupees(loan.remainingAmount)} left
+                        </div>
+                      </div>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+                          statusPill[loan.status] ?? "bg-slate-100 text-slate-600"
+                        }`}
+                      >
+                        {statusLabel[loan.status] ?? loan.status}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))
             ) : (
-              <div className="px-6 py-12 text-center">
-                <p className="text-muted-foreground mb-4">No loans yet. Add your first loan to get started.</p>
-                <div className="flex gap-3 justify-center flex-wrap">
-                  <Link href="/loans/new">
-                    <Button className="gap-2">
+              <div className="flex h-full flex-col items-center justify-center gap-4 py-10 text-center">
+                <p className="font-medium text-slate-500">No loans yet. Add your first loan to get started.</p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  <Button asChild className="gap-2 rounded-xl">
+                    <Link href="/loans/new">
                       <Plus className="h-4 w-4" />
                       Add your first loan
-                    </Button>
-                  </Link>
-                  <Button variant="outline" className="gap-2" onClick={() => setShowImport(true)}>
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="gap-2 rounded-xl" onClick={() => setShowImport(true)}>
                     <Upload className="h-4 w-4" />
                     Import from file
                   </Button>
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        {/* Quick action — drop statements */}
+        <button
+          onClick={() => setShowImport(true)}
+          className="group flex items-center justify-center rounded-[2rem] border-2 border-dashed border-indigo-200 bg-indigo-50 p-6 text-center bento-hover md:col-span-2"
+        >
+          <div>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 transition-transform group-hover:scale-110">
+              <Upload className="h-6 w-6" />
+            </div>
+            <h4 className="text-lg font-bold text-indigo-900">Drop statements here</h4>
+            <p className="mt-1 text-sm font-medium text-indigo-600/70">
+              PDF, CSV, or screenshots to auto-import
+            </p>
+          </div>
+        </button>
       </div>
     </>
   );

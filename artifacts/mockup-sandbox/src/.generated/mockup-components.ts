@@ -5,6 +5,7 @@ export const modules: ModuleMap = {
   "./components/mockups/dashboard-variants/CalmBrief.tsx": () => import("../components/mockups/dashboard-variants/CalmBrief.tsx"),
   "./components/mockups/dashboard-variants/CashflowTimeline.tsx": () => import("../components/mockups/dashboard-variants/CashflowTimeline.tsx"),
   "./components/mockups/dashboard-variants/CommandCenter.tsx": () => import("../components/mockups/dashboard-variants/CommandCenter.tsx"),
+  "./components/mockups/file-upload/FileUpload.tsx": () => import("../components/mockups/file-upload/FileUpload.tsx"),
   "./components/mockups/planner-layouts/AdvisorReport.tsx": () => import("../components/mockups/planner-layouts/AdvisorReport.tsx"),
   "./components/mockups/planner-layouts/BentoDashboard.tsx": () => import("../components/mockups/planner-layouts/BentoDashboard.tsx"),
   "./components/mockups/planner-layouts/ControlCockpit.tsx": () => import("../components/mockups/planner-layouts/ControlCockpit.tsx"),
@@ -13,6 +14,5 @@ export const modules: ModuleMap = {
   "./components/mockups/planner-usability/HierarchyFirst.tsx": () => import("../components/mockups/planner-usability/HierarchyFirst.tsx"),
   "./components/mockups/planner-variants/ComparisonCockpit.tsx": () => import("../components/mockups/planner-variants/ComparisonCockpit.tsx"),
   "./components/mockups/planner-variants/GoalFirstAssistant.tsx": () => import("../components/mockups/planner-variants/GoalFirstAssistant.tsx"),
-  "./components/mockups/planner-variants/OutcomeNarrative.tsx": () => import("../components/mockups/planner-variants/OutcomeNarrative.tsx"),
-  "./components/mockups/file-upload/FileUpload.tsx": () => import("../components/mockups/file-upload/FileUpload.tsx")
+  "./components/mockups/planner-variants/OutcomeNarrative.tsx": () => import("../components/mockups/planner-variants/OutcomeNarrative.tsx")
 };

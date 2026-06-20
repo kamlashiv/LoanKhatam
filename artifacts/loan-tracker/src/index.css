@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 
 @layer theme, base, clerk, components, utilities;
 
@@ -58,7 +58,7 @@
   --color-sidebar-accent-border: var(--sidebar-accent-border);
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-  --font-sans: "Outfit", sans-serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
   --font-mono: "Space Mono", monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -68,48 +68,48 @@
 }
 
 :root {
-  --background: 40 20% 97%; /* warm stone / ledger paper */
-  --foreground: 215 30% 15%; /* deep slate */
-  --border: 40 10% 85%;
-  --input: 40 10% 85%;
-  --ring: 160 40% 30%; /* deep green accent */
+  --background: 220 16% 95%; /* cool bento canvas (#F0F2F5) */
+  --foreground: 222 47% 11%; /* slate-900 */
+  --border: 214 32% 91%; /* slate-200 */
+  --input: 214 32% 91%;
+  --ring: 243 75% 59%; /* indigo accent */
 
   --card: 0 0% 100%;
-  --card-foreground: 215 30% 15%;
-  --card-border: 40 10% 85%;
+  --card-foreground: 222 47% 11%;
+  --card-border: 214 32% 91%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 215 30% 15%;
-  --popover-border: 40 10% 85%;
+  --popover-foreground: 222 47% 11%;
+  --popover-border: 214 32% 91%;
 
-  --primary: 160 50% 25%; /* rich forest green */
+  --primary: 243 75% 59%; /* indigo-600 */
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 40 15% 90%;
-  --secondary-foreground: 215 30% 15%;
+  --secondary: 220 16% 93%;
+  --secondary-foreground: 222 47% 11%;
 
-  --muted: 40 15% 90%;
-  --muted-foreground: 215 15% 45%;
+  --muted: 220 16% 93%;
+  --muted-foreground: 215 16% 47%; /* slate-500 */
 
-  --accent: 40 20% 90%;
-  --accent-foreground: 215 30% 15%;
+  --accent: 226 70% 96%; /* indigo-50 */
+  --accent-foreground: 243 60% 38%;
 
-  --destructive: 0 70% 45%;
+  --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
 
-  --success: 150 60% 30%;
+  --success: 160 84% 39%;
   --success-foreground: 0 0% 100%;
 
-  --sidebar: 215 30% 15%;
-  --sidebar-foreground: 40 20% 97%;
-  --sidebar-border: 215 30% 20%;
-  --sidebar-primary: 160 50% 25%;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 222 47% 11%;
+  --sidebar-border: 214 32% 91%;
+  --sidebar-primary: 243 75% 59%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 215 30% 25%;
-  --sidebar-accent-foreground: 40 20% 97%;
-  --sidebar-ring: 160 40% 30%;
+  --sidebar-accent: 220 16% 95%;
+  --sidebar-accent-foreground: 222 47% 11%;
+  --sidebar-ring: 243 75% 59%;
 
-  --radius: 0.5rem;
+  --radius: 0.85rem;
 }
 
 @layer base {
@@ -118,5 +118,18 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .bento-shadow {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+  }
+  .bento-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .bento-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
   }
 }

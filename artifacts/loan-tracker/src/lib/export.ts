@@ -494,6 +494,137 @@ export async function exportBankPDF(
   doc.save(`bank_amortization_${borrowerName.replace(/\s+/g, "_")}.pdf`);
 }
 
+export async function exportStrategyPDF(
+  inputs: import("./strategy-engine").StrategyInputs,
+  r: import("./strategy-engine").StrategyResult
+) {
+  const { jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
+  const { monthsToLabel } = await import("./strategy-engine");
+
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const PRIMARY = [49, 46, 129] as [number, number, number]; // indigo-900
+  const DARK = [15, 23, 42] as [number, number, number];
+  const rs = (v: number) => `Rs ${Math.round(v).toLocaleString("en-IN")}`;
+  const pct = (v: number) => `${Math.round(v * 100)}%`;
+
+  doc.setFillColor(...PRIMARY);
+  doc.rect(0, 0, 210, 24, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text("Smart Financial Strategy Report", 14, 13);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Generated: ${formatDate(new Date().toISOString().split("T")[0])}`, 14, 19);
+
+  let y = 34;
+  doc.setTextColor(...DARK);
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Financial Health Score: ${r.healthScore}/100 (${r.healthCategory})`, 14, y);
+  y += 8;
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Financial Summary", "Value"]],
+    body: [
+      ["Total Monthly Income", rs(r.totalIncome)],
+      ["Total Monthly Expenses", rs(r.totalExpenses)],
+      ["Free Cash Flow", rs(r.freeCashFlow)],
+      ["Savings Rate", pct(r.savingsRate)],
+      ["Total Debt", rs(r.totalDebt)],
+      ["Debt-to-Income Ratio", pct(r.dti)],
+      ["Net Worth", rs(r.netWorth)],
+      ["Emergency Fund Required (6 mo)", rs(r.emergencyFundRequirement)],
+    ],
+    theme: "grid",
+    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: "bold", fontSize: 9 },
+    bodyStyles: { fontSize: 9, textColor: DARK },
+    margin: { left: 14, right: 14 },
+  });
+  y = (doc as any).lastAutoTable.finalY + 8;
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Savings & Emergency Plan", "Value"]],
+    body: [
+      ["Recommended Monthly Saving", rs(r.monthlySavingTarget)],
+      ["Emergency Fund Gap", rs(r.emergencyGap)],
+      [
+        "Time to Reach Emergency Fund",
+        r.emergencyMonthsToGoal === 0
+          ? "Already funded"
+          : r.emergencyMonthsToGoal === null
+            ? "Increase savings first"
+            : `${r.emergencyMonthsToGoal} months`,
+      ],
+    ],
+    theme: "grid",
+    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: "bold", fontSize: 9 },
+    bodyStyles: { fontSize: 9, textColor: DARK },
+    margin: { left: 14, right: 14 },
+  });
+  y = (doc as any).lastAutoTable.finalY + 8;
+
+  if (r.hasDebt) {
+    autoTable(doc, {
+      startY: y,
+      head: [["Debt Strategy", "Debt-Free In", "Total Interest"]],
+      body: [
+        ["Minimum payments only", r.baseline.unbounded ? "Not reachable" : monthsToLabel(r.baseline.months), rs(r.baseline.totalInterest)],
+        ["Debt Snowball", r.snowball.unbounded ? "Not reachable" : monthsToLabel(r.snowball.months), rs(r.snowball.totalInterest)],
+        ["Debt Avalanche", r.avalanche.unbounded ? "Not reachable" : monthsToLabel(r.avalanche.months), rs(r.avalanche.totalInterest)],
+        [
+          `Recommended: ${r.recommendedStrategy === "avalanche" ? "Avalanche" : "Snowball"}`,
+          "—",
+          `Saves ${rs(r.interestSavedVsBaseline)}`,
+        ],
+      ],
+      theme: "grid",
+      headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: "bold", fontSize: 9 },
+      bodyStyles: { fontSize: 9, textColor: DARK },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 8;
+  }
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Investment Allocation (educational)", "Allocation", "Monthly Amount"]],
+    body: r.allocation.map((a) => [a.name, `${a.pct}%`, rs(a.amount)]),
+    theme: "grid",
+    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: "bold", fontSize: 9 },
+    bodyStyles: { fontSize: 9, textColor: DARK },
+    margin: { left: 14, right: 14 },
+  });
+  y = (doc as any).lastAutoTable.finalY + 8;
+
+  if (r.insights.length > 0) {
+    autoTable(doc, {
+      startY: y,
+      head: [["Smart Insights & Action Steps"]],
+      body: r.insights.map((i) => [`• ${i.text}`]),
+      theme: "plain",
+      headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: "bold", fontSize: 9 },
+      bodyStyles: { fontSize: 9, textColor: DARK },
+      margin: { left: 14, right: 14 },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+  }
+
+  doc.setFontSize(7.5);
+  doc.setTextColor(120, 120, 120);
+  const disclaimer = doc.splitTextToSize(
+    "Disclaimer: This tool provides educational financial guidance and is not personalized investment advice. Users should consult a qualified financial professional before making investment decisions.",
+    182
+  );
+  doc.text(disclaimer, 14, y + 2);
+
+  addPageNumbers(doc);
+  doc.save("smart_financial_strategy.pdf");
+}
+
 function addPageNumbers(doc: any) {
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {

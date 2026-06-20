@@ -1,0 +1,250 @@
+You are a world-class Financial Planning AI and UX Designer.
+
+Create a new tab in my Loan Management App called:
+
+"Smart Financial Strategy"
+
+OBJECTIVE:
+This tab should help users understand how to save money, pay off loans faster, build emergency funds, and invest intelligently based on their income, expenses, liabilities, goals, and risk profile.
+
+TARGET USERS:
+- Students
+- Salaried employees
+- Small business owners
+- Freelancers
+- Homemakers
+- High-income professionals
+- Entrepreneurs
+
+The system should work for both low-income and high-net-worth individuals.
+
+====================================================
+TAB NAME
+====================================================
+
+Smart Financial Strategy
+
+====================================================
+INPUT SECTION
+====================================================
+
+Collect the following information:
+
+1. Monthly Income
+2. Additional Income Sources
+3. Monthly Fixed Expenses
+   - Rent
+   - EMI
+   - Insurance
+   - Utilities
+   - School Fees
+   - Internet
+   - Others
+
+4. Monthly Variable Expenses
+   - Food
+   - Fuel
+   - Travel
+   - Entertainment
+   - Shopping
+   - Medical
+   - Miscellaneous
+
+5. Current Savings
+6. Existing Investments
+7. Outstanding Loans
+8. Credit Card Debt
+9. Financial Goals
+
+Goals examples:
+- Become debt free
+- Build emergency fund
+- Buy house
+- Buy car
+- Child education
+- Retirement
+- Business investment
+- Wealth creation
+
+10. Risk Profile
+- Conservative
+- Moderate
+- Aggressive
+
+11. Age
+
+====================================================
+AI ANALYSIS ENGINE
+====================================================
+
+After user submits data:
+
+Calculate:
+
+- Total Income
+- Total Expenses
+- Total Debt
+- Savings Rate
+- Debt-to-Income Ratio
+- Emergency Fund Requirement
+- Free Cash Flow
+- Financial Health Score
+
+Generate score from 0-100.
+
+Categories:
+0-30 Critical
+31-50 Weak
+51-70 Average
+71-85 Good
+86-100 Excellent
+
+====================================================
+SMART SAVINGS STRATEGY
+====================================================
+
+AI should automatically generate:
+
+1. Expense Reduction Suggestions
+
+Example:
+"Reduce food spending by 10%"
+"Reduce entertainment by 20%"
+"Cancel unused subscriptions"
+
+2. Monthly Saving Target
+
+Example:
+"You can safely save ₹12,500 per month."
+
+3. Emergency Fund Plan
+
+Example:
+"You need ₹2,40,000 emergency fund."
+"At your current saving rate, you can achieve this in 16 months."
+
+====================================================
+DEBT ELIMINATION STRATEGY
+====================================================
+
+Provide:
+
+Debt Snowball Strategy
+Debt Avalanche Strategy
+
+Compare both.
+
+Recommend best option.
+
+Estimate:
+- Debt free date
+- Interest saved
+- Faster payoff plan
+
+====================================================
+SMART INVESTMENT STRATEGY
+====================================================
+
+IMPORTANT:
+AI should NEVER promise returns.
+
+Generate personalized allocation based on user profile.
+
+Conservative Example:
+40% Emergency Fund
+30% Fixed Income
+20% Diversified Equity Funds
+10% Gold
+
+Moderate Example:
+20% Emergency Fund
+20% Fixed Income
+50% Diversified Equity Funds
+10% Gold
+
+Aggressive Example:
+10% Emergency Fund
+10% Fixed Income
+70% Diversified Equity Funds
+10% Gold
+
+Provide educational explanations only.
+
+====================================================
+AI RECOMMENDATION CARDS
+====================================================
+
+Create beautiful cards:
+
+1. Debt Freedom Plan
+2. Monthly Savings Plan
+3. Emergency Fund Plan
+4. Investment Allocation
+5. Wealth Building Strategy
+6. Retirement Readiness
+7. Financial Risk Warnings
+
+====================================================
+VISUAL DASHBOARD
+====================================================
+
+Include:
+
+- Pie Charts
+- Savings Progress Bar
+- Debt Progress Bar
+- Financial Health Meter
+- Net Worth Card
+- Monthly Cash Flow Graph
+
+====================================================
+SMART INSIGHTS
+====================================================
+
+Generate personalized insights such as:
+
+"Your rent exceeds 35% of income."
+
+"You can become debt free 14 months earlier by increasing EMI by ₹3,000."
+
+"Investing only after building emergency reserves may reduce financial stress."
+
+====================================================
+REPORT GENERATOR
+====================================================
+
+Generate downloadable PDF report containing:
+
+- Financial Summary
+- Savings Strategy
+- Debt Strategy
+- Investment Allocation
+- Goal Roadmap
+- Action Steps
+
+====================================================
+UI DESIGN
+====================================================
+
+Modern fintech design.
+
+Theme:
+Dark + Premium
+
+Features:
+- Smooth animations
+- Sliding cards
+- Mobile responsive
+- Clean typography
+- Progress indicators
+- Professional charts
+
+====================================================
+IMPORTANT DISCLAIMER
+====================================================
+
+Display:
+
+"This tool provides educational financial guidance and is not personalized investment advice. Users should consult a qualified financial professional before making investment decisions."
+
+Build the entire feature with scalable architecture, clean code, secure calculations, and a professional fintech-grade user experience.

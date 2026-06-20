@@ -43,7 +43,7 @@ function fileKind(file: File): "json" | "csv" | "pdf" | "image" | "text" | "unkn
 
 // ─── Number / date normalisers ───────────────────────────────────────────────
 
-function parseAmount(raw: string | number | null | undefined): number | null {
+export function parseAmount(raw: string | number | null | undefined): number | null {
   if (raw == null) return null;
   if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
   let s = raw.toString().trim().toLowerCase();
@@ -65,7 +65,7 @@ function parseAmount(raw: string | number | null | undefined): number | null {
   return Math.round(n * mult);
 }
 
-function parseRate(raw: string | number | null | undefined): number | null {
+export function parseRate(raw: string | number | null | undefined): number | null {
   if (raw == null) return null;
   if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
   const n = Number(raw.toString().replace(/[^\d.]/g, ""));
@@ -81,7 +81,7 @@ function pad(n: number): string {
 }
 
 // Returns YYYY-MM-DD or null. Assumes day-first for slash/dash numeric dates.
-function normalizeDate(raw: string | null | undefined): string | null {
+export function normalizeDate(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const s = raw.toString().trim();
   let m = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
@@ -146,7 +146,7 @@ function mapRecord(rec: Record<string, unknown>): Omit<ExtractedData, "confidenc
   };
 }
 
-function fromJSON(text: string): Omit<ExtractedData, "confidence" | "notes"> {
+export function fromJSON(text: string): Omit<ExtractedData, "confidence" | "notes"> {
   const data = JSON.parse(text);
   const rec = Array.isArray(data) ? data[0] : data;
   if (!rec || typeof rec !== "object") throw new Error("No loan object found in the JSON file.");
@@ -173,7 +173,7 @@ function splitCSVLine(line: string): string[] {
   return out.map((c) => c.trim());
 }
 
-function fromCSV(text: string): Omit<ExtractedData, "confidence" | "notes"> {
+export function fromCSV(text: string): Omit<ExtractedData, "confidence" | "notes"> {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
   if (lines.length < 2) throw new Error("CSV needs a header row and at least one data row.");
   const headers = splitCSVLine(lines[0]);
@@ -185,7 +185,7 @@ function fromCSV(text: string): Omit<ExtractedData, "confidence" | "notes"> {
 
 // ─── Free-text parser (used for PDF text and OCR output) ──────────────────────
 
-function fromText(text: string): Omit<ExtractedData, "confidence" | "notes"> {
+export function fromText(text: string): Omit<ExtractedData, "confidence" | "notes"> {
   const out = { ...EMPTY };
   const flat = text.replace(/\s+/g, " ");
 

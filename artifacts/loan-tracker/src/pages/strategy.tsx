@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { formatRupees } from "@/lib/loan-utils";
 import { exportStrategyPDF } from "@/lib/export";
+import { EmiInvestmentAnalyzer } from "@/components/emi-investment-analyzer";
 import {
   computeStrategy, monthsToLabel, compactRupees, GOAL_OPTIONS, EMPTY_INPUTS,
   type StrategyInputs, type DebtItem, type RiskProfile, type HealthCategory,
@@ -678,6 +679,9 @@ export default function Strategy() {
           </p>
         </div>
       </div>
+
+      {/* ── EMI vs Investment Analyzer ── */}
+      <EmiInvestmentAnalyzer />
     </div>
   );
 }

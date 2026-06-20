@@ -425,3 +425,266 @@ export function monthsToLabel(months: number): string {
 }
 
 export { formatShort as compactRupees };
+
+// ──────────────────────────────────────────────────────────────────────────
+// EMI vs Investment Analyzer
+//
+// Educational comparison only. Loan interest saved is certain; investment
+// outcomes depend on market performance and are never guaranteed. Nothing here
+// advises missing or defaulting on an EMI.
+// ──────────────────────────────────────────────────────────────────────────
+
+export const EMI_PCT_OPTIONS = [5, 10, 15, 20, 25, 50] as const;
+export const PROJECTION_YEARS = [1, 3, 5, 10, 15, 20] as const;
+
+export interface EmiInvestInputs {
+  totalLoanAmount: number;
+  remainingBalance: number;
+  /** Annual loan interest rate, e.g. 9 for 9%. */
+  annualRate: number;
+  currentEmi: number;
+  remainingTenureMonths: number;
+  monthlyIncome: number;
+  monthlyExpenses: number;
+  /** Assumed annual investment return, e.g. 12 for 12% (illustrative only). */
+  assumedReturnPct: number;
+  /** Selected % of the EMI amount to simulate investing. */
+  investPct: number;
+  /** Custom % for the bespoke scenario. */
+  customPct: number;
+}
+
+export const EMPTY_EMI_INVEST: EmiInvestInputs = {
+  totalLoanAmount: 0,
+  remainingBalance: 0,
+  annualRate: 9,
+  currentEmi: 0,
+  remainingTenureMonths: 0,
+  monthlyIncome: 0,
+  monthlyExpenses: 0,
+  assumedReturnPct: 12,
+  investPct: 10,
+  customPct: 15,
+};
+
+export interface EmiScenario {
+  key: string;
+  label: string;
+  pct: number;
+  monthlyInvestment: number;
+  totalContributions: number;
+  portfolioValue: number;
+  profit: number;
+  netWorthImpact: number;
+}
+
+export interface EmiProjection {
+  years: number;
+  contributions: number;
+  portfolio: number;
+  profit: number;
+}
+
+export interface EmiTimelinePoint {
+  year: number;
+  debtRemaining: number;
+  portfolio: number;
+  netWorth: number;
+}
+
+export interface EmiInvestResult {
+  hasData: boolean;
+  totalEmiRemaining: number;
+  totalInterestRemaining: number;
+  debtFreeMonths: number;
+  /** True when the EMI never clears the balance (EMI ≤ monthly interest). */
+  payoffUnbounded: boolean;
+  /** Months used as the scenario/projection contribution horizon. */
+  contributionMonths: number;
+  monthlySurplus: number;
+  selectedMonthlyInvestment: number;
+  guaranteedInterestSaved: number;
+  potentialProfitAtTenure: number;
+  scenarios: EmiScenario[];
+  projections: EmiProjection[];
+  timeline: EmiTimelinePoint[];
+  insights: string[];
+}
+
+/** Future value of a monthly SIP (ordinary annuity). */
+function sipFutureValue(monthly: number, annualReturnPct: number, months: number): number {
+  if (monthly <= 0 || months <= 0) return 0;
+  const r = annualReturnPct / 1200;
+  if (r === 0) return monthly * months;
+  return monthly * ((Math.pow(1 + r, months) - 1) / r);
+}
+
+/** Months to clear a balance at a given EMI; flags loans the EMI can't repay. */
+function payoffMonths(
+  balance: number,
+  annualRate: number,
+  emi: number,
+): { months: number; unbounded: boolean } {
+  if (balance <= 0) return { months: 0, unbounded: false };
+  if (emi <= 0) return { months: 0, unbounded: true };
+  const r = annualRate / 1200;
+  if (emi <= balance * r) return { months: 0, unbounded: true };
+  let b = balance;
+  let m = 0;
+  while (b > 0 && m < 1200) {
+    b = b * (1 + r) - emi;
+    m++;
+  }
+  return { months: m, unbounded: b > 0 };
+}
+
+/** Outstanding loan balance after `months` of EMI payments. */
+function balanceAfter(
+  balance: number,
+  annualRate: number,
+  emi: number,
+  months: number,
+): number {
+  const r = annualRate / 1200;
+  let b = balance;
+  for (let i = 0; i < months; i++) {
+    if (b <= 0) return 0;
+    b = b * (1 + r) - emi;
+  }
+  return Math.max(0, b);
+}
+
+export function analyzeEmiInvestment(inputs: EmiInvestInputs): EmiInvestResult {
+  const emi = Math.max(0, inputs.currentEmi);
+  const balance = Math.max(0, inputs.remainingBalance);
+  const tenure = Math.max(0, Math.round(inputs.remainingTenureMonths));
+  const ret = clamp(inputs.assumedReturnPct, 0, 40);
+
+  const hasData = emi > 0 && (balance > 0 || tenure > 0);
+
+  // Derive payoff from amortization when tenure isn't supplied, so the debt
+  // metrics stay consistent with (balance, rate, emi).
+  const derived = payoffMonths(balance, inputs.annualRate, emi);
+  const debtFreeMonths = tenure > 0 ? tenure : derived.months;
+  const payoffUnbounded = tenure > 0 ? false : derived.unbounded;
+
+  const totalEmiRemaining = payoffUnbounded ? 0 : emi * debtFreeMonths;
+  const totalInterestRemaining = payoffUnbounded ? 0 : Math.max(0, totalEmiRemaining - balance);
+  const monthlySurplus = inputs.monthlyIncome - inputs.monthlyExpenses - emi;
+
+  // Contribution period for scenarios/projections: the payoff horizon, or a
+  // 10-year default when it can't be determined, so the comparison stays
+  // meaningful.
+  const contributionMonths = debtFreeMonths > 0 ? debtFreeMonths : 120;
+  const scenarioMonths = contributionMonths;
+
+  const makeScenario = (key: string, label: string, pct: number): EmiScenario => {
+    const monthlyInvestment = Math.round((emi * pct) / 100);
+    const totalContributions = monthlyInvestment * scenarioMonths;
+    const portfolioValue = sipFutureValue(monthlyInvestment, ret, scenarioMonths);
+    return {
+      key,
+      label,
+      pct,
+      monthlyInvestment,
+      totalContributions,
+      portfolioValue,
+      profit: Math.max(0, portfolioValue - totalContributions),
+      netWorthImpact: portfolioValue,
+    };
+  };
+
+  const scenarios: EmiScenario[] = [
+    makeScenario("A", "Current Loan Strategy", 0),
+    makeScenario("B", "Invest 10% of EMI", 10),
+    makeScenario("C", "Invest 20% of EMI", 20),
+    makeScenario("D", "Invest 30% of EMI", 30),
+    makeScenario("E", `Custom (${clamp(Math.round(inputs.customPct), 0, 100)}% of EMI)`, clamp(Math.round(inputs.customPct), 0, 100)),
+  ];
+
+  const selectedMonthlyInvestment = Math.round((emi * clamp(inputs.investPct, 0, 100)) / 100);
+
+  const projections: EmiProjection[] = PROJECTION_YEARS.map((years) => {
+    const months = years * 12;
+    const contributions = selectedMonthlyInvestment * months;
+    const portfolio = sipFutureValue(selectedMonthlyInvestment, ret, months);
+    return { years, contributions, portfolio, profit: Math.max(0, portfolio - contributions) };
+  });
+
+  const horizonYears = clamp(Math.max(20, Math.ceil(scenarioMonths / 12)), 1, 30);
+  const timeline: EmiTimelinePoint[] = [];
+  for (let y = 1; y <= horizonYears; y++) {
+    const months = y * 12;
+    const debtRemaining =
+      !payoffUnbounded && debtFreeMonths > 0 && months >= debtFreeMonths
+        ? 0
+        : balanceAfter(balance, inputs.annualRate, emi, months);
+    const portfolio = sipFutureValue(selectedMonthlyInvestment, ret, months);
+    timeline.push({ year: y, debtRemaining, portfolio, netWorth: portfolio - debtRemaining });
+  }
+
+  const potentialProfitAtTenure = Math.max(
+    0,
+    sipFutureValue(selectedMonthlyInvestment, ret, scenarioMonths) - selectedMonthlyInvestment * scenarioMonths,
+  );
+
+  return {
+    hasData,
+    totalEmiRemaining,
+    totalInterestRemaining,
+    debtFreeMonths,
+    payoffUnbounded,
+    contributionMonths,
+    monthlySurplus,
+    selectedMonthlyInvestment,
+    guaranteedInterestSaved: totalInterestRemaining,
+    potentialProfitAtTenure,
+    scenarios,
+    projections,
+    timeline,
+    insights: buildEmiInsights(inputs, {
+      ret,
+      monthlySurplus,
+      selectedMonthlyInvestment,
+      totalInterestRemaining,
+      potentialProfitAtTenure,
+    }),
+  };
+}
+
+function buildEmiInsights(
+  inputs: EmiInvestInputs,
+  ctx: {
+    ret: number;
+    monthlySurplus: number;
+    selectedMonthlyInvestment: number;
+    totalInterestRemaining: number;
+    potentialProfitAtTenure: number;
+  },
+): string[] {
+  const out: string[] = [];
+  const rate = inputs.annualRate;
+
+  if (ctx.selectedMonthlyInvestment > 0) {
+    const fv15 = sipFutureValue(ctx.selectedMonthlyInvestment, ctx.ret, 180);
+    out.push(
+      `If ${formatShort(ctx.selectedMonthlyInvestment)} per month is invested for 15 years at an assumed ${ctx.ret}% return, it could grow to about ${formatShort(fv15)} through compounding — though actual returns are not guaranteed.`,
+    );
+  }
+  if (rate > ctx.ret) {
+    out.push(
+      `Your loan rate (${rate}%) is higher than the assumed investment return (${ctx.ret}%). Paying high-interest debt earlier gives a guaranteed interest saving that's hard to beat.`,
+    );
+  } else if (ctx.ret > rate) {
+    out.push(
+      `Your assumed return (${ctx.ret}%) is above your loan rate (${rate}%). Over long horizons this gap may favour investing, but interest saved is certain while investment outcomes are not.`,
+    );
+  }
+  out.push("Consider keeping 3–6 months of expenses as an emergency reserve before increasing investments.");
+  if (ctx.monthlySurplus < ctx.selectedMonthlyInvestment) {
+    out.push(
+      `Your monthly surplus (${formatShort(Math.max(0, ctx.monthlySurplus))}) is lower than the amount you're modelling to invest. Never skip an EMI to invest — only deploy genuine surplus.`,
+    );
+  }
+  return out;
+}

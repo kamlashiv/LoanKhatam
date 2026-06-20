@@ -328,25 +328,65 @@ export default function EditLoanScreen() {
       .filter((rc) => !isNaN(rc.newRate) && rc.newRate >= 0)
       .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
 
-    try {
-      await updateLoan({
-        id: loanId,
-        data: {
-          borrowerName: name,
-          principalAmount: principal,
-          interestRate: rate,
-          startDate,
-          dueDate,
-          description: description.trim() || undefined,
-          rateChanges: validRateChanges,
-        },
-      });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await invalidateLoanQueries();
-      router.back();
-    } catch {
-      Alert.alert("Error", "Could not update loan. Please try again.");
+    const performUpdate = async () => {
+      try {
+        await updateLoan({
+          id: loanId,
+          data: {
+            borrowerName: name,
+            principalAmount: principal,
+            interestRate: rate,
+            startDate,
+            dueDate,
+            description: description.trim() || undefined,
+            rateChanges: validRateChanges,
+          },
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await invalidateLoanQueries();
+        router.back();
+      } catch {
+        Alert.alert("Error", "Could not update loan. Please try again.");
+      }
+    };
+
+    // Warn before saving large edits to principal or interest rate, which can
+    // confusingly shift the outstanding balance once payments exist.
+    const bigChange = (original: number, next: number): boolean => {
+      if (original === next) return false;
+      if (original <= 0) return next > 0;
+      return Math.abs(next - original) / original > 0.1;
+    };
+
+    const principalChanged = loan
+      ? bigChange(loan.principalAmount, principal)
+      : false;
+    const rateChanged = loan ? bigChange(loan.interestRate, rate) : false;
+
+    if (principalChanged || rateChanged) {
+      const changes: string[] = [];
+      if (principalChanged) {
+        changes.push(
+          `Principal: ₹${loan!.principalAmount.toLocaleString("en-IN")} → ₹${principal.toLocaleString("en-IN")}`
+        );
+      }
+      if (rateChanged) {
+        changes.push(`Interest rate: ${loan!.interestRate}% → ${rate}%`);
+      }
+      Alert.alert(
+        "Confirm big change",
+        `You're making a significant change to this loan:\n\n${changes.join(
+          "\n"
+        )}\n\nThis can change the outstanding balance. Save anyway?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Save Changes", style: "destructive", onPress: performUpdate },
+        ]
+      );
+      return;
     }
+
+    await performUpdate();
   };
 
   const invalidateLoanQueries = async () => {

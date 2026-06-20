@@ -546,6 +546,13 @@ export function Planner() {
     setYearLumps({});
     setProfileName("");
     setActiveStrategy(null);
+    setTargetYears(10);
+    setDraft(null);
+    setChartTab("balance");
+    setViewMode("yearly");
+    setSearch("");
+    setTableExpanded(true);
+    setExportOpen(false);
   };
 
   const exportMeta = {
@@ -771,8 +778,17 @@ export function Planner() {
         <div className="lg:col-span-4">
           <Card>
             <CardHeader>
-              <CardTitle>Loan Details</CardTitle>
-              <CardDescription>Configure your loan parameters</CardDescription>
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1.5">
+                  <CardTitle>Loan Details</CardTitle>
+                  <CardDescription>Configure your loan parameters</CardDescription>
+                </div>
+                <Button asChild size="sm" className="shrink-0 gap-1.5">
+                  <Link href="/loans/new">
+                    <Plus className="h-4 w-4" /> Add Loan
+                  </Link>
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-5">
               <FileUploadZone onExtracted={handleExtracted} />

@@ -3,7 +3,7 @@ import "./RefinedEditorial.css";
 import React, { useState } from "react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell, Legend,
+  ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,8 @@ export function formatRupees(val: number) {
 }
 
 export function compactRupees(val: number) {
-  if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
+  if (val === 0) return "₹0";
+  if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)} Cr`;
   if (val >= 100000) return `₹${(val / 100000).toFixed(1)} L`;
   return `₹${Math.round(val).toLocaleString("en-IN")}`;
 }
@@ -89,7 +90,6 @@ export const PIE_ACCELERATED = [
 
 export function RefinedEditorial() {
   const [chartTab, setChartTab] = useState<"balance" | "costs">("balance");
-  const [tableMode, setTableMode] = useState<"yearly" | "monthly">("yearly");
   const d = DATA;
 
   return (
@@ -97,21 +97,21 @@ export function RefinedEditorial() {
       <div className="max-w-[1400px] mx-auto space-y-12">
 
         {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-200">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-200">
           <div className="space-y-3">
             <div className="editorial-label text-slate-400">Financial Planning</div>
             <h1 className="text-4xl md:text-5xl font-light tracking-tight text-slate-900 leading-tight">
               SMART Strategy
             </h1>
-            <p className="text-base text-slate-500 max-w-xl">
+            <p className="text-base text-slate-500 max-w-xl leading-relaxed">
               Plan prepayments with precision. See exactly how much interest and time you save over the lifetime of your loan.
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="ghost" className="gap-2 rounded-full h-10 px-5 text-slate-600 hover:text-slate-900 border border-slate-200">
+            <Button variant="ghost" className="gap-2 rounded-full h-10 px-5 text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 transition-colors">
               <RefreshCw className="w-4 h-4" /> Reset
             </Button>
-            <Button className="gap-2 rounded-full h-10 px-6 bg-slate-900 text-white hover:bg-slate-800">
+            <Button className="gap-2 rounded-full h-10 px-6 bg-slate-900 text-white hover:bg-slate-800 shadow-md hover:shadow-lg transition-all">
               <Download className="w-4 h-4" /> Export Report
             </Button>
           </div>
@@ -121,66 +121,69 @@ export function RefinedEditorial() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
 
           {/* LEFT: Inputs & Controls (Col span 4) */}
-          <div className="lg:col-span-4 space-y-8">
+          <div className="lg:col-span-4 flex flex-col gap-8">
             
             {/* Import Area */}
-            <div className="refined-editorial-card p-6">
+            <div className="refined-editorial-card p-6 md:p-8">
               <h3 className="editorial-label mb-4">Import Data</h3>
-              <div className="border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50 rounded-xl p-6 text-center cursor-pointer transition-colors group">
-                <div className="w-10 h-10 bg-white shadow-sm border border-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-105 transition-transform">
-                  <Upload className="w-4 h-4 text-slate-600" />
+              <div className="border border-dashed border-slate-300 hover:border-slate-400 bg-slate-50/50 rounded-xl p-8 text-center cursor-pointer transition-colors group">
+                <div className="w-12 h-12 bg-white shadow-sm border border-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
+                  <Upload className="w-5 h-5 text-slate-600 group-hover:text-slate-900" />
                 </div>
                 <p className="font-medium text-sm text-slate-800">Upload loan document</p>
-                <p className="text-xs text-slate-500 mt-1">PNG, PDF, or CSV supported</p>
+                <p className="text-xs text-slate-500 mt-2">PNG, PDF, or CSV supported</p>
               </div>
             </div>
 
             {/* Loan Parameters */}
-            <div className="refined-editorial-card p-8 space-y-8">
+            <div className="refined-editorial-card p-6 md:p-8 flex flex-col gap-8 flex-1">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <h3 className="text-lg font-medium text-slate-900">Loan Parameters</h3>
               </div>
 
-              <div className="space-y-6">
-                <div className="space-y-3">
+              <div className="space-y-8">
+                <div className="space-y-4">
                   <div className="flex justify-between items-end">
                     <label className="editorial-label">Principal Amount</label>
-                    <span className="font-mono text-sm font-medium text-slate-900">{formatRupees(d.principal)}</span>
+                    <span className="font-mono tabular-nums text-sm font-medium text-slate-900">{formatRupees(d.principal)}</span>
                   </div>
                   <Slider defaultValue={[d.principal]} max={5000000} step={100000} className="py-2" />
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex justify-between items-end">
                     <label className="editorial-label">Interest Rate</label>
-                    <span className="font-mono text-sm font-medium text-slate-900">{d.rate}%</span>
+                    <span className="font-mono tabular-nums text-sm font-medium text-slate-900">{d.rate}%</span>
                   </div>
                   <Slider defaultValue={[d.rate]} max={18} min={5} step={0.1} className="py-2" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
                     <label className="editorial-label">Tenure (Years)</label>
-                    <Input defaultValue={20} className="refined-editorial-input h-10 font-mono text-sm" />
+                    <Input defaultValue={20} className="refined-editorial-input h-11 font-mono tabular-nums text-sm" />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <label className="editorial-label">Start Month</label>
-                    <Input type="month" defaultValue="2024-01" className="refined-editorial-input h-10 text-sm" />
+                    <Input type="month" defaultValue="2024-01" className="refined-editorial-input h-11 text-sm font-mono tabular-nums" />
                   </div>
                 </div>
               </div>
 
-              <div className="pt-8 border-t border-slate-100 space-y-6">
-                <div className="space-y-3">
+              <div className="pt-8 border-t border-slate-100 space-y-8 mt-auto">
+                <div className="space-y-4">
                   <div className="flex justify-between items-end">
                     <label className="editorial-label text-emerald-700">Extra Monthly Payment</label>
-                    <span className="font-mono text-sm font-medium text-emerald-700">{formatRupees(d.extraEmi)}</span>
+                    <span className="font-mono tabular-nums text-sm font-medium text-emerald-700">{formatRupees(d.extraEmi)}</span>
                   </div>
-                  <Slider defaultValue={[d.extraEmi]} max={10000} step={100} className="py-2" />
+                  <Slider defaultValue={[d.extraEmi]} max={10000} step={100} className="py-2 [&_[role=slider]]:border-emerald-500 [&_[role=slider]]:focus-visible:ring-emerald-500/20 [&_.bg-primary]:bg-emerald-500" />
                 </div>
 
-                <div className="space-y-3">
-                  <label className="editorial-label">Target Payoff (Years)</label>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-end">
+                    <label className="editorial-label">Target Payoff (Years)</label>
+                    <span className="font-mono tabular-nums text-sm font-medium text-slate-900">{d.payoffYears} yrs</span>
+                  </div>
                   <Slider defaultValue={[16]} max={20} min={1} className="py-2" />
                 </div>
               </div>
@@ -192,69 +195,71 @@ export function RefinedEditorial() {
             
             {/* The Big Outcomes (Editorial Headlines) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="refined-editorial-card p-8 md:p-10 relative overflow-hidden flex flex-col justify-center">
-                <div className="absolute top-0 right-0 p-6 opacity-10">
-                  <PiggyBank className="w-24 h-24" />
+              <div className="refined-editorial-card p-8 md:p-10 relative overflow-hidden flex flex-col justify-center group hover:shadow-lg transition-shadow duration-300">
+                <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.06] group-hover:scale-110 transition-all duration-500">
+                  <PiggyBank className="w-32 h-32" />
                 </div>
                 <div className="editorial-label mb-4 text-slate-500">Interest Saved</div>
-                <div className="text-5xl lg:text-6xl font-light tracking-tighter text-slate-900 mb-2 font-mono">
+                <div className="text-5xl lg:text-6xl font-light tracking-tighter text-slate-900 mb-3 font-mono tabular-nums">
                   {formatRupees(d.intSaved)}
                 </div>
-                <p className="text-sm text-emerald-600 font-medium">≈ 23% of total interest avoided</p>
+                <p className="text-sm text-emerald-600 font-medium tracking-wide">≈ 23% OF TOTAL INTEREST AVOIDED</p>
               </div>
 
-              <div className="refined-editorial-card p-8 md:p-10 relative overflow-hidden flex flex-col justify-center">
-                <div className="absolute top-0 right-0 p-6 opacity-10">
-                  <CalendarRange className="w-24 h-24" />
+              <div className="refined-editorial-card p-8 md:p-10 relative overflow-hidden flex flex-col justify-center group hover:shadow-lg transition-shadow duration-300">
+                <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.06] group-hover:scale-110 transition-all duration-500">
+                  <CalendarRange className="w-32 h-32" />
                 </div>
                 <div className="editorial-label mb-4 text-slate-500">Time Saved</div>
-                <div className="text-5xl lg:text-6xl font-light tracking-tighter text-slate-900 mb-2">
-                  {d.payoffYears} <span className="text-3xl text-slate-400">yrs</span>
+                <div className="text-5xl lg:text-6xl font-light tracking-tighter text-slate-900 mb-3">
+                  <span className="font-mono tabular-nums">{d.payoffYears}</span> <span className="text-3xl text-slate-400">yrs</span>
                 </div>
-                <p className="text-sm text-slate-600 font-medium">Debt-free <span className="text-slate-900 font-semibold">{d.tenureSavedYrs} years</span> sooner</p>
+                <p className="text-sm text-slate-600 font-medium tracking-wide">DEBT-FREE <span className="text-slate-900 font-bold">{d.tenureSavedYrs} YEARS</span> SOONER</p>
               </div>
             </div>
 
             {/* Monthly Breakdown Card */}
             <div className="refined-editorial-card p-8 md:p-10">
-              <div className="editorial-label mb-6">Monthly Impact</div>
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+              <div className="editorial-label mb-8">Monthly Impact</div>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-8">
                 <div>
-                  <div className="text-xs text-slate-500 mb-1">Base EMI</div>
-                  <div className="text-xl font-mono text-slate-900">{formatRupees(d.baseEmi)}</div>
+                  <div className="text-xs text-slate-500 mb-2 font-medium tracking-wide uppercase">Base EMI</div>
+                  <div className="text-2xl font-mono tabular-nums text-slate-900">{formatRupees(d.baseEmi)}</div>
                 </div>
-                <div className="hidden sm:flex items-center justify-center text-slate-300">
-                  <Plus className="w-5 h-5" />
+                <div className="hidden sm:flex items-center justify-center text-slate-200">
+                  <Plus className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="text-xs text-slate-500 mb-1">Prepayment</div>
-                  <div className="text-xl font-mono text-emerald-600">+{formatRupees(d.extraEmi)}</div>
+                  <div className="text-xs text-emerald-700/70 mb-2 font-medium tracking-wide uppercase">Prepayment</div>
+                  <div className="text-2xl font-mono tabular-nums text-emerald-600">+{formatRupees(d.extraEmi)}</div>
                 </div>
-                <div className="hidden sm:flex items-center justify-center text-slate-300">
-                  <MoveRight className="w-5 h-5" />
+                <div className="hidden sm:flex items-center justify-center text-slate-200">
+                  <MoveRight className="w-6 h-6" />
                 </div>
-                <div className="sm:col-span-4 lg:col-span-1 pt-4 sm:pt-0 border-t sm:border-0 border-slate-100">
-                  <div className="text-xs text-slate-500 mb-1 font-semibold">Total Outflow</div>
-                  <div className="text-2xl font-mono text-slate-900 font-medium">{formatRupees(d.baseEmi + d.extraEmi)}</div>
+                <div className="sm:col-span-4 lg:col-span-1 pt-6 sm:pt-0 border-t sm:border-0 border-slate-100">
+                  <div className="text-xs text-slate-500 mb-2 font-bold tracking-wide uppercase">Total Outflow</div>
+                  <div className="text-3xl font-mono tabular-nums text-slate-900 font-medium">{formatRupees(d.baseEmi + d.extraEmi)}</div>
                 </div>
               </div>
             </div>
 
             {/* Strategies */}
             <div>
-              <h3 className="text-2xl font-light tracking-tight text-slate-900 mb-6">Leverage Strategies</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-light tracking-tight text-slate-900">Leverage Strategies</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {STRATEGIES.map((s, i) => (
-                  <div key={i} className="refined-editorial-card p-6 hover:border-slate-300 transition-colors group cursor-pointer flex flex-col justify-between">
+                  <div key={i} className="refined-editorial-card p-6 border-slate-200/60 hover:border-slate-400 hover:shadow-md transition-all duration-200 group cursor-pointer flex flex-col justify-between focus-within:ring-2 focus-within:ring-slate-900 focus-within:ring-offset-2 outline-none" tabIndex={0}>
                     <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-slate-100 transition-colors">
-                          <s.icon className="w-4 h-4 text-slate-700" />
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-slate-900 group-hover:border-slate-900 transition-colors duration-300">
+                          <s.icon className="w-4 h-4 text-slate-600 group-hover:text-white transition-colors duration-300" />
                         </div>
-                        <span className="text-[10px] font-mono font-medium bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full">{s.note}</span>
+                        <span className="text-[11px] font-mono tabular-nums font-medium bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full">{s.note}</span>
                       </div>
-                      <h4 className="font-medium text-slate-900 mb-1">{s.title}</h4>
-                      <p className="text-sm text-slate-500">{s.desc}</p>
+                      <h4 className="text-base font-medium text-slate-900 mb-2 group-hover:text-slate-900">{s.title}</h4>
+                      <p className="text-sm text-slate-500 font-mono tabular-nums tracking-tight">{s.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -266,40 +271,40 @@ export function RefinedEditorial() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-10">
                 <div>
                   <h3 className="text-2xl font-light tracking-tight text-slate-900">Projection</h3>
-                  <p className="text-sm text-slate-500 mt-1">Balance reduction over time</p>
+                  <p className="text-sm text-slate-500 mt-2 font-medium">Balance reduction over time</p>
                 </div>
-                <div className="flex bg-slate-100/50 p-1 rounded-full border border-slate-200/50">
-                  <button onClick={() => setChartTab("balance")} className={`px-5 py-2 text-xs rounded-full font-medium transition-all ${chartTab === "balance" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}>Balance</button>
-                  <button onClick={() => setChartTab("costs")} className={`px-5 py-2 text-xs rounded-full font-medium transition-all ${chartTab === "costs" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}>Costs</button>
+                <div className="flex bg-slate-100/80 p-1.5 rounded-full border border-slate-200/80">
+                  <button onClick={() => setChartTab("balance")} className={`px-6 py-2.5 text-sm rounded-full font-medium transition-all ${chartTab === "balance" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-800"}`}>Balance</button>
+                  <button onClick={() => setChartTab("costs")} className={`px-6 py-2.5 text-sm rounded-full font-medium transition-all ${chartTab === "costs" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-800"}`}>Costs</button>
                 </div>
               </div>
-              <div className="h-[360px] w-full">
+              <div className="h-[400px] w-full">
                 {chartTab === "balance" ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={BALANCE_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <AreaChart data={BALANCE_DATA} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                       <defs>
                         <linearGradient id="b_std" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#94a3b8" stopOpacity={0.2} /><stop offset="95%" stopColor="#94a3b8" stopOpacity={0} /></linearGradient>
                         <linearGradient id="b_acc" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#0f172a" stopOpacity={0.15} /><stop offset="95%" stopColor="#0f172a" stopOpacity={0} /></linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontFamily: 'Space Mono' }} dy={10} />
-                      <YAxis tickFormatter={compactRupees} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontFamily: 'Space Mono' }} dx={-10} />
-                      <Tooltip contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 8, color: "#0f172a", fontSize: 12, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }} formatter={(v: number) => formatRupees(v)} />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: 12, paddingTop: '20px' }} />
-                      <Area name="Standard Track" type="monotone" dataKey="Standard Balance" stroke="#cbd5e1" fill="url(#b_std)" strokeWidth={2} />
-                      <Area name="Accelerated Track" type="monotone" dataKey="Accelerated Balance" stroke="#0f172a" fill="url(#b_acc)" strokeWidth={2} />
+                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" opacity={0.6} />
+                      <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b", fontFamily: 'Space Mono' }} dy={15} tickMargin={10} minTickGap={30} />
+                      <YAxis tickFormatter={compactRupees} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b", fontFamily: 'Space Mono' }} dx={-10} width={80} domain={[0, 'auto']} />
+                      <Tooltip contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, color: "#0f172a", fontSize: 13, fontFamily: 'Space Mono', boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)", padding: "12px 16px" }} formatter={(v: number) => formatRupees(v)} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: 13, paddingTop: '30px', fontWeight: 500, color: "#334155" }} />
+                      <Area name="Standard Track" type="monotone" dataKey="Standard Balance" stroke="#94a3b8" fill="url(#b_std)" strokeWidth={2.5} activeDot={{ r: 6, strokeWidth: 0, fill: "#94a3b8" }} />
+                      <Area name="Accelerated Track" type="monotone" dataKey="Accelerated Balance" stroke="#0f172a" fill="url(#b_acc)" strokeWidth={2.5} activeDot={{ r: 6, strokeWidth: 0, fill: "#0f172a" }} />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={COST_DATA} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#94a3b8" }} dy={10} />
-                      <YAxis tickFormatter={compactRupees} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontFamily: 'Space Mono' }} dx={-10} />
-                      <Tooltip contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 8, color: "#0f172a", fontSize: 12, boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }} formatter={(v: number) => formatRupees(v)} />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: 12, paddingTop: '20px' }} />
-                      <Bar dataKey="Principal" stackId="a" fill="#cbd5e1" radius={[0, 0, 4, 4]} />
-                      <Bar dataKey="Interest" stackId="a" fill="#0f172a" radius={[4, 4, 0, 0]} />
+                    <BarChart data={COST_DATA} margin={{ top: 20, right: 10, left: 10, bottom: 0 }} barSize={80}>
+                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" opacity={0.6} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: "#475569", fontWeight: 500 }} dy={15} />
+                      <YAxis tickFormatter={compactRupees} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#64748b", fontFamily: 'Space Mono' }} dx={-10} width={80} />
+                      <Tooltip contentStyle={{ backgroundColor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, color: "#0f172a", fontSize: 13, fontFamily: 'Space Mono', boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)", padding: "12px 16px" }} formatter={(v: number) => formatRupees(v)} cursor={{ fill: "#f8fafc" }} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: 13, paddingTop: '30px', fontWeight: 500, color: "#334155" }} />
+                      <Bar dataKey="Principal" stackId="a" fill="#cbd5e1" radius={[0, 0, 6, 6]} />
+                      <Bar dataKey="Interest" stackId="a" fill="#0f172a" radius={[6, 6, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -312,82 +317,112 @@ export function RefinedEditorial() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
           {/* Doughnut Charts (Left Col span 4 to align with top inputs) */}
-          <div className="lg:col-span-4 space-y-6">
+          <div className="lg:col-span-4 space-y-8">
             <h3 className="text-2xl font-light tracking-tight text-slate-900 px-2">Composition</h3>
-            <div className="refined-editorial-card p-6 text-center">
-              <h4 className="text-sm font-medium text-slate-600 mb-6">Standard Path</h4>
-              <div className="h-48">
+            <div className="refined-editorial-card p-8 text-center relative">
+              <h4 className="text-sm font-semibold text-slate-600 mb-8 uppercase tracking-wider">Standard Path</h4>
+              <div className="h-56 relative">
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Total</span>
+                  <span className="font-mono tabular-nums text-lg font-medium text-slate-900">{compactRupees(d.stdTotal)}</span>
+                </div>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={PIE_STANDARD} cx="50%" cy="50%" innerRadius={60} outerRadius={80} stroke="none" dataKey="value">
+                    <Pie data={PIE_STANDARD} cx="50%" cy="50%" innerRadius={70} outerRadius={90} stroke="none" dataKey="value" paddingAngle={2}>
                       {PIE_STANDARD.map((e, i) => <Cell key={i} fill={e.color} />)}
                     </Pie>
-                    <Tooltip formatter={(v: number) => formatRupees(v)} contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                    <Tooltip formatter={(v: number) => formatRupees(v)} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', fontFamily: 'Space Mono', fontSize: '12px' }} itemStyle={{ color: '#0f172a' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="mt-2 editorial-label">Total Outflow</div>
-              <div className="font-mono text-lg mt-1">{formatRupees(d.stdTotal)}</div>
+              
+              <div className="mt-6 space-y-2">
+                {PIE_STANDARD.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="text-slate-600">{item.name}</span>
+                    </div>
+                    <span className="font-mono tabular-nums font-medium text-slate-900">{formatRupees(item.value)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="refined-editorial-card p-6 text-center border-emerald-100 bg-emerald-50/10">
-              <h4 className="text-sm font-medium text-emerald-800 mb-6 flex items-center justify-center gap-2">
+            <div className="refined-editorial-card p-8 text-center border-emerald-100 bg-emerald-50/30 relative">
+              <h4 className="text-sm font-semibold text-emerald-800 mb-8 flex items-center justify-center gap-2 uppercase tracking-wider">
                 <CheckCircle2 className="w-4 h-4" /> Accelerated Path
               </h4>
-              <div className="h-48">
+              <div className="h-56 relative">
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-[10px] text-emerald-600/70 font-bold uppercase tracking-widest mb-1">Total</span>
+                  <span className="font-mono tabular-nums text-lg font-medium text-emerald-900">{compactRupees(d.accTotal)}</span>
+                </div>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={PIE_ACCELERATED} cx="50%" cy="50%" innerRadius={60} outerRadius={80} stroke="none" dataKey="value">
+                    <Pie data={PIE_ACCELERATED} cx="50%" cy="50%" innerRadius={70} outerRadius={90} stroke="none" dataKey="value" paddingAngle={2}>
                       {PIE_ACCELERATED.map((e, i) => <Cell key={i} fill={e.color} />)}
                     </Pie>
-                    <Tooltip formatter={(v: number) => formatRupees(v)} contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
+                    <Tooltip formatter={(v: number) => formatRupees(v)} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', fontFamily: 'Space Mono', fontSize: '12px' }} itemStyle={{ color: '#0f172a' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="mt-2 editorial-label text-emerald-700">Total Outflow</div>
-              <div className="font-mono text-lg mt-1 text-emerald-900">{formatRupees(d.accTotal)}</div>
+
+              <div className="mt-6 space-y-2">
+                {PIE_ACCELERATED.map((item, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="text-emerald-800/80">{item.name}</span>
+                    </div>
+                    <span className="font-mono tabular-nums font-medium text-emerald-900">{formatRupees(item.value)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Amortization Ledger (Right Col span 8) */}
           <div className="lg:col-span-8">
-            <div className="refined-editorial-card p-0 overflow-hidden flex flex-col h-full">
-              <div className="p-8 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="refined-editorial-card p-0 overflow-hidden flex flex-col h-full border border-slate-200/80 shadow-sm">
+              <div className="p-8 border-b border-slate-200/80 bg-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                 <div>
                   <h3 className="text-2xl font-light tracking-tight text-slate-900">Ledger</h3>
-                  <p className="text-sm text-slate-500 mt-1">Detailed yearly breakdown</p>
+                  <p className="text-sm text-slate-500 mt-2 font-medium">Detailed yearly breakdown</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="relative">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <Input placeholder="Search year..." className="pl-9 h-10 w-48 rounded-full text-sm bg-slate-50 border-slate-200" />
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Input placeholder="Search year..." className="pl-10 h-10 w-48 rounded-full text-sm bg-slate-50 border-slate-200 hover:border-slate-300 focus:bg-white transition-colors" />
                   </div>
-                  <Button variant="outline" size="sm" className="h-10 rounded-full px-4 border-slate-200 text-slate-600">
+                  <Button variant="outline" size="sm" className="h-10 rounded-full px-5 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors font-medium">
                     CSV <Download className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
               </div>
-              <div className="overflow-x-auto editorial-scroll flex-1">
+              <div className="overflow-x-auto editorial-scroll flex-1 bg-white">
                 <table className="w-full text-sm text-left">
-                  <thead className="text-[10px] text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                  <thead className="text-[11px] text-slate-500 uppercase tracking-wider bg-slate-50/80 border-b border-slate-200/80">
                     <tr>
-                      <th className="px-6 py-4 font-semibold whitespace-nowrap">Period</th>
-                      <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">Opening</th>
-                      <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">EMI</th>
-                      <th className="px-6 py-4 font-semibold text-right whitespace-nowrap text-emerald-700">Extra</th>
-                      <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">Interest</th>
-                      <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">Closing</th>
+                      <th className="px-6 py-4 font-bold whitespace-nowrap">Period</th>
+                      <th className="px-6 py-4 font-bold text-right whitespace-nowrap">Opening</th>
+                      <th className="px-6 py-4 font-bold text-right whitespace-nowrap">EMI</th>
+                      <th className="px-6 py-4 font-bold text-right whitespace-nowrap text-emerald-700">Extra</th>
+                      <th className="px-6 py-4 font-bold text-right whitespace-nowrap">Principal</th>
+                      <th className="px-6 py-4 font-bold text-right whitespace-nowrap">Interest</th>
+                      <th className="px-6 py-4 font-bold text-right whitespace-nowrap">Closing</th>
                     </tr>
                   </thead>
-                  <tbody className="font-mono text-xs">
+                  <tbody className="font-mono tabular-nums text-[13px]">
                     {YEARLY_ROWS.map((r, i) => (
-                      <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 font-sans font-medium text-slate-700">Year {r.year}</td>
-                        <td className="px-6 py-4 text-right text-slate-500">{formatRupees(r.opening)}</td>
-                        <td className="px-6 py-4 text-right text-slate-500">{formatRupees(r.emiPaid)}</td>
-                        <td className="px-6 py-4 text-right text-emerald-600 font-medium">+{formatRupees(r.extraPaid)}</td>
-                        <td className="px-6 py-4 text-right text-slate-400">{formatRupees(r.interest)}</td>
-                        <td className="px-6 py-4 text-right text-slate-900 font-medium">{formatRupees(r.closing)}</td>
+                      <tr key={i} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 even:bg-slate-50/30 transition-colors">
+                        <td className="px-6 py-4.5 font-sans font-medium text-slate-700 whitespace-nowrap">Year {r.year}</td>
+                        <td className="px-6 py-4.5 text-right text-slate-500 whitespace-nowrap">{formatRupees(r.opening)}</td>
+                        <td className="px-6 py-4.5 text-right text-slate-500 whitespace-nowrap">{formatRupees(r.emiPaid)}</td>
+                        <td className="px-6 py-4.5 text-right text-emerald-600 font-medium whitespace-nowrap">+{formatRupees(r.extraPaid)}</td>
+                        <td className="px-6 py-4.5 text-right text-slate-700 whitespace-nowrap">{formatRupees(r.principal)}</td>
+                        <td className="px-6 py-4.5 text-right text-slate-400 whitespace-nowrap">{formatRupees(r.interest)}</td>
+                        <td className="px-6 py-4.5 text-right text-slate-900 font-medium whitespace-nowrap">{formatRupees(r.closing)}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -43,10 +43,10 @@ export const DATA = {
 };
 
 export const STRATEGIES = [
-  { title: "1 Extra EMI / Year", desc: "Saves ₹5,14,577 & 3 Yr(s), 3 Mo(s)", note: "₹21,696/yr", icon: TrendingUp },
-  { title: "Micro-Savings (5% Monthly)", desc: "Saves ₹3,58,882 & 2 Yr(s), 3 Mo(s)", note: "+₹1,085/mo", icon: Award },
-  { title: "10% Monthly Boost", desc: "Saves ₹6,26,091 & 4 Yr(s)", note: "+₹2,170/mo", icon: PiggyBank },
-  { title: "Super-Saver Combo", desc: "Saves ₹9,27,880 & 6 Yr(s)", note: "+₹2,170/mo · ₹21,696/yr", icon: Flame },
+  { title: "1 Extra EMI / Year", desc: `Saves ${formatRupees(514577)} & 3 Yr(s), 3 Mo(s)`, note: `${formatRupees(21696)}/yr`, icon: TrendingUp },
+  { title: "Micro-Savings (5% Monthly)", desc: `Saves ${formatRupees(358882)} & 2 Yr(s), 3 Mo(s)`, note: `+${formatRupees(1085)}/mo`, icon: Award },
+  { title: "10% Monthly Boost", desc: `Saves ${formatRupees(626091)} & 4 Yr(s)`, note: `+${formatRupees(2170)}/mo`, icon: PiggyBank },
+  { title: "Super-Saver Combo", desc: `Saves ${formatRupees(927880)} & 6 Yr(s)`, note: `+${formatRupees(2170)}/mo · ${formatRupees(21696)}/yr`, icon: Flame },
 ];
 
 export const BALANCE_DATA = Array.from({ length: 21 }, (_, i) => {
@@ -315,31 +315,37 @@ export function FocusedCockpit() {
               <CardContent className="p-4 flex-grow flex flex-col gap-4">
                 <div className="flex-1 min-h-[140px] bg-slate-50 rounded-xl p-3 border border-slate-100">
                   <p className="text-[10px] font-bold text-center text-slate-500 mb-1">Standard</p>
-                  <div className="h-24 w-full">
+                  <div className="h-36 w-full relative">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={PIE_STANDARD} cx="50%" cy="50%" innerRadius={35} outerRadius={45} stroke="none" dataKey="value">
+                        <Pie data={PIE_STANDARD} cx="50%" cy="50%" innerRadius={45} outerRadius={60} stroke="none" dataKey="value">
                           {PIE_STANDARD.map((e, i) => <Cell key={i} fill={e.color} />)}
                         </Pie>
-                        <Tooltip formatter={(v: number) => formatRupees(v)} contentStyle={{fontSize: 10}} />
+                        <Tooltip formatter={(v: number) => formatRupees(v)} contentStyle={{fontSize: 10, fontFamily: "'Space Mono', monospace"}} />
                       </PieChart>
                     </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase">Total</span>
+                      <span className="text-[12px] font-black font-mono-numbers text-slate-800">{compactRupees(d.stdTotal)}</span>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-center font-bold font-mono-numbers text-slate-700 mt-1">{compactRupees(d.stdTotal)}</p>
                 </div>
-                <div className="flex-1 min-h-[140px] bg-emerald-50/50 rounded-xl p-3 border border-emerald-100">
-                  <p className="text-[10px] font-bold text-center text-emerald-700 mb-1 flex items-center justify-center gap-1"><CheckCircle2 className="w-3 h-3" /> Accelerated</p>
-                  <div className="h-24 w-full">
+                <div className="flex-1 bg-emerald-50/50 rounded-xl p-4 border border-emerald-100 flex flex-col items-center justify-center relative">
+                  <p className="text-[11px] font-bold text-center text-emerald-700 mb-2 flex items-center justify-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Accelerated</p>
+                  <div className="h-36 w-full relative">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={PIE_ACCELERATED} cx="50%" cy="50%" innerRadius={35} outerRadius={45} stroke="none" dataKey="value">
+                        <Pie data={PIE_ACCELERATED} cx="50%" cy="50%" innerRadius={45} outerRadius={60} stroke="none" dataKey="value">
                           {PIE_ACCELERATED.map((e, i) => <Cell key={i} fill={e.color} />)}
                         </Pie>
-                        <Tooltip formatter={(v: number) => formatRupees(v)} contentStyle={{fontSize: 10}} />
+                        <Tooltip formatter={(v: number) => formatRupees(v)} contentStyle={{fontSize: 10, fontFamily: "'Space Mono', monospace"}} />
                       </PieChart>
                     </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-[10px] text-emerald-700/80 font-bold uppercase">Total</span>
+                      <span className="text-[12px] font-black font-mono-numbers text-emerald-800">{compactRupees(d.accTotal)}</span>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-center font-bold font-mono-numbers text-emerald-700 mt-1">{compactRupees(d.accTotal)}</p>
                 </div>
               </CardContent>
             </Card>
@@ -376,8 +382,8 @@ export function FocusedCockpit() {
                         <td className="px-4 py-2 font-bold text-slate-700 font-sans">Yr {r.year}</td>
                         <td className="px-4 py-2 text-right text-slate-500">{formatRupees(r.opening)}</td>
                         <td className="px-4 py-2 text-right text-slate-500">{formatRupees(r.emiPaid)}</td>
-                        <td className="px-4 py-2 text-right">
-                          <Input defaultValue={r.extraPaid} className="h-6 w-20 text-right text-[11px] font-mono-numbers font-bold bg-emerald-50 border-emerald-200 text-emerald-700 ml-auto focus-visible:ring-emerald-500" />
+                        <td className="px-4 py-2.5 text-right">
+                          <Input defaultValue={formatRupees(r.extraPaid)} className="h-7 w-[90px] text-right text-[11px] font-mono-numbers font-bold bg-emerald-50 border-emerald-200 text-emerald-700 ml-auto focus-visible:ring-emerald-500 hover:border-emerald-300 transition-colors shadow-sm" />
                         </td>
                         <td className="px-4 py-2 text-right text-slate-400">{formatRupees(r.interest)}</td>
                         <td className="px-4 py-2 text-right text-slate-600">{formatRupees(r.principal)}</td>

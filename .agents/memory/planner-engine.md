@@ -7,8 +7,9 @@ description: Design decisions for the standalone Planner's amortization simulati
 
 The standalone `/planner` page runs its own in-browser amortization simulation (separate from the per-loan bank-style schedule). Key decisions:
 
-- **Baseline vs plan.** Baseline = principal/rate/tenure only (no extra, no lumps, no top-up). Plan = baseline + recurring extra EMI + per-year lump prepayments + optional top-up. `interestSaved`/`monthsSaved` are `Math.max(0, baseline - plan)` so a top-up that raises total interest never shows negative savings.
-  **Why:** baseline must represent the original sanction so "savings" means savings vs doing nothing.
+- **Baseline vs plan.** Baseline = same loan context as plan (principal/rate/tenure **and** the configured top-up) but with NO acceleration (extraEMI=0, no lumps). Plan adds recurring extra EMI + per-year lumps + strategy presets. `interestSaved`/`monthsSaved` are `Math.max(0, baseline - plan)`.
+  **Why:** if baseline excluded the top-up while plan included it, the deltas would compare two different loan definitions and overstate/distort savings (caught in code review). Baseline must isolate the *prepayment* effect for whatever loan is configured.
+  **How to apply:** strategy-card savings sims must also pass the same `topUp` so each card compares against the same baseline. The "Net Principal" headline must read `plan.totalPrincipalBorrowed` (engine truth), not `principal + topUp.amount` — a top-up only counts once its disbursal month is actually reached.
 
 - **Per-month accounting invariant.** Each month records `emi` as the *actual installment paid* (`interest + scheduled principal`), not the nominal EMI. In the final/overpay month the installment is reduced to clear the exact balance and extra is zeroed. This keeps `sum(emi) + sum(extra) === sum(interest) + sum(principal)` and year/CSV/PDF totals consistent.
   **Why:** a prior version recorded the full nominal EMI in the payoff month, inflating ledger/export totals (caught in code review).

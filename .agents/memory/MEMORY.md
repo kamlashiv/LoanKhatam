@@ -16,3 +16,4 @@
 - [localStorage persisted index validation](localstorage-index-validation.md) — persisted array-index values (e.g. a selected-option index) need Number.isInteger + bounds checks in loader AND usage; finite-number + try/catch alone crashes on -1/0.5.
 - [Dark mode dark: variants](dark-mode-perl-variants.md) — additive dark mode via boundary-safe perl dark: injection; collapse duplicate variants; charts need JS theme values not dark: classes.
 - [EMI vs Investment Analyzer](emi-investment-analyzer.md) — /strategy section: deterministic SIP vs debt-payoff compare; derive payoff via amortization when tenure missing, flag unbounded EMI.
+- [Profile privacy tests & jest env](profile-privacy-tests.md) — cross-account isolation tested via real ProfileProvider+RQ with faked useAuth/global.fetch; jsdom lacks fetch/Response; dashboard+planner suites pre-existing red.

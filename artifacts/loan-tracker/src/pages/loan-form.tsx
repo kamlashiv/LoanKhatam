@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useParams } from "wouter";
+import { Link, useLocation, useParams, useSearch } from "wouter";
 import {
   useCreateLoan,
   useGetLoan,
@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export function LoanForm() {
@@ -23,16 +23,21 @@ export function LoanForm() {
   const id = params.id ? parseInt(params.id) : undefined;
   const isEditing = !!id;
   const [, setLocation] = useLocation();
+  const search = useSearch();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Read pre-filled values from URL query params (set by AI file import)
+  const urlParams = new URLSearchParams(search);
+  const fromImport = urlParams.has("borrowerName") || urlParams.has("principalAmount");
+
   const [form, setForm] = useState({
-    borrowerName: "",
-    principalAmount: "",
-    interestRate: "",
-    startDate: new Date().toISOString().split("T")[0],
-    dueDate: "",
-    description: "",
+    borrowerName: urlParams.get("borrowerName") ?? "",
+    principalAmount: urlParams.get("principalAmount") ?? "",
+    interestRate: urlParams.get("interestRate") ?? "",
+    startDate: urlParams.get("startDate") ?? new Date().toISOString().split("T")[0],
+    dueDate: urlParams.get("dueDate") ?? "",
+    description: urlParams.get("description") ?? "",
   });
 
   const { data: existingLoan } = useGetLoan(id ?? 0, {
@@ -120,6 +125,19 @@ export function LoanForm() {
           </p>
         </div>
       </div>
+
+      {/* AI pre-fill banner */}
+      {fromImport && (
+        <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
+          <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-primary">AI से Auto-Fill हुआ</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              File से loan data extract हुआ है — details verify करके Save करें
+            </p>
+          </div>
+        </div>
+      )}
 
       <Card className="border-border shadow-sm">
         <CardHeader>

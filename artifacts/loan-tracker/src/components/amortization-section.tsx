@@ -76,8 +76,15 @@ export function AmortizationSection({
   rateChanges = [],
 }: Props) {
   const amort = useMemo(
-    () => calculateAmortization(principalAmount, interestRate, startDate, dueDate),
-    [principalAmount, interestRate, startDate, dueDate]
+    () =>
+      calculateAmortization(
+        principalAmount,
+        interestRate,
+        startDate,
+        dueDate,
+        rateChanges
+      ),
+    [principalAmount, interestRate, startDate, dueDate, rateChanges]
   );
 
   const savings = useMemo(
@@ -88,9 +95,18 @@ export function AmortizationSection({
         startDate,
         dueDate,
         totalPaid,
-        remainingAmount
+        remainingAmount,
+        rateChanges
       ),
-    [principalAmount, interestRate, startDate, dueDate, totalPaid, remainingAmount]
+    [
+      principalAmount,
+      interestRate,
+      startDate,
+      dueDate,
+      totalPaid,
+      remainingAmount,
+      rateChanges,
+    ]
   );
 
   const bankResult = useMemo(

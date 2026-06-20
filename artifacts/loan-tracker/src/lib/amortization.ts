@@ -97,23 +97,51 @@ export function calculateAmortization(
   principal: number,
   annualRate: number,
   startDate: string,
-  dueDate: string
+  dueDate: string,
+  rateChanges: RateChange[] = []
 ): AmortizationResult {
   const tenureMonths = monthsBetween(startDate, dueDate);
   if (tenureMonths <= 0 || principal <= 0) {
     return { emi: 0, schedule: [], totalInterest: 0, totalPayment: 0, tenureMonths: 0 };
   }
 
-  const monthlyRate = annualRate / 12 / 100;
-  const emi = calcEMI(principal, annualRate, tenureMonths);
+  // Apply a rate change from the start of the first monthly period whose
+  // periodStart is on or after the effective date — identical semantics to
+  // calculateBankStyleSchedule, so blended-rate math stays consistent.
+  const sortedRateChanges = [...rateChanges]
+    .filter((rc) => rc.effectiveDate > startDate && rc.effectiveDate < dueDate)
+    .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
+
+  const initialEMI = calcEMI(principal, annualRate, tenureMonths);
 
   const schedule: AmortizationRow[] = [];
   let balance = principal;
+  let activeRate = annualRate;
+  let currentEMI = initialEMI;
+  let rateChangeIdx = 0;
 
   for (let i = 1; i <= tenureMonths; i++) {
+    const periodStart = firstOfMonth(addMonths(startDate, i - 1));
+
+    let rateChanged = false;
+    while (
+      rateChangeIdx < sortedRateChanges.length &&
+      sortedRateChanges[rateChangeIdx].effectiveDate <= periodStart
+    ) {
+      activeRate = sortedRateChanges[rateChangeIdx].newRate;
+      rateChanged = true;
+      rateChangeIdx++;
+    }
+
+    const remainingMonths = tenureMonths - i + 1;
+    if (rateChanged) {
+      currentEMI = calcEMI(balance, activeRate, remainingMonths);
+    }
+
+    const monthlyRate = activeRate / 12 / 100;
     const openingBalance = balance;
     const interestComponent = openingBalance * monthlyRate;
-    let principalComponent = emi - interestComponent;
+    let principalComponent = currentEMI - interestComponent;
     if (i === tenureMonths) principalComponent = openingBalance;
     const closingBalance = Math.max(0, openingBalance - principalComponent);
 
@@ -121,7 +149,7 @@ export function calculateAmortization(
       month: i,
       date: addMonths(startDate, i),
       openingBalance: r2(openingBalance),
-      emi: r2(emi),
+      emi: r2(currentEMI),
       interestComponent: r2(interestComponent),
       principalComponent: r2(principalComponent),
       closingBalance: r2(closingBalance),
@@ -134,7 +162,7 @@ export function calculateAmortization(
   const totalInterest = schedule.reduce((s, r) => s + r.interestComponent, 0);
 
   return {
-    emi: r2(emi),
+    emi: r2(initialEMI),
     schedule,
     totalInterest: r2(totalInterest),
     totalPayment: r2(totalPayment),
@@ -148,14 +176,40 @@ export function calculateSavings(
   startDate: string,
   dueDate: string,
   totalPaid: number,
-  remainingAmount: number
+  remainingAmount: number,
+  rateChanges: RateChange[] = []
 ): InterestSavings {
   const today = new Date().toISOString().split("T")[0];
 
-  const full = calculateAmortization(principalAmount, annualRate, startDate, dueDate);
+  const full = calculateAmortization(
+    principalAmount,
+    annualRate,
+    startDate,
+    dueDate,
+    rateChanges
+  );
   const scheduledTotalInterest = full.totalInterest;
   const principalRepaid = principalAmount - remainingAmount;
-  const remaining = calculateAmortization(remainingAmount, annualRate, today, dueDate);
+
+  // The remaining projection is anchored to the start of the current monthly
+  // period (not the raw calendar date) so its rate-change semantics match the
+  // schedule, which applies a change from the first period whose periodStart is
+  // on/after the effective date. The base rate is the rate already in effect at
+  // that period start; only changes after it (effectiveDate > periodStart) still
+  // apply within the remaining projection.
+  const remainingPeriodStart = firstOfMonth(today);
+  const remainingBaseRate = currentEffectiveRate(
+    annualRate,
+    rateChanges,
+    remainingPeriodStart
+  );
+  const remaining = calculateAmortization(
+    remainingAmount,
+    remainingBaseRate,
+    remainingPeriodStart,
+    dueDate,
+    rateChanges
+  );
   const projectedRemainingInterest = remaining.totalInterest;
   const estimatedInterestPaid = Math.max(0, totalPaid - principalRepaid);
   const interestSaved = Math.max(

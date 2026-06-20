@@ -8,3 +8,8 @@ The web **loan-tracker** extracts loan fields from uploaded files entirely in th
 **Why:** the user explicitly asked to stop using AI to extract uploaded files but to keep upload and read all types locally including PDF and image.
 
 **How to apply:** keep upload parsing in the web app local. The AI server route `artifacts/api-server/src/routes/extract-loan.ts` and its OpenAI dep are intentionally **kept** because `ledger-mobile` (`app/loan/new.tsx`) still calls `/api/extract-loan`. Do not delete that route while mobile depends on it.
+
+**Free-text parsing gotchas (regex parser):**
+- Interest rate: a doc has many `%` (GST, processing fee, penalty). Pick the `%` next to an interest/rate label and skip fee-context ones — BUT rate-context must override fee-context, because "interest **charged** at 2%" contains the substring "charge". Skipping on fee words alone drops the real rate.
+- Amount: check strong principal labels (principal/loan amount/sanctioned/disbursed) before the generic "amount" label, or an EMI/fee figure wins. Reject a number followed by `%` (it's a rate, not a principal).
+- Borrower name: keep a `:`/`-` separator required (optional-separator matches prose like "Borrower agrees to…"). Names from single-line PDF/OCR bleed into the next field — trim trailing field-label words.

@@ -286,6 +286,34 @@ describe("fromText", () => {
     expect(out.dueDate).toBeNull();
     expect(out.borrowerName).toBeNull();
   });
+
+  it("ignores fee/GST percentages and picks the labelled interest rate", () => {
+    expect(fromText("Processing fee of 2% and interest rate of 14% per annum.").interestRate).toBe(14);
+    expect(fromText("GST 18% applies. Loan interest 11% p.a.").interestRate).toBe(11);
+    expect(fromText("Late payment charge 5%. Rate of interest: 9%.").interestRate).toBe(9);
+  });
+
+  it("prefers a strong principal label over an earlier EMI/amount figure", () => {
+    const out = fromText("EMI amount Rs. 5,000 monthly. Principal amount Rs. 2,00,000.");
+    expect(out.principalAmount).toBe(200000);
+  });
+
+  it("reads a principal label sitting away from the figure", () => {
+    expect(fromText("Loan Amount (Sanctioned): Rs. 5,00,000 /-").principalAmount).toBe(500000);
+  });
+
+  it("does not read a percentage figure as the principal amount", () => {
+    expect(fromText("Amount charged at 5% interest.").principalAmount).toBeNull();
+  });
+
+  it("recognises extra borrower-name label variants", () => {
+    expect(fromText("Name of Borrower: Sunita Devi\n").borrowerName).toBe("Sunita Devi");
+    expect(fromText("Debtor: Mohan Lal\n").borrowerName).toBe("Mohan Lal");
+  });
+
+  it("trims trailing field labels that bleed into the name", () => {
+    expect(fromText("Borrower: Ramesh Kumar Loan Amount Rs. 50000").borrowerName).toBe("Ramesh Kumar");
+  });
 });
 
 describe("extractFromFile — confidence scoring & notes", () => {

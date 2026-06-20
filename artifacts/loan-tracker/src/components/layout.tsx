@@ -10,9 +10,10 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+   { href: "/planner", label: "SMART Strategy", icon: Target },
   { href: "/loans", label: "All Loans", icon: List },
   { href: "/amortization", label: "Amortization", icon: BarChart3 },
-  { href: "/planner", label: "Payoff Planner", icon: Target },
+ 
 ];
 
 function Brand() {

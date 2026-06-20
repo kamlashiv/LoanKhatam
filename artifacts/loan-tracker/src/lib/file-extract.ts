@@ -86,6 +86,52 @@ export function parseRate(raw: string | number | null | undefined): number | nul
 // Detects whether the matched rate is expressed per month so we can annualise it.
 const MONTHLY_RE = /per\s*month|per\s*mensem|monthly|\/\s*mo(?:nth)?\b|\bp\.?\s*m\.?\b/i;
 
+// Words that mean a nearby "%" is an interest rate, and words that mean it is
+// some other charge (a fee, tax, penalty, …) that must NOT be read as the rate.
+const RATE_CTX = /interest|roi|r\.o\.i|apr|\brate\b/i;
+const FEE_CTX = /fee|gst|\btax\b|penalt|charge|processing|foreclos|prepay|cibil|tds|stamp|insur|late\s*(?:fee|payment|charge)/i;
+
+function annualiseIfMonthly(rate: number, trailing: string): number {
+  if (MONTHLY_RE.test(trailing)) {
+    const annual = Math.round(rate * 12 * 100) / 100;
+    return annual <= 100 ? annual : rate;
+  }
+  return rate;
+}
+
+// Picks the interest rate from free text. Prefers a "%" that sits next to an
+// interest/rate label, skips percentages that belong to fees/GST/taxes/
+// penalties/processing charges, and annualises monthly rates.
+export function pickRate(flat: string): number | null {
+  let labeled: { val: number; trail: string } | null = null;
+  let firstClean: { val: number; trail: string } | null = null;
+  for (const m of flat.matchAll(/([\d.]+)\s*%\s*([^.,;\n]{0,18})/gi)) {
+    const val = parseRate(m[1]);
+    if (val == null) continue;
+    const idx = m.index ?? 0;
+    const pre = flat.slice(Math.max(0, idx - 28), idx);
+    const trail = m[2] ?? "";
+    const isRate = RATE_CTX.test(pre);
+    // A fee/tax/charge percentage is skipped — unless an interest/rate word is
+    // also nearby (e.g. "interest charged at 2%"), where the rate wins.
+    if (FEE_CTX.test(pre) && !isRate) continue;
+    if (isRate && !labeled) labeled = { val, trail };
+    if (!firstClean) firstClean = { val, trail };
+  }
+  let pick = labeled ?? firstClean;
+  if (!pick) {
+    // Labelled rate written without a "%" sign, e.g. "Interest 12 p.a.".
+    const lm = flat.match(
+      /(?:interest\s*rate|rate\s*of\s*interest|interest|roi|apr)\b[^%\d]{0,15}([\d.]+)\s*(%|p\.?\s*a\.?|per\s*annum|per\s*month|p\.?\s*m\.?)\b/i
+    );
+    if (lm) {
+      const v = parseRate(lm[1]);
+      if (v != null) pick = { val: v, trail: lm[2] ?? "" };
+    }
+  }
+  return pick ? annualiseIfMonthly(pick.val, pick.trail) : null;
+}
+
 function pad(n: number): string {
   return n.toString().padStart(2, "0");
 }
@@ -199,31 +245,32 @@ export function fromText(text: string): Omit<ExtractedData, "confidence" | "note
   const out = { ...EMPTY };
   const flat = text.replace(/\s+/g, " ");
 
-  // Amount: prefer labelled values, else first ₹/Rs amount.
-  const amtLabel = flat.match(
-    /(?:principal|loan\s*amount|sanctioned|disbursed|amount)\D{0,12}(₹|rs\.?|inr)?\s*([\d,]+(?:\.\d+)?)\s*(crore|cr|lakh|lac)?/i
+  // Amount: prefer strong principal labels, then a generic "amount" label,
+  // then the first ₹/Rs figure. "\D{0,20}" lets the label sit a little away
+  // from the number (e.g. "Loan Amount (Sanctioned): Rs. 5,00,000"), and the
+  // "(?!\s*%)" guard rejects a figure that is actually a rate ("amount at 5%").
+  const amtMult = "(crore|cr|lakh|lac)?(?!\\s*%)";
+  const strongAmt = flat.match(
+    new RegExp(
+      `(?:principal(?:\\s*amount)?|loan\\s*amount|loan\\s*sum|amount\\s*of\\s*loan|sanctioned(?:\\s*amount)?|disbursed(?:\\s*amount)?)\\D{0,20}(₹|rs\\.?|inr)?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${amtMult}`,
+      "i"
+    )
   );
-  if (amtLabel) {
-    out.principalAmount = parseAmount(`${amtLabel[2]} ${amtLabel[3] ?? ""}`);
+  const amt =
+    strongAmt ??
+    flat.match(
+      new RegExp(`(?:amount)\\D{0,15}(₹|rs\\.?|inr)?\\s*([\\d,]+(?:\\.\\d+)?)\\s*${amtMult}`, "i")
+    );
+  if (amt) {
+    out.principalAmount = parseAmount(`${amt[2]} ${amt[3] ?? ""}`);
   }
   if (out.principalAmount == null) {
-    const anyAmt = flat.match(/(₹|rs\.?|inr)\s*([\d,]+(?:\.\d+)?)\s*(crore|cr|lakh|lac)?/i);
+    const anyAmt = flat.match(/(₹|rs\.?|inr)\s*([\d,]+(?:\.\d+)?)\s*(crore|cr|lakh|lac)?(?!\s*%)/i);
     if (anyAmt) out.principalAmount = parseAmount(`${anyAmt[2]} ${anyAmt[3] ?? ""}`);
   }
 
-  // Interest rate. Capture a little trailing context so we can tell apart
-  // monthly rates ("2% per month") from annual ones and annualise correctly.
-  const rate =
-    flat.match(/([\d.]+)\s*%\s*([^.,;\n]{0,18})/i) ||
-    flat.match(/(?:interest|rate|roi)\D{0,10}([\d.]+)\s*%?\s*([^.,;\n]{0,18})/i);
-  if (rate) {
-    let parsed = parseRate(rate[1]);
-    if (parsed != null && MONTHLY_RE.test(rate[2] ?? "")) {
-      const annual = Math.round(parsed * 12 * 100) / 100;
-      parsed = annual <= 100 ? annual : parsed;
-    }
-    out.interestRate = parsed;
-  }
+  // Interest rate — label-aware and fee-aware (see pickRate).
+  out.interestRate = pickRate(flat);
 
   // Dates — collect all, then assign by label proximity.
   const dateRe = /(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}\s*[a-z]{3,}\s*\d{4})/gi;
@@ -242,9 +289,20 @@ export function fromText(text: string): Omit<ExtractedData, "confidence" | "note
     if (!out.dueDate && sorted.length > 1) out.dueDate = sorted[sorted.length - 1];
   }
 
-  // Borrower name.
-  const name = text.match(/(?:borrower|name|lent to|customer|party)\s*[:\-]\s*([A-Za-z][A-Za-z .]{1,40})/i);
-  if (name) out.borrowerName = name[1].trim().replace(/\s+/g, " ");
+  // Borrower name. Matched on the raw text (not "flat") so a newline ends the
+  // name; a colon/dash separator is required to avoid grabbing prose like
+  // "Borrower agrees to…". Trailing field labels that bleed onto the same line
+  // (common in single-line PDF/OCR output) are trimmed off.
+  const name = text.match(
+    /(?:borrower(?:'s)?\s*name|name\s*of\s*(?:the\s*)?borrower|borrower|lent\s*to|loaned\s*to|customer|party|payee|debtor|name)\s*[:\-]\s*([A-Za-z][A-Za-z.'\- ]{1,40})/i
+  );
+  if (name) {
+    let nm = name[1].trim().replace(/\s+/g, " ");
+    nm = nm
+      .split(/\s+(?:amount|loan|principal|interest|rate|date|due|start|sum|disbursed|sanctioned|rs|inr)\b/i)[0]
+      .trim();
+    if (nm) out.borrowerName = nm;
+  }
 
   return out;
 }

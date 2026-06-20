@@ -969,24 +969,24 @@ export function Planner() {
         <div className="lg:col-span-8 space-y-6">
           {/* Metric cards */}
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-            <Card className="border-emerald-200 bg-emerald-50/50">
+            <Card>
               <CardContent className="pt-5">
-                <div className="flex items-center gap-2 text-emerald-700">
-                  <TrendingDown className="h-4 w-4" />
+                <div className="flex items-center gap-2 text-slate-500">
+                  <TrendingDown className="h-4 w-4 text-emerald-600" />
                   <p className="text-xs font-semibold uppercase tracking-wide">Interest Saved</p>
                 </div>
-                <p className="text-2xl font-black text-emerald-700 mt-2">{formatRupees(interestSaved)}</p>
+                <p className="text-2xl font-black text-slate-900 mt-2">{formatRupees(interestSaved)}</p>
                 <p className="text-xs text-slate-500 mt-1">≈{Math.round(interestSavingPct)}% of standard interest</p>
               </CardContent>
             </Card>
 
-            <Card className="border-emerald-200 bg-emerald-50/50">
+            <Card>
               <CardContent className="pt-5">
-                <div className="flex items-center gap-2 text-emerald-700">
-                  <CalendarRange className="h-4 w-4" />
+                <div className="flex items-center gap-2 text-slate-500">
+                  <CalendarRange className="h-4 w-4 text-emerald-600" />
                   <p className="text-xs font-semibold uppercase tracking-wide">Tenure Saved</p>
                 </div>
-                <p className="text-2xl font-black text-emerald-700 mt-2">
+                <p className="text-2xl font-black text-slate-900 mt-2">
                   {monthsSaved > 0 ? savedTimeLabel(monthsSaved) : "0 Months"}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">

@@ -1,0 +1,3 @@
+- [Expo monorepo Metro config](expo-metro-monorepo.md) — Metro needs watchFolders + nodeModulesPaths to find packages in artifact's own node_modules; disableHierarchicalLookup breaks Metro's own resolution.
+- [Expo package versions for expo@54](expo-54-package-versions.md) — expo-secure-store@~15.0.8, expo-auth-session@~7.0.11 required; pnpm add without version picks incompatible latest.
+- [Anthropic AI integration wiring](anthropic-wiring.md) — Anthropic integration requires tsconfig refs in both root and api-server, db schema barrel export for conversations+messages, and @workspace/integrations-anthropic-ai in api-server dependencies.

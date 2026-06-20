@@ -195,9 +195,6 @@ export default function Strategy() {
         <div className="lg:col-span-5 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Wallet className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> Your Financial Picture
-              </CardTitle>
               <CardDescription>Fill in your monthly figures — everything updates instantly.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

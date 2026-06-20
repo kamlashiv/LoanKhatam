@@ -33,13 +33,14 @@ const DEFAULTS = {
   tenureMonths: 240,
 };
 
-// Mirrors monthsToStr in planner.tsx — used in the Accelerated Payoff card.
-function monthsToStr(m: number): string {
-  const y = Math.floor(m / 12);
-  const mo = m % 12;
-  if (y === 0) return `${mo} months`;
-  if (mo === 0) return `${y} years`;
-  return `${y} years ${mo} months`;
+// Mirrors savedTimeLabel in planner.tsx — used in the Accelerated Payoff card.
+function savedTimeLabel(months: number): string {
+  const y = Math.floor(months / 12);
+  const mo = months % 12;
+  if (y > 0 && mo > 0) return `${y} Yr(s), ${mo} Mo(s)`;
+  if (y > 0) return `${y} Yr(s)`;
+  if (mo > 0) return `${mo} Mo(s)`;
+  return "0 Months";
 }
 
 // Mirrors payoffDate in planner.tsx — the page formats payoff as a date.
@@ -65,6 +66,14 @@ function inputByLabel(labelText: string | RegExp): HTMLInputElement {
 
 function setNumber(input: HTMLInputElement, value: number) {
   fireEvent.change(input, { target: { value: String(value) } });
+}
+
+// Matches an element whose own normalised text equals `expected`. Useful when
+// an amount is rendered next to surrounding words/symbols (e.g. "+ ₹5,00,000"),
+// so the value lives in the same node as other text and getByText(exact) misses.
+function hasText(expected: string) {
+  return (_: string, el: Element | null) =>
+    (el?.textContent ?? "").replace(/\s+/g, " ").trim() === expected;
 }
 
 describe("Planner page", () => {
@@ -123,7 +132,7 @@ describe("Planner page", () => {
 
     // Accelerated payoff card shows the time saved.
     expect(
-      screen.getAllByText(monthsToStr(monthsSaved)).length
+      screen.getAllByText(savedTimeLabel(monthsSaved)).length
     ).toBeGreaterThan(0);
     // Earlier payoff date for the savings plan is shown.
     expect(
@@ -163,7 +172,7 @@ describe("Planner page", () => {
 
     expect(monthsSaved).toBeGreaterThan(0);
     expect(
-      screen.getAllByText(monthsToStr(monthsSaved)).length
+      screen.getAllByText(savedTimeLabel(monthsSaved)).length
     ).toBeGreaterThan(0);
     expect(
       screen.getAllByText(formatRupees(plan.totalInterest)).length
@@ -183,12 +192,13 @@ describe("Planner page", () => {
       topUp: { amount: topUpAmount, rate: 9, month: 12 },
     });
 
-    // Net principal card shows principal + top-up, plus the top-up amount itself.
+    // Net principal card shows principal + top-up, plus the disbursed top-up
+    // amount itself (rendered inline as "+ ₹5,00,000").
     expect(
       screen.getAllByText(formatRupees(plan.totalPrincipalBorrowed)).length
     ).toBeGreaterThan(0);
     expect(
-      screen.getAllByText(formatRupees(topUpAmount)).length
+      screen.getAllByText(hasText(`+ ${formatRupees(topUpAmount)}`)).length
     ).toBeGreaterThan(0);
     // Helper note confirms the top-up was registered.
     expect(
@@ -217,14 +227,21 @@ describe("Planner page", () => {
       topUp: { amount: topUpAmount, rate: 9, month: 12 },
     };
     const plan = simulatePlan(input);
-    const baseline = simulatePlan({ ...DEFAULTS, extraEMI: 0 });
+    // The page's baseline keeps the same loan context (incl. the top-up) but
+    // strips acceleration, so savings isolate the prepayment effect. Mirror that
+    // here — a top-up-free baseline would over-count the interest "saved".
+    const baseline = simulatePlan({
+      ...DEFAULTS,
+      extraEMI: 0,
+      topUp: { amount: topUpAmount, rate: 9, month: 12 },
+    });
     const interestSaved = Math.max(0, baseline.totalInterest - plan.totalInterest);
     const monthsSaved = Math.max(0, baseline.payoffMonths - plan.payoffMonths);
 
     // Accelerated payoff and savings reflect the combined inputs.
     expect(monthsSaved).toBeGreaterThan(0);
     expect(
-      screen.getAllByText(monthsToStr(monthsSaved)).length
+      screen.getAllByText(savedTimeLabel(monthsSaved)).length
     ).toBeGreaterThan(0);
     expect(
       screen.getAllByText(formatRupees(interestSaved)).length

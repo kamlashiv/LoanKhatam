@@ -111,4 +111,75 @@ describe("SignInScreen", () => {
     );
     expect(signInCreate).not.toHaveBeenCalled();
   });
+
+  it("signs in with Google SSO and navigates to the app on success", async () => {
+    const ssoSetActive = jest.fn().mockResolvedValue(undefined);
+    startSSOFlow.mockResolvedValue({
+      createdSessionId: "sess_google_1",
+      setActive: ssoSetActive,
+    });
+
+    render(<SignInScreen />);
+    fireEvent.press(screen.getByTestId("google-sign-in-btn"));
+
+    await waitFor(() => {
+      expect(ssoSetActive).toHaveBeenCalledWith({ session: "sess_google_1" });
+    });
+    expect(startSSOFlow).toHaveBeenCalledWith({
+      strategy: "oauth_google",
+      redirectUrl: "ledger://redirect",
+    });
+    expect(mockReplace).toHaveBeenCalledWith("/(tabs)");
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it("does not navigate when Google SSO is dismissed without a session", async () => {
+    const ssoSetActive = jest.fn().mockResolvedValue(undefined);
+    startSSOFlow.mockResolvedValue({
+      createdSessionId: null,
+      setActive: ssoSetActive,
+    });
+
+    render(<SignInScreen />);
+    fireEvent.press(screen.getByTestId("google-sign-in-btn"));
+
+    await waitFor(() => {
+      expect(startSSOFlow).toHaveBeenCalled();
+    });
+    expect(ssoSetActive).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it("shows an error alert and does not navigate when Google SSO fails", async () => {
+    startSSOFlow.mockRejectedValue({
+      errors: [{ message: "SSO connection failed." }],
+    });
+
+    render(<SignInScreen />);
+    fireEvent.press(screen.getByTestId("google-sign-in-btn"));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        "Sign-in Failed",
+        "SSO connection failed.",
+      );
+    });
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("shows a fallback error message when Google SSO throws without details", async () => {
+    startSSOFlow.mockRejectedValue(new Error("network down"));
+
+    render(<SignInScreen />);
+    fireEvent.press(screen.getByTestId("google-sign-in-btn"));
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalledWith(
+        "Sign-in Failed",
+        "Google sign-in failed. Please try again.",
+      );
+    });
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
 });

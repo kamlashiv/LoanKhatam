@@ -26,10 +26,11 @@ import {
   type StrategyInputs, type RiskProfile, type HealthCategory,
 } from "@/lib/strategy-engine";
 import {
-  useProfile, EMPTY_PROFILE, type ProfileData,
+  useProfile, EMPTY_PROFILE, totalIncome, totalExpenses, type ProfileData,
 } from "@/lib/profile";
 import { useDerivedLoans, type DerivedLoans } from "@/lib/loan-derive";
 import { SaveIndicator } from "@/components/save-indicator";
+import { OverspendAlert } from "@/components/budget-warnings";
 
 /**
  * Map the shared financial profile onto the strategy engine's input shape.
@@ -136,6 +137,11 @@ export default function Strategy() {
   const hasData = result.totalIncome > 0 || result.totalExpenses > 0;
   const cat = CATEGORY_STYLE[result.healthCategory];
 
+  // Negative-surplus signal from the shared profile helpers (single source of
+  // truth), with live EMI folded in so it matches every other screen.
+  const profIncome = totalIncome(profile);
+  const profExpenses = totalExpenses(profile, derived.aggregateEmi);
+
   const toggleGoal = (g: string) =>
     set("goals", inputs.goals.includes(g) ? inputs.goals.filter((x) => x !== g) : [...inputs.goals, g]);
 
@@ -209,6 +215,8 @@ export default function Strategy() {
             </Card>
           ) : (
             <>
+              <OverspendAlert income={profIncome} expenses={profExpenses} />
+
               {/* Health score */}
               <Card>
                 <CardContent className="pt-6">

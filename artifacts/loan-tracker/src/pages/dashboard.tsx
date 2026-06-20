@@ -17,6 +17,7 @@ import {
   useProfile, totalIncome, totalExpenses, monthlySurplus, profileCompleteness,
 } from "@/lib/profile";
 import { useDerivedLoans } from "@/lib/loan-derive";
+import { OverspendAlert } from "@/components/budget-warnings";
 
 interface ExtractedLoan {
   borrowerName: string | null;
@@ -379,6 +380,13 @@ export function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Overspend alert — expenses exceed income */}
+      <OverspendAlert
+        income={profIncome}
+        expenses={totalExpenses(profile, derived.aggregateEmi)}
+        className="mb-6"
+      />
 
       {/* Financial Profile snapshot */}
       <div className="mb-6 rounded-[1.5rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">

@@ -23,6 +23,7 @@ import {
 } from "@/lib/strategy-engine";
 import { useProfile, totalIncome, totalExpenses } from "@/lib/profile";
 import { useDerivedLoans } from "@/lib/loan-derive";
+import { SurplusCaution } from "@/components/budget-warnings";
 
 const STORAGE_KEY = "loan-tracker:emi-invest";
 
@@ -122,6 +123,12 @@ export function EmiInvestmentAnalyzer() {
   // EMI itself is derived from real loans, so expense math injects that figure.
   const profIncome = totalIncome(profile);
   const profExpenses = totalExpenses(profile, derived.aggregateEmi);
+  // True monthly surplus straight from the profile helpers (expenses already
+  // include the derived loan EMI). We deliberately avoid `result.monthlySurplus`
+  // here: that figure subtracts the analyzer's manual `currentEmi` on top of
+  // expenses that already contain EMI, which would understate surplus and fire
+  // false overspend cautions.
+  const profSurplus = profIncome - profExpenses;
 
   const setIncome = useCallback(
     (n: number) => update({ monthlyIncome: Math.max(0, n - profile.additionalIncome) }),
@@ -260,6 +267,13 @@ export function EmiInvestmentAnalyzer() {
                 accent={result.monthlySurplus >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}
                 sub="income − expenses − EMI" />
             </div>
+
+            <SurplusCaution
+              planned={result.selectedMonthlyInvestment}
+              surplus={profSurplus}
+              active={profIncome > 0 || profExpenses > 0}
+              noun="monthly investment"
+            />
 
             {/* Scenarios */}
             <div className="space-y-3">

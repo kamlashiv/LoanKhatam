@@ -28,8 +28,9 @@ import {
 } from "@/lib/planner-engine";
 import { exportPlannerCSV, exportPlannerPDF } from "@/lib/export";
 import { extractFromFile, type ExtractedData } from "@/lib/file-extract";
-import { useProfile, monthlySurplus } from "@/lib/profile";
+import { useProfile, monthlySurplus, totalIncome, totalExpenses } from "@/lib/profile";
 import { useDerivedLoans } from "@/lib/loan-derive";
+import { SurplusCaution } from "@/components/budget-warnings";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface LoanParams {
@@ -333,6 +334,9 @@ export function Planner() {
   const { profile } = useProfile();
   const derived = useDerivedLoans();
   const surplus = monthlySurplus(profile, derived.aggregateEmi);
+  const profIncome = totalIncome(profile);
+  const profExpenses = totalExpenses(profile, derived.aggregateEmi);
+  const profileSet = profIncome > 0 || profExpenses > 0;
   // Theme-aware chart styling so grids, axes, and slice borders stay legible.
   const gridStroke = isDark ? "#1e293b" : "#f1f5f9";
   const axisTick = { fontSize: 11, fill: isDark ? "#94a3b8" : "#64748b" };
@@ -893,6 +897,12 @@ export function Planner() {
                     Your profile shows a monthly surplus of {formatRupees(Math.round(surplus))}. Tap to apply it as extra EMI.
                   </button>
                 )}
+                <SurplusCaution
+                  planned={params.extraEMI}
+                  surplus={surplus}
+                  active={profileSet}
+                  noun="extra payment"
+                />
               </div>
 
               <div className="space-y-1.5">

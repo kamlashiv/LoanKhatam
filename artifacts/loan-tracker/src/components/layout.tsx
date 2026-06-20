@@ -29,7 +29,7 @@ function ThemeToggle({ className }: { className?: string }) {
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/profile", label: "Financial Profile", icon: UserCircle },
-  { href: "/planner", label: "SMART Strategy", icon: Target },
+  { href: "/planner", label: "Smart Strategy", icon: Target },
   { href: "/strategy", label: "Financial Strategy", icon: Sparkles },
   { href: "/loans", label: "All Loans", icon: List },
   { href: "/amortization", label: "Amortization", icon: BarChart3 },

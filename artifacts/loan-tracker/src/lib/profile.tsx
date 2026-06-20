@@ -198,13 +198,12 @@ function ProfileProviderInner({ children }: { children: React.ReactNode }) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const migrationTriedRef = useRef(false);
   const mountedRef = useRef(true);
-
-  // Seed local draft from the server once it arrives.
-  useEffect(() => {
-    if (!data || draft !== null) return;
-    setDraft(data.data);
-    setUpdatedAt(data.updatedAt);
-  }, [data, draft]);
+  // Whether the server profile has been folded into the local draft yet.
+  const hydratedRef = useRef(false);
+  // Edits made before the server profile arrives are buffered here so we can
+  // merge them onto the loaded data instead of saving an EMPTY_PROFILE-based
+  // payload that would clobber the user's persisted profile.
+  const pendingPatchRef = useRef<Partial<ProfileData> | null>(null);
 
   const persist = useCallback(
     async (next: ProfileData) => {
@@ -244,6 +243,10 @@ function ProfileProviderInner({ children }: { children: React.ReactNode }) {
       /* ignore */
     }
     if (legacy && !isEmptyProfile(legacy)) {
+      // Legacy migration is authoritative for this fresh (server-empty) profile;
+      // mark hydrated so the seed effect doesn't overwrite it with defaults.
+      hydratedRef.current = true;
+      pendingPatchRef.current = null;
       setDraft(legacy);
       void persist(legacy);
     }
@@ -257,8 +260,34 @@ function ProfileProviderInner({ children }: { children: React.ReactNode }) {
     [persist],
   );
 
+  // Seed local draft from the server once it arrives. If the user already made
+  // edits while loading, merge those buffered patches onto the server data and
+  // save the merged result — never overwrite the server profile with defaults.
+  useEffect(() => {
+    if (!data || hydratedRef.current) return;
+    hydratedRef.current = true;
+    setUpdatedAt(data.updatedAt);
+    const pending = pendingPatchRef.current;
+    if (pending) {
+      pendingPatchRef.current = null;
+      const merged = { ...data.data, ...pending };
+      setDraft(merged);
+      scheduleSave(merged);
+    } else {
+      setDraft(data.data);
+    }
+  }, [data, scheduleSave]);
+
   const update = useCallback(
     (patch: Partial<ProfileData>) => {
+      // Before the server profile has loaded (signed-in or auth still
+      // resolving), buffer the edit and reflect it in the UI, but do NOT save
+      // yet — the seed effect merges it onto the server data once available.
+      if (!hydratedRef.current && isSignedIn !== false) {
+        pendingPatchRef.current = { ...(pendingPatchRef.current ?? {}), ...patch };
+        setDraft((prev) => ({ ...(prev ?? EMPTY_PROFILE), ...patch }));
+        return;
+      }
       setDraft((prev) => {
         const base = prev ?? EMPTY_PROFILE;
         const next = { ...base, ...patch };
@@ -266,11 +295,15 @@ function ProfileProviderInner({ children }: { children: React.ReactNode }) {
         return next;
       });
     },
-    [scheduleSave],
+    [scheduleSave, isSignedIn],
   );
 
   const replace = useCallback(
     (next: ProfileData) => {
+      // An explicit full replace (e.g. Reset) is authoritative: mark hydrated so
+      // a late server response can't clobber it, and drop any buffered patches.
+      hydratedRef.current = true;
+      pendingPatchRef.current = null;
       setDraft(next);
       scheduleSave(next);
     },

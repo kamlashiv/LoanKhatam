@@ -32,10 +32,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Edit, Trash2, Plus, Calendar } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Plus, Calendar, ChevronDown, TrendingUp } from "lucide-react";
 import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils";
 import { useToast } from "@/hooks/use-toast";
 import { AmortizationSection } from "@/components/amortization-section";
+import { currentEffectiveRate } from "@/lib/amortization";
 
 type Tab = "payments" | "amortization";
 
@@ -47,6 +48,7 @@ export function LoanDetail() {
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState<Tab>("payments");
+  const [showRateHistory, setShowRateHistory] = useState(false);
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
@@ -123,6 +125,13 @@ export function LoanDetail() {
 
   const statusConfig = getLoanStatusConfig(loan.status);
   const progress = Math.min(100, loan.principalAmount > 0 ? (loan.totalPaid / loan.principalAmount) * 100 : 0);
+
+  const rateChanges = [...(loan.rateChanges ?? [])].sort((a, b) =>
+    a.effectiveDate.localeCompare(b.effectiveDate)
+  );
+  const hasRateChanges = rateChanges.length > 0;
+  const currentRate = currentEffectiveRate(loan.interestRate, rateChanges);
+  const rateIsCurrent = currentRate !== loan.interestRate;
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "payments", label: "Payments" },
@@ -205,12 +214,59 @@ export function LoanDetail() {
               </p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Interest Rate</p>
+              <p className="text-sm text-muted-foreground">Current Rate</p>
               <p className="text-xl font-bold mt-1">
-                {loan.interestRate}<span className="text-base font-normal text-muted-foreground">% p.a.</span>
+                {currentRate}<span className="text-base font-normal text-muted-foreground">% p.a.</span>
               </p>
+              {hasRateChanges && (
+                <button
+                  onClick={() => setShowRateHistory(!showRateHistory)}
+                  className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                >
+                  <TrendingUp className="h-3 w-3" />
+                  Rate changed {rateChanges.length} time{rateChanges.length > 1 ? "s" : ""}
+                  <ChevronDown
+                    className={`h-3 w-3 transition-transform ${showRateHistory ? "rotate-180" : ""}`}
+                  />
+                </button>
+              )}
             </div>
           </div>
+
+          {hasRateChanges && showRateHistory && (
+            <div className="mb-6 rounded-lg border border-border bg-muted/40 p-4">
+              <p className="text-sm font-semibold mb-3">Rate change history</p>
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    Original rate · from {formatDate(loan.startDate)}
+                  </span>
+                  <span className="font-medium">{loan.interestRate}% p.a.</span>
+                </div>
+                {rateChanges.map((rc, i) => {
+                  const isActive = rateIsCurrent && i === rateChanges.length - 1;
+                  return (
+                    <div
+                      key={`${rc.effectiveDate}-${i}`}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span className="text-muted-foreground">
+                        Effective {formatDate(rc.effectiveDate)}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="font-medium">{rc.newRate}% p.a.</span>
+                        {isActive && (
+                          <Badge className="bg-primary/10 text-primary border-primary/20 border text-[10px] px-1.5 py-0">
+                            Current
+                          </Badge>
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2 mb-6">
             <div className="flex justify-between text-sm">

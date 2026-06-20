@@ -177,6 +177,22 @@ export function currentScheduleMonth(startDate: string): number {
   return monthsBetween(startDate, new Date().toISOString().split("T")[0]) + 1;
 }
 
+/**
+ * Resolve the interest rate currently in effect for a loan: the most recent
+ * rate change whose effectiveDate has already passed (<= asOf), or the original
+ * rate if no rate changes have taken effect yet.
+ */
+export function currentEffectiveRate(
+  originalRate: number,
+  rateChanges: RateChange[] = [],
+  asOf: string = new Date().toISOString().split("T")[0]
+): number {
+  const applied = rateChanges
+    .filter((rc) => rc.effectiveDate <= asOf)
+    .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
+  return applied.length > 0 ? applied[applied.length - 1].newRate : originalRate;
+}
+
 export function calculateBankStyleSchedule(
   principal: number,
   annualRate: number,

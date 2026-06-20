@@ -13,6 +13,8 @@ export interface PlannerInput {
   rate: number; // annual %
   tenureMonths: number;
   extraEMI: number; // recurring extra paid every month
+  /** 1-based month from which the recurring extra EMI starts (default 1). */
+  extraStartMonth?: number;
   /** One-time lump prepayments keyed by 1-based month index. */
   lumpPrepayments?: Record<number, number>;
   topUp?: TopUp | null;
@@ -64,6 +66,7 @@ function r2(n: number): number {
 
 export function simulatePlan(input: PlannerInput): PlannerResult {
   const { principal, rate, tenureMonths, extraEMI } = input;
+  const extraStartMonth = Math.max(1, Math.round(input.extraStartMonth ?? 1));
   const lumps = input.lumpPrepayments ?? {};
   const topUp = input.topUp && input.topUp.amount > 0 ? input.topUp : null;
 
@@ -116,7 +119,8 @@ export function simulatePlan(input: PlannerInput): PlannerResult {
     const interest = r2(opening * monthlyRate);
 
     const lump = lumps[m] ?? 0;
-    const desiredExtra = extraEMI + lump;
+    const recurringExtra = m >= extraStartMonth ? extraEMI : 0;
+    const desiredExtra = recurringExtra + lump;
 
     // Scheduled principal from the regular installment.
     let schedPrincipal = emi - interest;

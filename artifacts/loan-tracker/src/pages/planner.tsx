@@ -33,6 +33,16 @@ interface LoanParams {
   tenureMonths: number;
   startMonth: string;
   extraEMI: number;
+  /** YYYY-MM month from which the recurring extra payment begins. */
+  extraStartMonth: string;
+}
+
+/** Whole-month difference from `from` to `to` (both YYYY-MM). */
+function monthsBetween(from: string, to: string): number {
+  const [fy, fm] = from.split("-").map(Number);
+  const [ty, tm] = to.split("-").map(Number);
+  if (!fy || !fm || !ty || !tm) return 0;
+  return (ty - fy) * 12 + (tm - fm);
 }
 
 interface TopUpState {
@@ -323,7 +333,9 @@ export function Planner() {
     tenureMonths: 240,
     startMonth: new Date().toISOString().slice(0, 7),
     extraEMI: 0,
+    extraStartMonth: new Date().toISOString().slice(0, 7),
   });
+  const [tenureUnit, setTenureUnit] = useState<"years" | "months">("years");
   const [profileName, setProfileName] = useState("");
   const [topUp, setTopUp] = useState<TopUpState>({ amount: 0, rate: 9, month: 12 });
   const [yearLumps, setYearLumps] = useState<Record<number, number>>({});
@@ -358,7 +370,11 @@ export function Planner() {
       const months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
       if (months > 0) updates.tenureMonths = months;
     }
-    if (draft.startDate) updates.startMonth = draft.startDate.slice(0, 7);
+    if (draft.startDate) {
+      updates.startMonth = draft.startDate.slice(0, 7);
+      // Re-anchor the extra-payment start to the imported loan start.
+      updates.extraStartMonth = updates.startMonth;
+    }
     if (draft.borrowerName) setProfileName(draft.borrowerName);
     setParams((p) => ({ ...p, ...updates }));
     setYearLumps({});
@@ -388,16 +404,20 @@ export function Planner() {
     [topUp.amount, topUp.rate, topUp.month, params.tenureMonths]
   );
 
+  // 1-based month offset where the recurring extra payment kicks in.
+  const extraStartOffset = Math.max(1, monthsBetween(params.startMonth, params.extraStartMonth) + 1);
+
   const plan: PlannerResult = useMemo(
     () => simulatePlan({
       principal: params.principal,
       rate: params.rate,
       tenureMonths: params.tenureMonths,
       extraEMI: params.extraEMI,
+      extraStartMonth: extraStartOffset,
       lumpPrepayments,
       topUp: topUpInput,
     }),
-    [params, lumpPrepayments, topUpInput]
+    [params, extraStartOffset, lumpPrepayments, topUpInput]
   );
 
   // Baseline keeps the same loan context (incl. top-up) but no acceleration,
@@ -480,6 +500,7 @@ export function Planner() {
         rate: params.rate,
         tenureMonths: params.tenureMonths,
         extraEMI: Math.round(res.extraEMI),
+        extraStartMonth: extraStartOffset,
         lumpPrepayments: lumps,
         topUp: topUpInput,
       });
@@ -487,7 +508,7 @@ export function Planner() {
       const mSaved = Math.max(0, baseline.payoffMonths - sim.payoffMonths);
       return { ...s, res, saved, mSaved, ...STRAT_VISUAL[i % STRAT_VISUAL.length] };
     });
-  }, [plan.baseEMI, params.principal, params.rate, params.tenureMonths, topUpInput, baseline]);
+  }, [plan.baseEMI, params.principal, params.rate, params.tenureMonths, extraStartOffset, topUpInput, baseline]);
 
   const applyStrategy = (id: string, extraEMI: number, yearlyLump: number) => {
     setActiveStrategy(id);
@@ -503,7 +524,9 @@ export function Planner() {
   };
 
   const resetAll = () => {
-    setParams({ principal: 2500000, rate: 8.5, tenureMonths: 240, startMonth: new Date().toISOString().slice(0, 7), extraEMI: 0 });
+    const now = new Date().toISOString().slice(0, 7);
+    setParams({ principal: 2500000, rate: 8.5, tenureMonths: 240, startMonth: now, extraEMI: 0, extraStartMonth: now });
+    setTenureUnit("years");
     setTopUp({ amount: 0, rate: 9, month: 12 });
     setYearLumps({});
     setProfileName("");
@@ -686,12 +709,41 @@ export function Planner() {
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <Label id="planner-tenure-label" className="text-xs font-medium">Tenure</Label>
-                  <span className="text-xs font-semibold text-indigo-600">{tenureYears} Years</span>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      aria-labelledby="planner-tenure-label"
+                      className="w-16 h-7 text-xs text-right"
+                      type="number"
+                      min={1}
+                      max={tenureUnit === "years" ? 30 : 360}
+                      value={tenureUnit === "years" ? tenureYears : params.tenureMonths}
+                      onChange={(e) => {
+                        const n = Math.max(1, Number(e.target.value));
+                        set("tenureMonths", tenureUnit === "years" ? Math.round(n * 12) : Math.round(n));
+                      }}
+                    />
+                    <div className="flex rounded-lg border border-slate-200 p-0.5 text-[11px] font-semibold">
+                      <button
+                        type="button"
+                        onClick={() => setTenureUnit("years")}
+                        className={`px-2 py-0.5 rounded-md transition-colors ${tenureUnit === "years" ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-slate-700"}`}
+                      >
+                        Yr
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTenureUnit("months")}
+                        className={`px-2 py-0.5 rounded-md transition-colors ${tenureUnit === "months" ? "bg-indigo-600 text-white" : "text-slate-500 hover:text-slate-700"}`}
+                      >
+                        Mo
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <Slider
                   min={12}
                   max={360}
-                  step={12}
+                  step={tenureUnit === "years" ? 12 : 1}
                   value={[params.tenureMonths]}
                   onValueChange={([v]) => set("tenureMonths", v)}
                   aria-labelledby="planner-tenure-label"
@@ -710,7 +762,14 @@ export function Planner() {
                   className="h-8 text-xs"
                   type="month"
                   value={params.startMonth}
-                  onChange={(e) => set("startMonth", e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setParams((p) => ({
+                      ...p,
+                      startMonth: v,
+                      extraStartMonth: v && monthsBetween(v, p.extraStartMonth) < 0 ? v : p.extraStartMonth,
+                    }));
+                  }}
                 />
               </div>
 
@@ -740,6 +799,24 @@ export function Planner() {
                 <p className="text-xs text-slate-500">
                   Base EMI: <span className="font-medium text-slate-900">{formatRupees(plan.baseEMI)}</span>/month
                 </p>
+                <div className="space-y-1.5 pt-1">
+                  <Label htmlFor="planner-extra-start" className="text-xs font-medium text-emerald-700">
+                    Extra Payments Start From
+                  </Label>
+                  <Input
+                    id="planner-extra-start"
+                    className="h-8 text-xs border-emerald-300 focus:border-emerald-500"
+                    type="month"
+                    min={params.startMonth}
+                    value={params.extraStartMonth}
+                    onChange={(e) => { setActiveStrategy(null); set("extraStartMonth", e.target.value || params.startMonth); }}
+                  />
+                  {extraStartOffset > 1 && params.extraEMI > 0 && (
+                    <p className="text-[11px] text-slate-500">
+                      Extra of {formatRupees(params.extraEMI)} begins in {monthLabel(params.startMonth, extraStartOffset)} (month {extraStartOffset}).
+                    </p>
+                  )}
+                </div>
               </div>
 
               <Button

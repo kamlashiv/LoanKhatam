@@ -118,6 +118,38 @@ describe("simulatePlan — accelerated with a recurring extra EMI", () => {
   });
 });
 
+describe("simulatePlan — deferred recurring extra (extraStartMonth)", () => {
+  const base: PlannerInput = { principal: 1_000_000, rate: 9, tenureMonths: 120, extraEMI: 5000 };
+  const fromStart = simulatePlan(base);
+  const deferred = simulatePlan({ ...base, extraStartMonth: 13 });
+
+  it("treats a missing or 1 extraStartMonth as starting immediately", () => {
+    const explicitOne = simulatePlan({ ...base, extraStartMonth: 1 });
+    expect(explicitOne.payoffMonths).toBe(fromStart.payoffMonths);
+    expect(explicitOne.totalInterest).toBeCloseTo(fromStart.totalInterest, 1);
+  });
+
+  it("applies no recurring extra before the start month", () => {
+    for (let i = 0; i < 12; i++) {
+      expect(deferred.months[i].extra).toBe(0);
+    }
+    expect(deferred.months[12].extra).toBeGreaterThan(0);
+  });
+
+  it("saves less than starting the extra immediately, but more than no extra", () => {
+    const noExtra = simulatePlan({ ...base, extraEMI: 0 });
+    expect(deferred.totalInterest).toBeGreaterThan(fromStart.totalInterest);
+    expect(deferred.totalInterest).toBeLessThan(noExtra.totalInterest);
+    expect(deferred.payoffMonths).toBeGreaterThanOrEqual(fromStart.payoffMonths);
+  });
+
+  it("preserves the per-month identity and never goes negative", () => {
+    expectRowIdentity(deferred);
+    expectNoNegativeBalances(deferred);
+    expect(deferred.months[deferred.months.length - 1].closing).toBe(0);
+  });
+});
+
 describe("simulatePlan — one-time lump prepayments", () => {
   const input: PlannerInput = {
     principal: 1_000_000,

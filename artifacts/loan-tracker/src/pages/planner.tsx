@@ -1006,12 +1006,12 @@ export function Planner() {
             </Card>
 
             <Card>
-              <CardContent className="pt-5">
+              <CardContent className="pt-7 pb-7">
                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
                   <Scale className="h-4 w-4" />
                   <p className="text-xs font-semibold uppercase tracking-wide">Net Principal</p>
                 </div>
-                <FitAmount value={netPrincipal} className="font-black text-slate-900 dark:text-slate-50 mt-2" maxFontSize={23} />
+                <FitAmount value={netPrincipal} className="font-black text-slate-900 dark:text-slate-50 mt-2" maxFontSize={26} />
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   Borrowed amount
                   {disbursedTopUp > 0 && (

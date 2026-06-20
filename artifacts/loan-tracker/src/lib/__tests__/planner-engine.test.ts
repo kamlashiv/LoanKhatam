@@ -176,6 +176,53 @@ describe("simulatePlan — top-up loan disbursed mid-tenure", () => {
   });
 });
 
+describe("simulatePlan — extra EMI + lump prepayments + top-up combined", () => {
+  // A single simulation that exercises all three accelerators at once: a
+  // recurring extra EMI, two one-time lump prepayments, AND a mid-tenure top-up
+  // that recomputes the EMI. This guards the interaction between them.
+  const input: PlannerInput = {
+    principal: 1_000_000,
+    rate: 9,
+    tenureMonths: 120,
+    extraEMI: 5000,
+    lumpPrepayments: { 6: 75000, 30: 125000 },
+    topUp: { amount: 300000, rate: 11, month: 18 },
+  };
+  const result = simulatePlan(input);
+
+  it("disburses the top-up in the configured month", () => {
+    expect(result.months[17].topUp).toBeCloseTo(300000, 1); // month 18 (1-based)
+  });
+
+  it("applies the lump prepayments in their configured months", () => {
+    // Extra each lump month = recurring extra EMI + the lump amount.
+    expect(result.months[5].extra).toBeCloseTo(5000 + 75000, 1); // month 6
+    expect(result.months[29].extra).toBeCloseTo(5000 + 125000, 1); // month 30
+  });
+
+  it("includes the top-up in total principal borrowed", () => {
+    expect(result.totalPrincipalBorrowed).toBe(1_300_000);
+  });
+
+  it("keeps emi+extra === interest+principal on every row, including top-up and final months", () => {
+    expectRowIdentity(result);
+    // Explicitly assert the identity on the top-up month and the final installment.
+    const topUpRow = result.months[17];
+    expect(topUpRow.emi + topUpRow.extra).toBeCloseTo(
+      topUpRow.interest + topUpRow.principal,
+      1
+    );
+    const last = result.months[result.months.length - 1];
+    expect(last.emi + last.extra).toBeCloseTo(last.interest + last.principal, 1);
+  });
+
+  it("pays off with a zero closing balance within the padded tenure and never goes negative", () => {
+    expect(result.payoffMonths).toBeLessThanOrEqual(input.tenureMonths + 2);
+    expect(result.months[result.months.length - 1].closing).toBe(0);
+    expectNoNegativeBalances(result);
+  });
+});
+
 describe("simulatePlan — final payoff month installment", () => {
   it("records the adjusted final installment so emi+extra === interest+principal", () => {
     const result = simulatePlan({ principal: 500000, rate: 10, tenureMonths: 36, extraEMI: 2000 });

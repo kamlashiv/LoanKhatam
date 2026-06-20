@@ -528,6 +528,19 @@ export default function App() {
 
   const targetYearsMax = Math.max(1, Math.round(params.tenureMonths / 12));
 
+  // ─── Impact summary (narrative hero) ───────────────────────────────────────
+  const hasSavings = interestSaved > 0 || monthsSaved > 0;
+  const plannedDuration = savedTimeLabel(plan.payoffMonths);
+  const baselineDuration = savedTimeLabel(baseline.payoffMonths);
+  const debtFreeDate = monthLabel(params.startMonth, Math.max(1, plan.payoffMonths));
+  const baselineDebtFreeDate = monthLabel(params.startMonth, Math.max(1, baseline.payoffMonths));
+  const lumpCount = Object.values(yearLumps).filter((v) => Number(v) > 0).length;
+  const impactContrib = [
+    params.extraEMI > 0 ? `${compactRupees(params.extraEMI)} extra each month` : null,
+    lumpCount > 0 ? "yearly prepayments" : null,
+  ].filter(Boolean) as string[];
+  const impactContribText = impactContrib.length ? impactContrib.join(" plus ") : "your accelerated plan";
+
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -553,6 +566,89 @@ export default function App() {
             <Download className="w-4 h-4" /> Export CSV
           </Button>
         </header>
+
+        {/* Impact Summary — narrative hero (Layout B) atop the bento grid (Layout C) */}
+        <Card className="rounded-3xl border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-indigo-50/50 shadow-sm overflow-hidden">
+          <CardContent className="p-6 md:p-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="space-y-3 max-w-2xl">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider">
+                  <Sparkles className="h-3.5 w-3.5" /> Impact Summary
+                </span>
+                {hasSavings ? (
+                  <>
+                    <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                      You save{" "}
+                      {interestSaved > 0 && <span className="text-emerald-600">{compactRupees(interestSaved)}</span>}
+                      {interestSaved > 0 && monthsSaved > 0 && " and "}
+                      {monthsSaved > 0 && <span className="text-emerald-600">{savedTimeLabel(monthsSaved)}</span>}
+                    </h2>
+                    <p className="text-sm md:text-base text-slate-500 leading-relaxed">
+                      {monthsSaved > 0 ? (
+                        <>
+                          By adding {impactContribText}, you become debt-free in{" "}
+                          <span className="font-semibold text-slate-700">{plannedDuration}</span> instead of{" "}
+                          <span className="font-semibold text-slate-700">{baselineDuration}</span>
+                          {interestSaved > 0 ? (
+                            <> — keeping <span className="font-semibold text-emerald-700">{compactRupees(interestSaved)}</span> of interest in your pocket.</>
+                          ) : (
+                            "."
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          By adding {impactContribText}, you keep{" "}
+                          <span className="font-semibold text-emerald-700">{compactRupees(interestSaved)}</span> of
+                          interest in your pocket — without pushing out your payoff timeline.
+                        </>
+                      )}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                      See how much you could <span className="text-emerald-600">save</span>
+                    </h2>
+                    <p className="text-sm md:text-base text-slate-500 leading-relaxed">
+                      Add an extra EMI, a yearly prepayment, or pick a strategy below — watch your total
+                      interest and loan tenure drop in real time.
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* Debt-free timeline — standard vs accelerated (additive comparison) */}
+              <div className="shrink-0 rounded-2xl bg-white/70 backdrop-blur border border-slate-200 p-5 lg:min-w-[250px]">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                  <CalendarRange className="h-3.5 w-3.5 text-indigo-600" /> Debt-free timeline
+                </p>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-6">
+                    <span className="text-xs text-slate-500 flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-rose-400" /> Standard
+                    </span>
+                    <span className="text-sm font-bold text-slate-700">{baselineDebtFreeDate}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-6">
+                    <span className="text-xs text-slate-500 flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" /> Accelerated
+                    </span>
+                    <span className="text-sm font-bold text-emerald-600">{debtFreeDate}</span>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-slate-100 text-center">
+                  <span className="text-xs font-semibold text-emerald-700">
+                    {monthsSaved > 0
+                      ? `${savedTimeLabel(monthsSaved)} sooner`
+                      : interestSaved > 0
+                      ? "Same timeline · lower interest"
+                      : "Set a plan to pull this in"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-6 auto-rows-min font-bold">

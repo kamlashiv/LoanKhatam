@@ -261,6 +261,40 @@ export default function EditLoanScreen() {
       fontWeight: "600" as const,
       fontFamily: "Inter_600SemiBold",
     },
+    markPaidBtn: {
+      borderWidth: 1,
+      borderColor: colors.success,
+      backgroundColor: colors.success + "14",
+      borderRadius: colors.radius,
+      height: 50,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 12,
+      flexDirection: "row",
+      gap: 8,
+    },
+    markPaidBtnText: {
+      color: colors.success,
+      fontSize: 16,
+      fontWeight: "600" as const,
+      fontFamily: "Inter_600SemiBold",
+    },
+    paidNotice: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginTop: 12,
+      paddingVertical: 14,
+      borderRadius: colors.radius,
+      backgroundColor: colors.success + "14",
+    },
+    paidNoticeText: {
+      color: colors.success,
+      fontSize: 14,
+      fontWeight: "600" as const,
+      fontFamily: "Inter_600SemiBold",
+    },
   });
 
   const handleSubmit = async () => {
@@ -308,22 +342,54 @@ export default function EditLoanScreen() {
         },
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await queryClient.invalidateQueries({
-        queryKey: getGetLoanQueryKey(loanId),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: getListLoansQueryKey(),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: getGetRecentLoansQueryKey(),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: getGetDashboardSummaryQueryKey(),
-      });
+      await invalidateLoanQueries();
       router.back();
     } catch {
       Alert.alert("Error", "Could not update loan. Please try again.");
     }
+  };
+
+  const invalidateLoanQueries = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: getGetLoanQueryKey(loanId),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: getListLoansQueryKey(),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: getGetRecentLoansQueryKey(),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: getGetDashboardSummaryQueryKey(),
+    });
+  };
+
+  const handleMarkAsPaid = () => {
+    Alert.alert(
+      "Mark as Paid",
+      "Close out this loan by setting its status to paid?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Mark as Paid",
+          onPress: async () => {
+            try {
+              await updateLoan({ id: loanId, data: { status: "paid" } });
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success
+              );
+              await invalidateLoanQueries();
+              router.back();
+            } catch {
+              Alert.alert(
+                "Error",
+                "Could not mark loan as paid. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (isLoading) {
@@ -507,6 +573,23 @@ export default function EditLoanScreen() {
             {isPending ? "Saving..." : "Save Changes"}
           </Text>
         </TouchableOpacity>
+
+        {loan.status === "paid" ? (
+          <View style={styles.paidNotice}>
+            <Feather name="check-circle" size={18} color={colors.success} />
+            <Text style={styles.paidNoticeText}>This loan is marked as paid</Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.markPaidBtn}
+            onPress={handleMarkAsPaid}
+            disabled={isPending}
+            testID="mark-as-paid"
+          >
+            <Feather name="check-circle" size={18} color={colors.success} />
+            <Text style={styles.markPaidBtnText}>Mark as Paid</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );

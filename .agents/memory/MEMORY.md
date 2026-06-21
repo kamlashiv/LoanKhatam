@@ -14,6 +14,7 @@
 - [Loan-tracker social sharing](loan-tracker-social-share.md) — "share to social media" = share-intent links + Web Share API, not OAuth auto-posting; buildShareMessage in share-loan.tsx.
 - [Strategy Brief](strategy-brief.md) — /strategy combines both engines; prepayment what-if MUST run on outstanding balance over remaining tenure, not original principal (review rejection).
 - [Clerk web dev 401 — stale token](clerk-dev-token-not-refreshing.md) — cookie present + userId null + JWT ageSec≫60s = client not refreshing (Replit preview iframe blocks Clerk cookie); fix = open app in own tab, not code.
+- [Clerk card padding breaks in prod only](clerk-prod-card-padding.md) — Clerk's runtime-injected padding loses the cascade in prod (duplicate @layer drops `clerk`); set explicit !important padding on appearance.elements, verify via prod build CSS grep.
 - [Profile EMI derived from loans](profile-emi-derived.md) — loan EMI/debts derive live from DB loans via useDerivedLoans; pass derived.aggregateEmi to profile expense/surplus helpers; analyzer must merge localStorage on write-back.
 - [Per-user context + cache scoping](per-user-context-cache-scoping.md) — app-wide per-user contexts must scope component state (key by userId), query cache key, AND guard in-flight saves, or data bleeds across account switches.
 - [Amortization optional/empty dates](amortization-optional-dates.md) — monthsBetween must isNaN-guard to 0; Math.max(0,NaN)=NaN bypasses tenure<=0 guards and leaks NaN EMIs when due date is empty.

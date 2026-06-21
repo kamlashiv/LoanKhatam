@@ -11,6 +11,7 @@
 - [Loans list status query param](loans-status-query-param.md) — /loans seeds its filter tab from ?status=; sidebar overdue CTA depends on it. Keep param names in sync.
 - ["Smart Strategy" = /planner](smart-strategy-nav-mapping.md) — nav label "Smart Strategy"→/planner (not /strategy); planner→/loans/new CTAs must carry plan params or the form opens blank.
 - [Loan-tracker link/icon button a11y](loan-tracker-a11y-buttons.md) — use Button asChild+Link (not Link>Button); icon-only buttons need aria-label. Both were review rejections.
+- [Loan-tracker social sharing](loan-tracker-social-share.md) — "share to social media" = share-intent links + Web Share API, not OAuth auto-posting; buildShareMessage in share-loan.tsx.
 - [Strategy Brief](strategy-brief.md) — /strategy combines both engines; prepayment what-if MUST run on outstanding balance over remaining tenure, not original principal (review rejection).
 - [Clerk web dev 401 — stale token](clerk-dev-token-not-refreshing.md) — cookie present + userId null + JWT ageSec≫60s = client not refreshing (Replit preview iframe blocks Clerk cookie); fix = open app in own tab, not code.
 - [Profile EMI derived from loans](profile-emi-derived.md) — loan EMI/debts derive live from DB loans via useDerivedLoans; pass derived.aggregateEmi to profile expense/surplus helpers; analyzer must merge localStorage on write-back.

@@ -36,6 +36,7 @@ import { ArrowLeft, Edit, Trash2, Plus, Calendar, Clock, Calculator, ChevronDown
 import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils";
 import { useToast } from "@/hooks/use-toast";
 import { AmortizationSection } from "@/components/amortization-section";
+import { ShareLoan } from "@/components/share-loan";
 import { currentEffectiveRate } from "@/lib/amortization";
 
 function computeEmi(principal: number, annualRate: number, months: number): number {
@@ -168,6 +169,13 @@ export function LoanDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <ShareLoan
+            borrowerName={loan.borrowerName}
+            principalAmount={loan.principalAmount}
+            remainingAmount={loan.remainingAmount}
+            dueDate={loan.dueDate}
+            bank={loan.bank}
+          />
           <Link href={`/loans/${loan.id}/edit`}>
             <Button variant="outline" size="sm" className="gap-2">
               <Edit className="h-4 w-4" />

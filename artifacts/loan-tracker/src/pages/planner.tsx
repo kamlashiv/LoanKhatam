@@ -971,6 +971,7 @@ export function Planner() {
                   surplus={surplus}
                   active={profileSet}
                   noun="extra payment"
+                  onUseSafeAmount={(amount) => { set("extraEMI", amount); setActiveStrategy(null); }}
                 />
               </div>
 

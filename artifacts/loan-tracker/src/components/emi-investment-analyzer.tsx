@@ -317,6 +317,11 @@ export function EmiInvestmentAnalyzer() {
               surplus={profSurplus}
               active={profIncome > 0 || profExpenses > 0}
               noun="monthly investment"
+              onUseSafeAmount={
+                connectedEmi > 0
+                  ? (amount) => set("investPct", (amount / connectedEmi) * 100)
+                  : undefined
+              }
             />
 
             {/* Scenarios */}

@@ -52,6 +52,14 @@ A personal loan management app for tracking money lent to friends and family. Us
 - Record and delete individual payments
 - Amounts displayed in Indian Rupees (₹), dates in DD/MM/YYYY
 
+## Mobile (Android APK via Capacitor)
+
+- `artifacts/loan-tracker` is wrapped with Capacitor to produce an Android app.
+- `capacitor.config.ts` uses `server.url` to load the **live published site** (so backend API + Clerk auth work as on web). Update `APP_URL` to the `.replit.app` published URL before shipping the APK.
+- Native project lives in `artifacts/loan-tracker/android/` — open in Android Studio → Build → Build APK(s).
+- The APK cannot be compiled inside Replit (no Android SDK/Gradle/JDK here); build on a local Android Studio install or via PWABuilder using the published URL.
+- Re-sync native assets after a web change: `pnpm --filter @workspace/loan-tracker run build && npx cap sync android` (run from the artifact dir).
+
 ## User preferences
 
 _Populate as you build — explicit user instructions worth remembering across sessions._

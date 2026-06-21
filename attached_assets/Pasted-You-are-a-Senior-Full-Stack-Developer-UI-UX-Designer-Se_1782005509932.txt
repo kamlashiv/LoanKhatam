@@ -1,0 +1,183 @@
+You are a Senior Full Stack Developer, UI/UX Designer, Security Expert, and Product Architect.
+
+Create a complete production-ready Settings Module for my Loan Closure Planner App and Website.
+
+APP PURPOSE:
+This application helps users calculate EMI, loan payoff strategies, prepayments, interest savings, investment comparison, and loan closure planning. The app is for educational and personal financial planning purposes only.
+
+IMPORTANT:
+Display a clear disclaimer throughout the application:
+
+"This application is not a bank, NBFC, loan provider, financial institution, government agency, or licensed financial advisor."
+
+"This application does not provide loans, approve loans, collect repayments, or offer financial advice."
+
+"All calculations are estimates and are intended only for educational and personal financial planning purposes."
+
+"Users should verify all financial decisions independently."
+
+SETTINGS PAGE REQUIREMENTS:
+
+Create a modern settings dashboard with categorized sections.
+
+1. ACCOUNT SETTINGS
+- Profile Information
+- Edit Name
+- Edit Email
+- Mobile Number
+- Change Password
+- Delete Account
+- Logout
+- Guest User Information
+
+2. SECURITY & PRIVACY
+- Two Factor Authentication
+- Biometric Login
+- Encryption Status
+- Session Management
+- Privacy Settings
+- Data Download
+- Data Export
+- Delete Personal Data
+
+3. APPEARANCE
+- Light Mode
+- Dark Mode
+- System Theme
+- Font Size Control
+- Accessibility Options
+- Color Preferences
+
+4. LANGUAGE & REGION
+- Language Selection
+- Currency Selection
+- Date Format
+- Number Format
+
+5. LOAN CALCULATOR SETTINGS
+- Default Interest Rate
+- Default Loan Tenure
+- Default Currency
+- EMI Preferences
+- Auto Save Calculations
+- Reset Calculations
+
+6. NOTIFICATIONS
+- EMI Reminder
+- Due Date Reminder
+- Prepayment Reminder
+- Weekly Summary
+- Monthly Summary
+- Push Notifications
+- Email Notifications
+
+7. DATA MANAGEMENT
+- Backup Data
+- Restore Data
+- Import Data
+- Export Data
+- Download PDF Reports
+- Download Excel Reports
+
+8. HELP & SUPPORT
+- FAQ
+- Contact Support
+- Report Bug
+- Request Feature
+- User Guide
+
+9. ABOUT APPLICATION
+
+Create a dedicated About Page containing:
+
+- App Name
+- Version Number
+- Release Date
+- Developer Information
+- Website Information
+- Support Email
+
+Purpose of Application
+
+Detailed explanation of how the application works.
+
+10. LEGAL SECTION
+
+Create separate pages:
+
+- Privacy Policy
+- Terms and Conditions
+- Disclaimer
+- Cookie Policy
+- Data Usage Policy
+
+11. LICENSE SECTION
+
+Display prominently:
+
+IMPORTANT NOTICE
+
+This software is NOT licensed by any bank, NBFC, RBI, financial institution, or government authority.
+
+This software is intended solely for personal financial planning, educational use, and loan analysis.
+
+This application should not be interpreted as financial, investment, legal, tax, or lending advice.
+
+12. FEEDBACK
+- App Rating
+- User Feedback Form
+- Feature Request Form
+
+13. ADMIN SETTINGS
+
+Admin-only dashboard with:
+
+- User Management
+- Content Management
+- Theme Management
+- Notification Management
+- FAQ Management
+- Analytics Dashboard
+- Security Logs
+- Backup Control
+- App Text Editor
+- App Configuration Manager
+
+UI/UX REQUIREMENTS:
+
+- Modern responsive design
+- Mobile-first layout
+- Professional finance app appearance
+- Smooth animations
+- Large readable typography
+- Clean cards and sections
+- Sidebar navigation on desktop
+- Bottom navigation on mobile
+- Search within settings
+- Accessibility support
+- Fast loading
+
+TECHNICAL REQUIREMENTS:
+
+- Secure authentication
+- Role-based access control
+- Admin and User roles
+- Data encryption
+- Input validation
+- Error handling
+- Audit logging
+- Responsive web design
+- SEO-friendly website structure
+
+Generate:
+1. Complete UI structure
+2. Database schema
+3. Frontend components
+4. Backend APIs
+5. Admin panel
+6. Legal pages
+7. Settings page implementation
+8. Security implementation
+9. Production-ready code architecture
+
+The code should be scalable, secure, and ready for deployment.

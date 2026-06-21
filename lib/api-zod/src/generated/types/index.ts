@@ -7,6 +7,9 @@
  */
 
 export * from './dashboardSummary';
+export * from './feedback';
+export * from './feedbackInput';
+export * from './feedbackInputKind';
 export * from './financialProfile';
 export * from './financialProfileData';
 export * from './financialProfileDataRiskProfile';
@@ -22,3 +25,7 @@ export * from './payment';
 export * from './paymentInput';
 export * from './profileDebtItem';
 export * from './rateChange';
+export * from './userNotificationPrefs';
+export * from './userSettings';
+export * from './userSettingsData';
+export * from './userSettingsDataDateFormat';

@@ -125,6 +125,88 @@ export const UpdateProfileResponse = zod.object({
 
 
 /**
+ * @summary Get the current user's account preferences
+ */
+export const GetSettingsResponse = zod.object({
+  "data": zod.object({
+  "currency": zod.string().describe('ISO 4217 currency code, e.g. INR, USD'),
+  "locale": zod.string().describe('BCP-47 locale for number formatting, e.g. en-IN'),
+  "dateFormat": zod.enum(['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']),
+  "defaultInterestRate": zod.number(),
+  "defaultTenureMonths": zod.number(),
+  "autoSaveCalculations": zod.boolean(),
+  "notifications": zod.object({
+  "emiReminder": zod.boolean(),
+  "dueDateReminder": zod.boolean(),
+  "prepaymentReminder": zod.boolean(),
+  "weeklySummary": zod.boolean(),
+  "monthlySummary": zod.boolean(),
+  "emailNotifications": zod.boolean(),
+  "pushNotifications": zod.boolean()
+})
+}),
+  "updatedAt": zod.string().nullable()
+})
+
+
+/**
+ * @summary Create or replace the current user's account preferences
+ */
+export const UpdateSettingsBody = zod.object({
+  "currency": zod.string().describe('ISO 4217 currency code, e.g. INR, USD'),
+  "locale": zod.string().describe('BCP-47 locale for number formatting, e.g. en-IN'),
+  "dateFormat": zod.enum(['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']),
+  "defaultInterestRate": zod.number(),
+  "defaultTenureMonths": zod.number(),
+  "autoSaveCalculations": zod.boolean(),
+  "notifications": zod.object({
+  "emiReminder": zod.boolean(),
+  "dueDateReminder": zod.boolean(),
+  "prepaymentReminder": zod.boolean(),
+  "weeklySummary": zod.boolean(),
+  "monthlySummary": zod.boolean(),
+  "emailNotifications": zod.boolean(),
+  "pushNotifications": zod.boolean()
+})
+})
+
+export const UpdateSettingsResponse = zod.object({
+  "data": zod.object({
+  "currency": zod.string().describe('ISO 4217 currency code, e.g. INR, USD'),
+  "locale": zod.string().describe('BCP-47 locale for number formatting, e.g. en-IN'),
+  "dateFormat": zod.enum(['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']),
+  "defaultInterestRate": zod.number(),
+  "defaultTenureMonths": zod.number(),
+  "autoSaveCalculations": zod.boolean(),
+  "notifications": zod.object({
+  "emiReminder": zod.boolean(),
+  "dueDateReminder": zod.boolean(),
+  "prepaymentReminder": zod.boolean(),
+  "weeklySummary": zod.boolean(),
+  "monthlySummary": zod.boolean(),
+  "emailNotifications": zod.boolean(),
+  "pushNotifications": zod.boolean()
+})
+}),
+  "updatedAt": zod.string().nullable()
+})
+
+
+/**
+ * @summary Submit user feedback, a rating, or a feature request
+ */
+
+
+
+export const SubmitFeedbackBody = zod.object({
+  "kind": zod.enum(['rating', 'feedback', 'feature']),
+  "rating": zod.number().optional(),
+  "message": zod.string().min(1),
+  "email": zod.string().optional()
+})
+
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({

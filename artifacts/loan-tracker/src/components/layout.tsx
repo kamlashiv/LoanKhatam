@@ -5,7 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
 import {
   Wallet, LayoutDashboard, List, LogOut, Plus, Menu, BarChart3, Target, Flame,
-  Sun, Moon, Sparkles, UserCircle,
+  Sun, Moon, Sparkles, UserCircle, Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -33,6 +33,7 @@ const navItems = [
   { href: "/strategy", label: "Financial Strategy", icon: Sparkles },
   
   { href: "/amortization", label: "Amortization", icon: BarChart3 },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 function Brand() {

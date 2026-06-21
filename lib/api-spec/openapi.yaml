@@ -17,6 +17,10 @@ tags:
     description: Dashboard summaries
   - name: profile
     description: Global financial profile
+  - name: settings
+    description: User account preferences
+  - name: feedback
+    description: User feedback and feature requests
 
 paths:
   /profile:
@@ -50,6 +54,65 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FinancialProfile"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get the current user's account preferences
+      responses:
+        "200":
+          description: User settings (defaults when none saved yet)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSettings"
+        "401":
+          description: Unauthorized
+    put:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Create or replace the current user's account preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserSettingsData"
+      responses:
+        "200":
+          description: Saved settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSettings"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+
+  /feedback:
+    post:
+      operationId: submitFeedback
+      tags: [feedback]
+      summary: Submit user feedback, a rating, or a feature request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeedbackInput"
+      responses:
+        "201":
+          description: Feedback recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Feedback"
         "400":
           description: Invalid input
         "401":
@@ -569,6 +632,110 @@ components:
           $ref: "#/components/schemas/FinancialProfileData"
         updatedAt:
           type: ["string", "null"]
+
+    UserNotificationPrefs:
+      type: object
+      required:
+        - emiReminder
+        - dueDateReminder
+        - prepaymentReminder
+        - weeklySummary
+        - monthlySummary
+        - emailNotifications
+        - pushNotifications
+      properties:
+        emiReminder:
+          type: boolean
+        dueDateReminder:
+          type: boolean
+        prepaymentReminder:
+          type: boolean
+        weeklySummary:
+          type: boolean
+        monthlySummary:
+          type: boolean
+        emailNotifications:
+          type: boolean
+        pushNotifications:
+          type: boolean
+
+    UserSettingsData:
+      type: object
+      required:
+        - currency
+        - locale
+        - dateFormat
+        - defaultInterestRate
+        - defaultTenureMonths
+        - autoSaveCalculations
+        - notifications
+      properties:
+        currency:
+          type: string
+          description: ISO 4217 currency code, e.g. INR, USD
+        locale:
+          type: string
+          description: BCP-47 locale for number formatting, e.g. en-IN
+        dateFormat:
+          type: string
+          enum: [DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD]
+        defaultInterestRate:
+          type: number
+        defaultTenureMonths:
+          type: number
+        autoSaveCalculations:
+          type: boolean
+        notifications:
+          $ref: "#/components/schemas/UserNotificationPrefs"
+
+    UserSettings:
+      type: object
+      required:
+        - data
+        - updatedAt
+      properties:
+        data:
+          $ref: "#/components/schemas/UserSettingsData"
+        updatedAt:
+          type: ["string", "null"]
+
+    FeedbackInput:
+      type: object
+      required:
+        - kind
+        - message
+      properties:
+        kind:
+          type: string
+          enum: [rating, feedback, feature]
+        rating:
+          type: number
+        message:
+          type: string
+          minLength: 1
+        email:
+          type: string
+
+    Feedback:
+      type: object
+      required:
+        - id
+        - kind
+        - message
+        - createdAt
+      properties:
+        id:
+          type: integer
+        kind:
+          type: string
+        rating:
+          type: ["number", "null"]
+        message:
+          type: string
+        email:
+          type: ["string", "null"]
+        createdAt:
+          type: string
 
     DashboardSummary:
       type: object

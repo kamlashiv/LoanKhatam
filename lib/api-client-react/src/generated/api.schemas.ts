@@ -152,6 +152,71 @@ export interface FinancialProfile {
   updatedAt: string | null;
 }
 
+export interface UserNotificationPrefs {
+  emiReminder: boolean;
+  dueDateReminder: boolean;
+  prepaymentReminder: boolean;
+  weeklySummary: boolean;
+  monthlySummary: boolean;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+}
+
+export type UserSettingsDataDateFormat = typeof UserSettingsDataDateFormat[keyof typeof UserSettingsDataDateFormat];
+
+
+export const UserSettingsDataDateFormat = {
+  'DD/MM/YYYY': 'DD/MM/YYYY',
+  'MM/DD/YYYY': 'MM/DD/YYYY',
+  'YYYY-MM-DD': 'YYYY-MM-DD',
+} as const;
+
+export interface UserSettingsData {
+  /** ISO 4217 currency code, e.g. INR, USD */
+  currency: string;
+  /** BCP-47 locale for number formatting, e.g. en-IN */
+  locale: string;
+  dateFormat: UserSettingsDataDateFormat;
+  defaultInterestRate: number;
+  defaultTenureMonths: number;
+  autoSaveCalculations: boolean;
+  notifications: UserNotificationPrefs;
+}
+
+export interface UserSettings {
+  data: UserSettingsData;
+  /** @nullable */
+  updatedAt: string | null;
+}
+
+export type FeedbackInputKind = typeof FeedbackInputKind[keyof typeof FeedbackInputKind];
+
+
+export const FeedbackInputKind = {
+  rating: 'rating',
+  feedback: 'feedback',
+  feature: 'feature',
+} as const;
+
+export interface FeedbackInput {
+  kind: FeedbackInputKind;
+  rating?: number;
+  /** @minLength 1 */
+  message: string;
+  email?: string;
+}
+
+export interface Feedback {
+  id: number;
+  kind: string;
+  /** @nullable */
+  rating?: number | null;
+  message: string;
+  /** @nullable */
+  email?: string | null;
+  createdAt: string;
+}
+
 export interface DashboardSummary {
   totalLoans: number;
   activeLoans: number;

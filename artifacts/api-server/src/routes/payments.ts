@@ -35,7 +35,7 @@ router.get("/", requireAuth, async (req: any, res) => {
       .where(eq(paymentsTable.loanId, loanId))
       .orderBy(desc(paymentsTable.paymentDate));
 
-    res.json(
+    return res.json(
       payments.map((p) => ({
         id: p.id,
         loanId: p.loanId,
@@ -47,7 +47,7 @@ router.get("/", requireAuth, async (req: any, res) => {
     );
   } catch (err) {
     logger.error({ err }, "Error listing payments");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -96,7 +96,7 @@ router.post("/", requireAuth, async (req: any, res) => {
         .where(eq(loansTable.id, loanId));
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       id: payment.id,
       loanId: payment.loanId,
       amount: parseFloat(payment.amount),
@@ -106,7 +106,7 @@ router.post("/", requireAuth, async (req: any, res) => {
     });
   } catch (err) {
     logger.error({ err }, "Error adding payment");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -135,10 +135,10 @@ router.delete("/:paymentId", requireAuth, async (req: any, res) => {
     if (!payment) return res.status(404).json({ error: "Payment not found" });
 
     await db.delete(paymentsTable).where(eq(paymentsTable.id, paymentId));
-    res.status(204).send();
+    return res.status(204).send();
   } catch (err) {
     logger.error({ err }, "Error deleting payment");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

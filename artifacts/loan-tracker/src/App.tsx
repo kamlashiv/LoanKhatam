@@ -20,6 +20,16 @@ import { Planner } from "@/pages/planner";
 import Strategy from "@/pages/strategy";
 import { ProfilePage } from "@/pages/profile";
 import { ProfileProvider } from "@/lib/profile";
+import { PreferencesProvider } from "@/lib/preferences";
+import { SettingsPage } from "@/pages/settings";
+import { AboutPage } from "@/pages/about";
+import { HelpPage } from "@/pages/help";
+import { PrivacyPolicyPage } from "@/pages/privacy-policy";
+import { TermsPage } from "@/pages/terms";
+import { DisclaimerPage } from "@/pages/disclaimer";
+import { CookiePolicyPage } from "@/pages/cookie-policy";
+import { DataUsagePage } from "@/pages/data-usage";
+import { LicensePage } from "@/pages/license";
 
 const queryClient = new QueryClient();
 
@@ -186,6 +196,7 @@ function ClerkProviderWithRoutes() {
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
         <ProfileProvider>
+        <PreferencesProvider>
         <Switch>
           <Route path="/" component={HomeRedirect} />
           <Route path="/sign-in/*?" component={SignInPage} />
@@ -200,9 +211,19 @@ function ClerkProviderWithRoutes() {
           <Route path="/planner" component={() => <ProtectedRoute component={Planner} />} />
           <Route path="/strategy" component={() => <ProtectedRoute component={Strategy} />} />
           <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} />} />
+          <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
+          <Route path="/about" component={() => <ProtectedRoute component={AboutPage} />} />
+          <Route path="/help" component={() => <ProtectedRoute component={HelpPage} />} />
+          <Route path="/privacy-policy" component={() => <ProtectedRoute component={PrivacyPolicyPage} />} />
+          <Route path="/terms" component={() => <ProtectedRoute component={TermsPage} />} />
+          <Route path="/disclaimer" component={() => <ProtectedRoute component={DisclaimerPage} />} />
+          <Route path="/cookie-policy" component={() => <ProtectedRoute component={CookiePolicyPage} />} />
+          <Route path="/data-usage" component={() => <ProtectedRoute component={DataUsagePage} />} />
+          <Route path="/license" component={() => <ProtectedRoute component={LicensePage} />} />
           
           <Route component={NotFound} />
         </Switch>
+        </PreferencesProvider>
         </ProfileProvider>
       </QueryClientProvider>
     </ClerkProvider>

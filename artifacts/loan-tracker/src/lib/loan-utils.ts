@@ -1,3 +1,5 @@
+import { formatDateValue } from "./format-config";
+
 export function formatRupees(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -55,8 +57,7 @@ export function rupeesToWords(amount: number): string {
 
 export function formatDate(dateStr: string): string {
   if (!dateStr) return "";
-  const [y, m, d] = dateStr.split("-");
-  return `${d}/${m}/${y}`;
+  return formatDateValue(dateStr);
 }
 
 export function getLoanStatusConfig(status: string) {

@@ -91,10 +91,10 @@ router.get("/", requireAuth, async (req: any, res) => {
     const filtered = statusFilter
       ? result.filter((l) => l.status === statusFilter)
       : result;
-    res.json(filtered);
+    return res.json(filtered);
   } catch (err) {
     logger.error({ err }, "Error listing loans");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -123,10 +123,10 @@ router.post("/", requireAuth, async (req: any, res) => {
         rateChanges: (rateChanges ?? []) as any,
       })
       .returning();
-    res.status(201).json(computeLoanFields(loan, []));
+    return res.status(201).json(computeLoanFields(loan, []));
   } catch (err) {
     logger.error({ err }, "Error creating loan");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -149,10 +149,10 @@ router.get("/recent", requireAuth, async (req: any, res) => {
         return computeLoanFields(loan, payments);
       }),
     );
-    res.json(result);
+    return res.json(result);
   } catch (err) {
     logger.error({ err }, "Error fetching recent loans");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -174,10 +174,10 @@ router.get("/:id", requireAuth, async (req: any, res) => {
       .from(paymentsTable)
       .where(eq(paymentsTable.loanId, id));
 
-    res.json(computeLoanFields(loan, payments));
+    return res.json(computeLoanFields(loan, payments));
   } catch (err) {
     logger.error({ err }, "Error getting loan");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -224,10 +224,10 @@ router.patch("/:id", requireAuth, async (req: any, res) => {
       .from(paymentsTable)
       .where(eq(paymentsTable.loanId, id));
 
-    res.json(computeLoanFields(updated, payments));
+    return res.json(computeLoanFields(updated, payments));
   } catch (err) {
     logger.error({ err }, "Error updating loan");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -244,10 +244,10 @@ router.delete("/:id", requireAuth, async (req: any, res) => {
     if (!existing) return res.status(404).json({ error: "Not found" });
 
     await db.delete(loansTable).where(eq(loansTable.id, id));
-    res.status(204).send();
+    return res.status(204).send();
   } catch (err) {
     logger.error({ err }, "Error deleting loan");
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

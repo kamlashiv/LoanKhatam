@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback, Fragment } from "react";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -1022,6 +1022,13 @@ export function Planner() {
                     {formatRupees(topUp.amount)} will be added in month {topUp.month} — the EMI will be recalculated.
                   </p>
                 )}
+                <SurplusCaution
+                  planned={topUp.amount}
+                  surplus={surplus}
+                  active={profileSet}
+                  noun="top-up"
+                  onUseSafeAmount={(amount) => setTopUp((t) => ({ ...t, amount }))}
+                />
               </div>
 
               <div className="space-y-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 p-3">
@@ -1351,8 +1358,11 @@ export function Planner() {
                 </thead>
                 <tbody>
                   {viewMode === "yearly"
-                    ? yearlyRows.map((y) => (
-                        <tr key={y.year} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                    ? yearlyRows.map((y) => {
+                        const lump = yearLumps[y.year] ?? 0;
+                        return (
+                        <Fragment key={y.year}>
+                        <tr className="border-b border-slate-100 dark:border-slate-800 last:border-0">
                           <td className="py-2 pr-3 font-medium text-slate-800 dark:text-slate-100">Year {y.year}</td>
                           <td className="py-2 px-3 text-right tabular-nums">{formatRupees(y.opening)}</td>
                           <td className="py-2 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">{formatRupees(y.interest)}</td>
@@ -1372,7 +1382,25 @@ export function Planner() {
                           </td>
                           <td className="py-2 pl-3 text-right tabular-nums font-semibold text-slate-900 dark:text-slate-50">{formatRupees(y.closing)}</td>
                         </tr>
-                      ))
+                        {profileSet && lump > 0 && lump > surplus && (
+                          <tr className="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                            <td colSpan={6} className="pb-2">
+                              <SurplusCaution
+                                planned={lump}
+                                surplus={surplus}
+                                active={profileSet}
+                                noun={`year ${y.year} prepayment`}
+                                onUseSafeAmount={(amount) => {
+                                  setActiveStrategy(null);
+                                  setYearLumps((prev) => ({ ...prev, [y.year]: amount }));
+                                }}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                        </Fragment>
+                        );
+                      })
                     : monthlyRows.map((m) => (
                         <tr key={m.month} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
                           <td className="py-2 pr-3 font-medium text-slate-800 dark:text-slate-100">{m.label}</td>

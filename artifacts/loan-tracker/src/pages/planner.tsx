@@ -960,10 +960,10 @@ export function Planner() {
                 {surplus > 0 && (
                   <button
                     type="button"
-                    onClick={() => { set("extraEMI", Math.round(surplus)); setActiveStrategy(null); }}
+                    onClick={() => { set("extraEMI", Math.floor(surplus)); setActiveStrategy(null); }}
                     className="mt-1 w-full rounded-md bg-emerald-100 dark:bg-emerald-900/40 px-3 py-2 text-left text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-colors"
                   >
-                    Your profile shows a monthly surplus of {formatRupees(Math.round(surplus))}. Tap to apply it as extra EMI.
+                    Your profile shows a monthly surplus of {formatRupees(Math.floor(surplus))}. Tap to apply it as extra EMI.
                   </button>
                 )}
                 <SurplusCaution

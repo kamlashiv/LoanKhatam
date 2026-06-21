@@ -62,7 +62,7 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
   },
   variables: {
-    colorPrimary: "hsl(160 50% 25%)",
+    colorPrimary: "hsl(243 75% 59%)",
     colorForeground: "hsl(215 30% 15%)",
     colorMutedForeground: "hsl(215 15% 45%)",
     colorDanger: "hsl(0 70% 45%)",
@@ -70,7 +70,7 @@ const clerkAppearance = {
     colorInput: "hsl(0 0% 100%)",
     colorInputForeground: "hsl(215 30% 15%)",
     colorNeutral: "hsl(40 10% 85%)",
-    fontFamily: "Outfit, sans-serif",
+    fontFamily: "Plus Jakarta Sans, sans-serif",
     borderRadius: "0.5rem",
   },
   elements: {

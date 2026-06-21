@@ -127,7 +127,7 @@ const confLabel = { high: "✓ High", medium: "~ Medium", low: "⚠ Low" };
 // are money values rendered in rupees.
 const PROFILE_FIELD_ORDER = Object.keys(PROFILE_FIELD_LABELS) as (keyof ExtractedProfileFields)[];
 
-function ImportProfileModal({
+export function ImportProfileModal({
   onClose,
   onApply,
 }: {

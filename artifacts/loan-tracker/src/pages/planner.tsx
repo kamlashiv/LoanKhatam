@@ -691,6 +691,18 @@ export function Planner() {
 
   const rows = viewMode === "yearly" ? yearlyRows : monthlyRows;
 
+  // Carry the currently-configured plan into the New Loan form so "Add Loan" /
+  // "Save as Loan" pre-fill the create form instead of opening a blank one.
+  const plannerSaveQuery = useMemo(() => {
+    const q = new URLSearchParams();
+    if (profileName.trim()) q.set("borrowerName", profileName.trim());
+    if (params.principal > 0) q.set("principalAmount", String(params.principal));
+    if (params.rate >= 0) q.set("interestRate", String(params.rate));
+    if (params.tenureMonths > 0) q.set("tenureMonths", String(params.tenureMonths));
+    if (params.startMonth) q.set("startDate", `${params.startMonth}-01`);
+    return q.toString();
+  }, [profileName, params]);
+
   return (
     <div className="space-y-6">
       {/* ── Header ──────────────────────────────────────────────────────── */}
@@ -837,7 +849,7 @@ export function Planner() {
                   <CardDescription>Configure your loan parameters</CardDescription>
                 </div>
                 <Button asChild size="sm" className="shrink-0 gap-1.5">
-                  <Link href="/loans/new">
+                  <Link href={`/loans/new?${plannerSaveQuery}`}>
                     <Plus className="h-4 w-4" /> Add Loan
                   </Link>
                 </Button>
@@ -1437,7 +1449,7 @@ export function Planner() {
             <p className="text-sm text-white/80">Save this loan to your tracker and start logging payments.</p>
           </div>
           <Button asChild variant="secondary" className="gap-2 shrink-0">
-            <Link href="/loans/new">
+            <Link href={`/loans/new?${plannerSaveQuery}`}>
               <Plus className="h-4 w-4" /> Save as Loan
             </Link>
           </Button>

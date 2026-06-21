@@ -113,6 +113,13 @@ export function LoanForm() {
         toast({ title: "Loan created successfully" });
         setLocation(`/loans/${data.id}`);
       },
+      onError: () => {
+        toast({
+          title: "Could not create loan",
+          description: "Please review the details and try again.",
+          variant: "destructive",
+        });
+      },
     },
   });
 
@@ -126,6 +133,13 @@ export function LoanForm() {
         }
         toast({ title: "Loan updated successfully" });
         setLocation(`/loans/${id}`);
+      },
+      onError: () => {
+        toast({
+          title: "Could not update loan",
+          description: "Please review the details and try again.",
+          variant: "destructive",
+        });
       },
     },
   });

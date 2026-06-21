@@ -701,3 +701,79 @@ export const GetRecentLoansResponseItem = zod.object({
 export const GetRecentLoansResponse = zod.array(GetRecentLoansResponseItem)
 
 
+/**
+ * @summary Detect credit cards and loans from pasted statement or email text using AI
+ */
+
+
+
+export const ExtractFinancialsBody = zod.object({
+  "text": zod.string().min(1).describe('Pasted statement, email, or message text to analyse')
+})
+
+export const ExtractFinancialsResponse = zod.object({
+  "cards": zod.array(zod.object({
+  "bank": zod.string(),
+  "cardName": zod.string(),
+  "last4": zod.string(),
+  "network": zod.string(),
+  "creditLimit": zod.number().nullish(),
+  "outstanding": zod.number().nullish(),
+  "dueDate": zod.string().nullish(),
+  "confidence": zod.enum(['high', 'medium', 'low']),
+  "source": zod.string().describe('Where the item was detected (e.g. Gmail, Pasted)')
+})),
+  "loans": zod.array(zod.object({
+  "lender": zod.string(),
+  "loanType": zod.string().nullish(),
+  "principalAmount": zod.number().nullish(),
+  "interestRate": zod.number().nullish(),
+  "emi": zod.number().nullish(),
+  "startDate": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "confidence": zod.enum(['high', 'medium', 'low']),
+  "source": zod.string()
+})),
+  "emailsScanned": zod.number().optional().describe('Number of emails scanned (Gmail scan only)')
+})
+
+
+/**
+ * @summary Whether a Gmail account is connected for auto-sync
+ */
+export const GetGmailStatusResponse = zod.object({
+  "connected": zod.boolean(),
+  "email": zod.string().nullish()
+})
+
+
+/**
+ * @summary Scan the connected Gmail inbox and detect cards and loans via AI
+ */
+export const ScanGmailResponse = zod.object({
+  "cards": zod.array(zod.object({
+  "bank": zod.string(),
+  "cardName": zod.string(),
+  "last4": zod.string(),
+  "network": zod.string(),
+  "creditLimit": zod.number().nullish(),
+  "outstanding": zod.number().nullish(),
+  "dueDate": zod.string().nullish(),
+  "confidence": zod.enum(['high', 'medium', 'low']),
+  "source": zod.string().describe('Where the item was detected (e.g. Gmail, Pasted)')
+})),
+  "loans": zod.array(zod.object({
+  "lender": zod.string(),
+  "loanType": zod.string().nullish(),
+  "principalAmount": zod.number().nullish(),
+  "interestRate": zod.number().nullish(),
+  "emi": zod.number().nullish(),
+  "startDate": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "confidence": zod.enum(['high', 'medium', 'low']),
+  "source": zod.string()
+})),
+  "emailsScanned": zod.number().optional().describe('Number of emails scanned (Gmail scan only)')
+})
+
+

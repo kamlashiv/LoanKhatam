@@ -136,6 +136,79 @@ export interface CreditCardUpdate {
   dueDate?: string;
 }
 
+export interface ExtractFinancialsInput {
+  /**
+     * Pasted statement, email, or message text to analyse
+     * @minLength 1
+     */
+  text: string;
+}
+
+export type DetectedCardConfidence = typeof DetectedCardConfidence[keyof typeof DetectedCardConfidence];
+
+
+export const DetectedCardConfidence = {
+  high: 'high',
+  medium: 'medium',
+  low: 'low',
+} as const;
+
+export interface DetectedCard {
+  bank: string;
+  cardName: string;
+  last4: string;
+  network: string;
+  /** @nullable */
+  creditLimit?: number | null;
+  /** @nullable */
+  outstanding?: number | null;
+  /** @nullable */
+  dueDate?: string | null;
+  confidence: DetectedCardConfidence;
+  /** Where the item was detected (e.g. Gmail, Pasted) */
+  source: string;
+}
+
+export type DetectedLoanConfidence = typeof DetectedLoanConfidence[keyof typeof DetectedLoanConfidence];
+
+
+export const DetectedLoanConfidence = {
+  high: 'high',
+  medium: 'medium',
+  low: 'low',
+} as const;
+
+export interface DetectedLoan {
+  lender: string;
+  /** @nullable */
+  loanType?: string | null;
+  /** @nullable */
+  principalAmount?: number | null;
+  /** @nullable */
+  interestRate?: number | null;
+  /** @nullable */
+  emi?: number | null;
+  /** @nullable */
+  startDate?: string | null;
+  /** @nullable */
+  dueDate?: string | null;
+  confidence: DetectedLoanConfidence;
+  source: string;
+}
+
+export interface FinancialScanResult {
+  cards: DetectedCard[];
+  loans: DetectedLoan[];
+  /** Number of emails scanned (Gmail scan only) */
+  emailsScanned?: number;
+}
+
+export interface GmailStatus {
+  connected: boolean;
+  /** @nullable */
+  email?: string | null;
+}
+
 export interface Payment {
   id: number;
   loanId: number;

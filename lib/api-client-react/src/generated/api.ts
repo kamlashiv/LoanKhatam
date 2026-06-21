@@ -25,11 +25,14 @@ import type {
   CreditCardInput,
   CreditCardUpdate,
   DashboardSummary,
+  ExtractFinancialsInput,
   Feedback,
   FeedbackInput,
   FinancialProfile,
   FinancialProfileData,
+  FinancialScanResult,
   GetLikeStatusParams,
+  GmailStatus,
   HealthStatus,
   LikeInput,
   LikeStatus,
@@ -1996,4 +1999,222 @@ export function useGetRecentLoans<TData = Awaited<ReturnType<typeof getRecentLoa
 
 
 
+
+export const getExtractFinancialsUrl = () => {
+
+
+
+
+  return `/api/extract-financials`
+}
+
+/**
+ * @summary Detect credit cards and loans from pasted statement or email text using AI
+ */
+export const extractFinancials = async (extractFinancialsInput: ExtractFinancialsInput, options?: RequestInit): Promise<FinancialScanResult> => {
+
+  return customFetch<FinancialScanResult>(getExtractFinancialsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      extractFinancialsInput,)
+  }
+);}
+
+
+
+
+export const getExtractFinancialsMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof extractFinancials>>, TError,{data: BodyType<ExtractFinancialsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof extractFinancials>>, TError,{data: BodyType<ExtractFinancialsInput>}, TContext> => {
+
+const mutationKey = ['extractFinancials'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof extractFinancials>>, {data: BodyType<ExtractFinancialsInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  extractFinancials(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExtractFinancialsMutationResult = NonNullable<Awaited<ReturnType<typeof extractFinancials>>>
+    export type ExtractFinancialsMutationBody = BodyType<ExtractFinancialsInput>
+    export type ExtractFinancialsMutationError = ErrorType<void>
+
+    /**
+ * @summary Detect credit cards and loans from pasted statement or email text using AI
+ */
+export const useExtractFinancials = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof extractFinancials>>, TError,{data: BodyType<ExtractFinancialsInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof extractFinancials>>,
+        TError,
+        {data: BodyType<ExtractFinancialsInput>},
+        TContext
+      > => {
+      return useMutation(getExtractFinancialsMutationOptions(options));
+    }
+
+export const getGetGmailStatusUrl = () => {
+
+
+
+
+  return `/api/gmail/status`
+}
+
+/**
+ * @summary Whether a Gmail account is connected for auto-sync
+ */
+export const getGmailStatus = async ( options?: RequestInit): Promise<GmailStatus> => {
+
+  return customFetch<GmailStatus>(getGetGmailStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetGmailStatusQueryKey = () => {
+    return [
+    `/api/gmail/status`
+    ] as const;
+    }
+
+
+export const getGetGmailStatusQueryOptions = <TData = Awaited<ReturnType<typeof getGmailStatus>>, TError = ErrorType<void>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGmailStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetGmailStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getGmailStatus>>> = ({ signal }) => getGmailStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getGmailStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetGmailStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getGmailStatus>>>
+export type GetGmailStatusQueryError = ErrorType<void>
+
+
+/**
+ * @summary Whether a Gmail account is connected for auto-sync
+ */
+
+export function useGetGmailStatus<TData = Awaited<ReturnType<typeof getGmailStatus>>, TError = ErrorType<void>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getGmailStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetGmailStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getScanGmailUrl = () => {
+
+
+
+
+  return `/api/gmail/scan`
+}
+
+/**
+ * @summary Scan the connected Gmail inbox and detect cards and loans via AI
+ */
+export const scanGmail = async ( options?: RequestInit): Promise<FinancialScanResult> => {
+
+  return customFetch<FinancialScanResult>(getScanGmailUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getScanGmailMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scanGmail>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof scanGmail>>, TError,void, TContext> => {
+
+const mutationKey = ['scanGmail'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof scanGmail>>, void> = () => {
+
+
+          return  scanGmail(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ScanGmailMutationResult = NonNullable<Awaited<ReturnType<typeof scanGmail>>>
+
+    export type ScanGmailMutationError = ErrorType<void>
+
+    /**
+ * @summary Scan the connected Gmail inbox and detect cards and loans via AI
+ */
+export const useScanGmail = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scanGmail>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof scanGmail>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getScanGmailMutationOptions(options));
+    }
 

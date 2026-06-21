@@ -545,6 +545,61 @@ paths:
         "401":
           description: Unauthorized
 
+  /extract-financials:
+    post:
+      operationId: extractFinancials
+      tags: [sync]
+      summary: Detect credit cards and loans from pasted statement or email text using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExtractFinancialsInput"
+      responses:
+        "200":
+          description: Detected financial items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialScanResult"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+
+  /gmail/status:
+    get:
+      operationId: getGmailStatus
+      tags: [sync]
+      summary: Whether a Gmail account is connected for auto-sync
+      responses:
+        "200":
+          description: Gmail connection status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GmailStatus"
+        "401":
+          description: Unauthorized
+
+  /gmail/scan:
+    post:
+      operationId: scanGmail
+      tags: [sync]
+      summary: Scan the connected Gmail inbox and detect cards and loans via AI
+      responses:
+        "200":
+          description: Detected financial items from email
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinancialScanResult"
+        "401":
+          description: Unauthorized
+        "503":
+          description: Gmail not connected
+
 components:
   schemas:
     HealthStatus:
@@ -766,6 +821,102 @@ components:
           minimum: 0
         dueDate:
           type: string
+
+    ExtractFinancialsInput:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          minLength: 1
+          description: Pasted statement, email, or message text to analyse
+
+    DetectedCard:
+      type: object
+      required:
+        - bank
+        - cardName
+        - last4
+        - network
+        - confidence
+        - source
+      properties:
+        bank:
+          type: string
+        cardName:
+          type: string
+        last4:
+          type: string
+        network:
+          type: string
+        creditLimit:
+          type: ["number", "null"]
+        outstanding:
+          type: ["number", "null"]
+        dueDate:
+          type: ["string", "null"]
+        confidence:
+          type: string
+          enum: [high, medium, low]
+        source:
+          type: string
+          description: Where the item was detected (e.g. Gmail, Pasted)
+
+    DetectedLoan:
+      type: object
+      required:
+        - lender
+        - confidence
+        - source
+      properties:
+        lender:
+          type: string
+        loanType:
+          type: ["string", "null"]
+        principalAmount:
+          type: ["number", "null"]
+        interestRate:
+          type: ["number", "null"]
+        emi:
+          type: ["number", "null"]
+        startDate:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        confidence:
+          type: string
+          enum: [high, medium, low]
+        source:
+          type: string
+
+    FinancialScanResult:
+      type: object
+      required:
+        - cards
+        - loans
+      properties:
+        cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/DetectedCard"
+        loans:
+          type: array
+          items:
+            $ref: "#/components/schemas/DetectedLoan"
+        emailsScanned:
+          type: integer
+          description: Number of emails scanned (Gmail scan only)
+
+    GmailStatus:
+      type: object
+      required:
+        - connected
+      properties:
+        connected:
+          type: boolean
+        email:
+          type: ["string", "null"]
 
     Payment:
       type: object

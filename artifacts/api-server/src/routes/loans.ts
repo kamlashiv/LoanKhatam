@@ -15,6 +15,17 @@ function requireAuth(req: any, res: any, next: any) {
   const auth = getAuth(req);
   const userId = auth?.sessionClaims?.userId || auth?.userId;
   if (!userId) {
+    req.log?.warn(
+      {
+        hasCookieHeader: Boolean(req.headers.cookie),
+        hasSessionCookie: /(^|;\s*)__session=/.test(req.headers.cookie ?? ""),
+        hasAuthHeader: Boolean(req.headers.authorization),
+        authStatus: (auth as any)?.tokenType ?? null,
+        authReason: (auth as any)?.reason ?? null,
+        authUserId: auth?.userId ?? null,
+      },
+      "requireAuth: rejected request (debug)",
+    );
     return res.status(401).json({ error: "Unauthorized" });
   }
   req.userId = userId;

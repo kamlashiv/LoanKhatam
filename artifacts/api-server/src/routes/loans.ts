@@ -15,41 +15,6 @@ function requireAuth(req: any, res: any, next: any) {
   const auth = getAuth(req);
   const userId = auth?.sessionClaims?.userId || auth?.userId;
   if (!userId) {
-    let jwt: any = null;
-    try {
-      const cookie = req.headers.cookie ?? "";
-      const m = /(?:^|;\s*)__session=([^;]+)/.exec(cookie);
-      if (m) {
-        const parts = m[1].split(".");
-        if (parts.length === 3) {
-          const payload = JSON.parse(
-            Buffer.from(parts[1], "base64url").toString("utf8"),
-          );
-          const now = Math.floor(Date.now() / 1000);
-          jwt = {
-            iat: payload.iat,
-            exp: payload.exp,
-            now,
-            expired: typeof payload.exp === "number" ? payload.exp < now : null,
-            ageSec: typeof payload.iat === "number" ? now - payload.iat : null,
-            iss: payload.iss,
-            sub: payload.sub,
-            azp: payload.azp,
-          };
-        }
-      }
-    } catch (e) {
-      jwt = { decodeError: String(e) };
-    }
-    req.log?.warn(
-      {
-        authKeys: auth ? Object.keys(auth) : null,
-        authStatus: (auth as any)?.tokenType ?? null,
-        authReason: (auth as any)?.reason ?? null,
-        jwt,
-      },
-      "requireAuth: rejected request (debug2)",
-    );
     return res.status(401).json({ error: "Unauthorized" });
   }
   req.userId = userId;

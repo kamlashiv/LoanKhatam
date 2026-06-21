@@ -29,8 +29,11 @@ import {
   useProfile, EMPTY_PROFILE, totalIncome, totalExpenses, type ProfileData,
 } from "@/lib/profile";
 import { useDerivedLoans, type DerivedLoans } from "@/lib/loan-derive";
+import { useListLoans } from "@workspace/api-client-react";
 import { SaveIndicator } from "@/components/save-indicator";
 import { OverspendAlert } from "@/components/budget-warnings";
+import { StrategyBrief } from "@/components/strategy-brief";
+import type { BriefLoan } from "@/lib/strategy-brief";
 
 /**
  * Map the shared financial profile onto the strategy engine's input shape.
@@ -118,9 +121,25 @@ export default function Strategy() {
   const { isDark } = useTheme();
   const { profile, update, replace, saveStatus, updatedAt } = useProfile();
   const derived = useDerivedLoans();
+  const { data: loanList } = useListLoans();
   const [exporting, setExporting] = useState(false);
 
   const inputs = useMemo(() => profileToStrategyInputs(profile, derived), [profile, derived]);
+
+  // Real loans reduced to what the prepayment what-if needs (Smart Strategy).
+  const briefLoans = useMemo<BriefLoan[]>(
+    () =>
+      (loanList ?? [])
+        .filter((l) => l.status !== "paid" && l.remainingAmount > 0)
+        .map((l) => ({
+          name: l.borrowerName,
+          principal: l.principalAmount,
+          outstanding: l.remainingAmount,
+          rate: l.interestRate,
+          tenureMonths: l.tenureMonths ?? null,
+        })),
+    [loanList],
+  );
 
   const set = useCallback(
     <K extends keyof StrategyInputs>(key: K, val: StrategyInputs[K]) => {
@@ -195,6 +214,9 @@ export default function Strategy() {
           </Button>
         </div>
       </div>
+
+      {/* ── Combined Smart + Financial strategy brief (upload-driven) ── */}
+      <StrategyBrief inputs={inputs} loans={briefLoans} onImport={update} />
 
       <div className="grid grid-cols-1 gap-6">
         {/* ── Results ── */}

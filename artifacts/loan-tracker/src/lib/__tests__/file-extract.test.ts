@@ -412,11 +412,43 @@ describe("profileFromText", () => {
     expect(out.fuel).toBe(4000);
   });
 
+  it("extracts the newer recurring-expense categories from a bank statement", () => {
+    const text = [
+      "School Fee: Rs. 12,000",
+      "Netflix: Rs. 649",
+      "Gym Membership: Rs. 1,500",
+      "Apollo Pharmacy: Rs. 2,200",
+    ].join("\n");
+    const out = profileFromText(text);
+    expect(out.schoolFees).toBe(12000);
+    // Netflix + gym both fall under the subscriptions/entertainment bucket.
+    expect(out.entertainment).toBe(2149);
+    expect(out.medical).toBe(2200);
+  });
+
+  it("averages the newer categories across the months a statement spans", () => {
+    const text = [
+      "05/01/2025 Tuition Fee Rs. 10,000",
+      "06/01/2025 Spotify Rs. 200",
+      "07/01/2025 Hospital Rs. 4,000",
+      "05/02/2025 Tuition Fee Rs. 10,000",
+      "06/02/2025 Spotify Rs. 200",
+      "07/02/2025 Hospital Rs. 2,000",
+    ].join("\n");
+    const out = profileFromText(text);
+    expect(out.schoolFees).toBe(10000);
+    expect(out.entertainment).toBe(200);
+    expect(out.medical).toBe(3000);
+  });
+
   it("returns all-null when nothing relevant is present", () => {
     const out = profileFromText("This document has no financial figures.");
     expect(out.monthlyIncome).toBeNull();
     expect(out.rent).toBeNull();
     expect(out.name).toBeNull();
+    expect(out.schoolFees).toBeNull();
+    expect(out.entertainment).toBeNull();
+    expect(out.medical).toBeNull();
   });
 
   it("sums repeated category amounts within a single month", () => {
@@ -479,6 +511,19 @@ describe("profileFromJSON / profileFromCSV", () => {
     expect(out.monthlyIncome).toBe(85000);
     expect(out.rent).toBe(22000);
     expect(out.food).toBe(9000);
+  });
+
+  it("maps the newer expense categories via aliases", () => {
+    const json = JSON.stringify({
+      name: "Asha",
+      tuition: "10000",
+      subscriptions: "1200",
+      healthcare: "3000",
+    });
+    const out = profileFromJSON(json);
+    expect(out.schoolFees).toBe(10000);
+    expect(out.entertainment).toBe(1200);
+    expect(out.medical).toBe(3000);
   });
 });
 

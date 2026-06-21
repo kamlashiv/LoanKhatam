@@ -479,8 +479,11 @@ export interface ExtractedProfileFields {
   insurance: number | null;
   utilities: number | null;
   internet: number | null;
+  schoolFees: number | null;
   food: number | null;
   fuel: number | null;
+  entertainment: number | null;
+  medical: number | null;
 }
 
 export interface ExtractedProfile extends ExtractedProfileFields {
@@ -498,8 +501,11 @@ export const PROFILE_FIELD_LABELS: Record<keyof ExtractedProfileFields, string> 
   insurance: "Insurance",
   utilities: "Utilities",
   internet: "Internet",
+  schoolFees: "School Fees",
   food: "Food",
   fuel: "Fuel",
+  entertainment: "Subscriptions",
+  medical: "Medical",
 };
 
 const EMPTY_PROFILE_FIELDS: ExtractedProfileFields = {
@@ -510,8 +516,11 @@ const EMPTY_PROFILE_FIELDS: ExtractedProfileFields = {
   insurance: null,
   utilities: null,
   internet: null,
+  schoolFees: null,
   food: null,
   fuel: null,
+  entertainment: null,
+  medical: null,
 };
 
 // Net/take-home pay wins over gross — it's what actually lands in the account.
@@ -529,8 +538,14 @@ const EXPENSE_RE: Record<
   utilities:
     /electricity\s*bill|water\s*bill|gas\s*bill|utility\s*bill|utilities|power\s*bill|\bbescom\b|\bmseb\b|\btneb\b/i,
   internet: /internet\s*bill|broadband|wi-?fi|fibernet|telecom\s*bill|mobile\s*(?:bill|recharge)/i,
+  schoolFees:
+    /school\s*fee|tuition\s*fee|tuition|college\s*fee|education\s*fee|class\s*fee|coaching\s*fee|coaching|university\s*fee|exam\s*fee/i,
   food: /groceries|grocery|supermarket|big\s*basket|swiggy|zomato|food\s*expenses/i,
   fuel: /fuel\s*(?:expense|cost)?|petrol|diesel|indian\s*oil|bharat\s*petroleum|hp\s*petrol/i,
+  entertainment:
+    /netflix|amazon\s*prime|prime\s*video|hotstar|disney\+?|spotify|youtube\s*premium|sony\s*liv|sonyliv|zee5|\bott\b|gym\s*(?:membership|fee|subscription)?|subscription\s*(?:fee|charge)?|subscriptions?/i,
+  medical:
+    /medical\s*(?:expense|bill)?|hospital|pharmacy|chemist|doctor\s*(?:fee|visit)?|clinic|apollo|medplus|pharmeasy|health\s*care|healthcare|diagnostic|lab\s*test/i,
 };
 
 const ADDITIONAL_INCOME_RE =
@@ -669,8 +684,11 @@ const PROFILE_KEY_ALIASES: Record<keyof ExtractedProfileFields, string[]> = {
   insurance: ["insurance", "premium", "insurancepremium"],
   utilities: ["utilities", "utility", "electricity", "power", "waterbill"],
   internet: ["internet", "broadband", "wifi"],
+  schoolFees: ["schoolfees", "tuition", "tuitionfees", "educationfees", "education", "collegefees", "coaching"],
   food: ["food", "groceries", "grocery"],
   fuel: ["fuel", "petrol", "diesel"],
+  entertainment: ["entertainment", "subscriptions", "subscription", "streaming", "netflix", "gym"],
+  medical: ["medical", "healthcare", "health", "pharmacy", "hospital", "medicalexpenses"],
 };
 
 function profileFromRecord(rec: Record<string, unknown>): ExtractedProfileFields {
@@ -693,8 +711,11 @@ function profileFromRecord(rec: Record<string, unknown>): ExtractedProfileFields
     insurance: parseAmount(pick(PROFILE_KEY_ALIASES.insurance) as string | number | null),
     utilities: parseAmount(pick(PROFILE_KEY_ALIASES.utilities) as string | number | null),
     internet: parseAmount(pick(PROFILE_KEY_ALIASES.internet) as string | number | null),
+    schoolFees: parseAmount(pick(PROFILE_KEY_ALIASES.schoolFees) as string | number | null),
     food: parseAmount(pick(PROFILE_KEY_ALIASES.food) as string | number | null),
     fuel: parseAmount(pick(PROFILE_KEY_ALIASES.fuel) as string | number | null),
+    entertainment: parseAmount(pick(PROFILE_KEY_ALIASES.entertainment) as string | number | null),
+    medical: parseAmount(pick(PROFILE_KEY_ALIASES.medical) as string | number | null),
   };
 }
 

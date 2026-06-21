@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { useClerk } from "@clerk/react";
+import { useClerk, useUser } from "@clerk/react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
@@ -36,12 +36,27 @@ const navItems = [
 ];
 
 function Brand() {
+  const { user } = useUser();
+  const name =
+    user?.firstName ||
+    user?.username ||
+    user?.fullName?.split(" ")[0] ||
+    user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
+    "";
+
   return (
     <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/20">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/20">
         <Wallet className="h-5 w-5 text-white" />
       </div>
-      <span className="text-2xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">Ledger</span>
+      <div className="flex min-w-0 flex-col leading-tight">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+          Welcome
+        </span>
+        <span className="truncate text-xl font-extrabold tracking-tight text-slate-800 dark:text-slate-100">
+          {name || "back"}
+        </span>
+      </div>
     </div>
   );
 }

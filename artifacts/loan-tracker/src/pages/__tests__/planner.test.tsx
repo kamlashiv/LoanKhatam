@@ -9,11 +9,13 @@
  */
 import React from "react";
 import { render, screen, within, fireEvent } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // wouter ships untranspiled ESM and recharts renders nothing useful in jsdom
 // (zero-size container) — neither is under test, so stub them out.
 jest.mock("wouter", () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
+  useLocation: () => ["/", () => {}],
 }));
 jest.mock("recharts", () => {
   // Render nothing — charts are purely visual and not under test; rendering
@@ -22,9 +24,51 @@ jest.mock("recharts", () => {
   return new Proxy({}, { get: () => Stub });
 });
 
+// The planner reads the global financial profile and loan-derived figures to
+// drive its budget hints; both rely on providers we don't mount here, so stub
+// the hooks (an empty profile / no loans). The page's loan parameters default
+// to static values, so this does not affect any engine assertions below.
+jest.mock("@/lib/profile", () => {
+  const actual = jest.requireActual("@/lib/profile");
+  return {
+    ...actual,
+    useProfile: () => ({
+      profile: actual.EMPTY_PROFILE,
+      update: jest.fn(),
+      isLoading: false,
+      saveStatus: "idle",
+    }),
+  };
+});
+jest.mock("@/lib/loan-derive", () => ({
+  useDerivedLoans: () => ({
+    debtItems: [],
+    aggregateEmi: 0,
+    totalOutstanding: 0,
+    hasLoans: false,
+    isLoading: false,
+  }),
+}));
+
 import { Planner } from "../planner";
+import { ThemeProvider } from "@/lib/theme";
 import { formatRupees } from "@/lib/loan-utils";
 import { simulatePlan, type PlannerInput } from "@/lib/planner-engine";
+
+// The page consumes useTheme (chart styling) and useQueryClient (save-plan
+// mutation), so wrap it in the real ThemeProvider and a fresh QueryClient.
+function renderPlanner() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return render(
+    <QueryClientProvider client={client}>
+      <ThemeProvider>
+        <Planner />
+      </ThemeProvider>
+    </QueryClientProvider>,
+  );
+}
 
 // The default loan parameters the page initialises with.
 const DEFAULTS = {
@@ -73,7 +117,7 @@ function hasText(expected: string) {
 
 describe("Planner page", () => {
   it("renders the baseline plan's numbers from the engine", () => {
-    render(<Planner />);
+    renderPlanner();
 
     const expected = simulatePlan({ ...DEFAULTS, extraEMI: 0 });
 
@@ -112,7 +156,7 @@ describe("Planner page", () => {
   });
 
   it("reflects an extra monthly EMI in payoff, interest saved and months saved", () => {
-    render(<Planner />);
+    renderPlanner();
 
     const extraEMI = 10_000;
     setNumber(inputByLabel(/Extra Monthly Payment/), extraEMI);
@@ -147,7 +191,7 @@ describe("Planner page", () => {
   });
 
   it("applies a yearly lump prepayment entered in the ledger", () => {
-    render(<Planner />);
+    renderPlanner();
 
     // The "Extra Prepaid (edit)" input on the Year 1 row.
     const firstRow = screen.getByText("Year 1").closest("tr")!;
@@ -175,7 +219,7 @@ describe("Planner page", () => {
   });
 
   it("recalculates when a top-up loan is configured", () => {
-    render(<Planner />);
+    renderPlanner();
 
     const topUpAmount = 500_000;
     setNumber(inputByLabel(/^Amount \(₹\)$/), topUpAmount);
@@ -202,7 +246,7 @@ describe("Planner page", () => {
   });
 
   it("combines extra EMI, a yearly lump and a top-up at the UI level", () => {
-    render(<Planner />);
+    renderPlanner();
 
     const extraEMI = 8_000;
     const lump = 150_000;

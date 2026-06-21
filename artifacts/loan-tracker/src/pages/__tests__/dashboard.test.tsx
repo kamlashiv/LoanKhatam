@@ -1,11 +1,11 @@
 /**
  * @jest-environment jsdom
  *
- * Integration tests for the Dashboard page. The summary cards (total lent,
- * outstanding, collected, overdue count), the stats row and the recent-loans
- * list are the first thing users see, and they are wired straight to the
- * dashboard-summary and recent-loans endpoints. These tests render the page
- * with mocked hook data and assert each card shows the correctly formatted
+ * Integration tests for the Dashboard page. The bento summary cards (total
+ * lent, outstanding, collected, overdue), the loan status mix and the
+ * recent-loans list are the first thing users see, and they are wired straight
+ * to the dashboard-summary and recent-loans endpoints. These tests render the
+ * page with mocked hook data and assert each card shows the correctly formatted
  * value and that the recent-loans list renders the expected rows — so a
  * regression in how the endpoint data is mapped to the UI is caught here.
  */
@@ -24,6 +24,33 @@ const mockUseGetRecentLoans = jest.fn();
 jest.mock("@workspace/api-client-react", () => ({
   useGetDashboardSummary: () => mockUseGetDashboardSummary(),
   useGetRecentLoans: () => mockUseGetRecentLoans(),
+}));
+
+// The dashboard also reads the global financial profile and loan-derived
+// figures; both rely on providers we don't mount here, so stub the hooks. The
+// real profile helpers (totalIncome/totalExpenses/etc.) are kept so the
+// snapshot logic still runs against EMPTY_PROFILE (which keeps the snapshot
+// section collapsed and out of the way of the assertions below).
+jest.mock("@/lib/profile", () => {
+  const actual = jest.requireActual("@/lib/profile");
+  return {
+    ...actual,
+    useProfile: () => ({
+      profile: actual.EMPTY_PROFILE,
+      update: jest.fn(),
+      isLoading: false,
+      saveStatus: "idle",
+    }),
+  };
+});
+jest.mock("@/lib/loan-derive", () => ({
+  useDerivedLoans: () => ({
+    debtItems: [],
+    aggregateEmi: 0,
+    totalOutstanding: 0,
+    hasLoans: false,
+    isLoading: false,
+  }),
 }));
 
 import { Dashboard } from "../dashboard";
@@ -102,12 +129,13 @@ function loaded() {
   });
 }
 
-// Find a summary card by its label and return its enclosing card element so we
-// can scope assertions about its value and caption to that card.
-function cardByLabel(label: string): HTMLElement {
-  const labelEl = screen.getByText(label);
-  const card = labelEl.closest("div.relative.overflow-hidden") as HTMLElement;
-  if (!card) throw new Error(`No card found for label: ${label}`);
+// Find a bento summary card by a label/heading it contains and return its
+// enclosing card element so assertions about its value can be scoped to it.
+// Every bento card carries the `bento-shadow` class.
+function cardByText(text: string): HTMLElement {
+  const el = screen.getByText(text);
+  const card = el.closest("div.bento-shadow") as HTMLElement;
+  if (!card) throw new Error(`No card found for text: ${text}`);
   return card;
 }
 
@@ -121,36 +149,34 @@ describe("Dashboard page", () => {
     loaded();
     render(<Dashboard />);
 
-    const totalLent = cardByLabel("Total Lent");
+    const totalLent = cardByText("Total Lent");
     expect(
       within(totalLent).getByText(formatRupees(SUMMARY.totalLent)),
     ).toBeInTheDocument();
 
-    const outstanding = cardByLabel("Outstanding");
+    const outstanding = cardByText("Outstanding");
     expect(
       within(outstanding).getByText(formatRupees(SUMMARY.totalOutstanding)),
     ).toBeInTheDocument();
 
-    const collected = cardByLabel("Collected");
+    const collected = cardByText("Collected");
     expect(
       within(collected).getByText(formatRupees(SUMMARY.totalCollected)),
     ).toBeInTheDocument();
   });
 
-  it("shows the overdue loan count and the past-due caption", () => {
+  it("shows the overdue loan count and urgent caption when loans are overdue", () => {
     loaded();
     render(<Dashboard />);
 
-    const overdue = cardByLabel("Overdue Loans");
+    const overdue = cardByText("Loans Overdue");
     expect(
       within(overdue).getByText(String(SUMMARY.overdueLoans)),
     ).toBeInTheDocument();
-    expect(
-      within(overdue).getByText("Past their due date"),
-    ).toBeInTheDocument();
+    expect(within(overdue).getByText("Urgent Attention")).toBeInTheDocument();
   });
 
-  it("uses the all-on-track caption when there are no overdue loans", () => {
+  it("uses the all-clear caption when there are no overdue loans", () => {
     mockUseGetDashboardSummary.mockReturnValue({
       data: { ...SUMMARY, overdueLoans: 0 },
       isLoading: false,
@@ -158,35 +184,40 @@ describe("Dashboard page", () => {
     mockUseGetRecentLoans.mockReturnValue({ data: [], isLoading: false });
     render(<Dashboard />);
 
-    const overdue = cardByLabel("Overdue Loans");
+    const overdue = cardByText("All Clear");
     expect(within(overdue).getByText("0")).toBeInTheDocument();
-    expect(within(overdue).getByText("All on track")).toBeInTheDocument();
+    expect(within(overdue).getByText("Loans Overdue")).toBeInTheDocument();
   });
 
-  it("renders the stats row counts from the summary", () => {
+  it("renders the loan status mix counts from the summary", () => {
     loaded();
     render(<Dashboard />);
 
-    // "Active" also appears as a status badge in the recent-loans list, so scope
-    // the stats-row assertions to the stats-row container (the parent of the
-    // individual stat boxes).
-    const statsRow = screen
-      .getByText("Total Loans")
-      .closest("div.flex.gap-3")!.parentElement as HTMLElement;
+    const mix = cardByText("Loan Status Mix");
 
-    const totalLoans = within(statsRow).getByText("Total Loans").closest("div")!;
+    const activeRow = within(mix).getByText("Active").closest(
+      "div.justify-between",
+    )!;
     expect(
-      within(totalLoans).getByText(String(SUMMARY.totalLoans)),
+      within(activeRow).getByText(String(SUMMARY.activeLoans)),
     ).toBeInTheDocument();
 
-    const active = within(statsRow).getByText("Active").closest("div")!;
+    const paidRow = within(mix).getByText("Paid").closest("div.justify-between")!;
     expect(
-      within(active).getByText(String(SUMMARY.activeLoans)),
+      within(paidRow).getByText(String(SUMMARY.paidLoans)),
     ).toBeInTheDocument();
 
-    const paid = within(statsRow).getByText("Fully Paid").closest("div")!;
+    const overdueRow = within(mix).getByText("Overdue").closest(
+      "div.justify-between",
+    )!;
     expect(
-      within(paid).getByText(String(SUMMARY.paidLoans)),
+      within(overdueRow).getByText(String(SUMMARY.overdueLoans)),
+    ).toBeInTheDocument();
+
+    // The total loan count is surfaced on the Total Lent card.
+    const totalLent = cardByText("Total Lent");
+    expect(
+      within(totalLent).getByText(`Across ${SUMMARY.totalLoans} total loans`),
     ).toBeInTheDocument();
   });
 
@@ -195,18 +226,21 @@ describe("Dashboard page", () => {
     render(<Dashboard />);
 
     for (const loan of RECENT_LOANS) {
-      const name = screen.getByText(loan.borrowerName);
-      const row = name.closest("div.px-6") as HTMLElement;
+      const row = screen
+        .getByText(loan.borrowerName)
+        .closest("div.p-4") as HTMLElement;
       expect(row).toBeTruthy();
 
       expect(
-        within(row).getByText(`Due ${formatDate(loan.dueDate)}`),
+        within(row).getByText(
+          `Due ${formatDate(loan.dueDate)} • ${loan.interestRate}% rate`,
+        ),
       ).toBeInTheDocument();
       expect(
         within(row).getByText(formatRupees(loan.principalAmount)),
       ).toBeInTheDocument();
       expect(
-        within(row).getByText(`${formatRupees(loan.remainingAmount)} remaining`),
+        within(row).getByText(`${formatRupees(loan.remainingAmount)} left`),
       ).toBeInTheDocument();
     }
   });
@@ -215,13 +249,17 @@ describe("Dashboard page", () => {
     loaded();
     render(<Dashboard />);
 
-    const asha = screen.getByText("Asha Patel").closest("div.px-6") as HTMLElement;
+    const asha = screen.getByText("Asha Patel").closest("div.p-4") as HTMLElement;
     expect(within(asha).getByText("Active")).toBeInTheDocument();
 
-    const rahul = screen.getByText("Rahul Mehta").closest("div.px-6") as HTMLElement;
+    const rahul = screen
+      .getByText("Rahul Mehta")
+      .closest("div.p-4") as HTMLElement;
     expect(within(rahul).getByText("Overdue")).toBeInTheDocument();
 
-    const priya = screen.getByText("Priya Singh").closest("div.px-6") as HTMLElement;
+    const priya = screen
+      .getByText("Priya Singh")
+      .closest("div.p-4") as HTMLElement;
     expect(within(priya).getByText("Paid")).toBeInTheDocument();
   });
 
@@ -233,8 +271,6 @@ describe("Dashboard page", () => {
     mockUseGetRecentLoans.mockReturnValue({ data: [], isLoading: false });
     render(<Dashboard />);
 
-    expect(
-      screen.getByText(/No loans yet/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/No loans yet/i)).toBeInTheDocument();
   });
 });

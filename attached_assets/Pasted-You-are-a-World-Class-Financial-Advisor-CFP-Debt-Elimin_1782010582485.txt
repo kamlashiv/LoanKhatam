@@ -1,0 +1,470 @@
+You are a World-Class Financial Advisor, CFP, Debt Elimination Expert, Wealth Planner, Investment Strategist, Data Scientist, Fintech Product Architect, UI/UX Expert, and Senior Full Stack Developer.
+
+Build a complete AI-powered Financial Freedom Platform.
+
+APP NAME:
+Loan Freedom AI
+
+MISSION:
+Help users become debt-free faster, save more money, invest intelligently, build wealth, and achieve financial freedom.
+
+==================================================
+SMART DATA COLLECTION SYSTEM
+==================================================
+
+Before asking any question:
+
+1. Check all existing user data.
+2. Check previous calculations.
+3. Check saved profiles.
+4. Check stored loan information.
+5. Check stored income records.
+6. Check stored expense records.
+7. Check investment history.
+8. Check user preferences.
+
+If data already exists:
+Use it automatically.
+
+Only ask for missing information.
+
+Never ask duplicate questions.
+
+If some values can be estimated:
+Ask for confirmation.
+
+Example:
+
+"We found your Home Loan details.
+Please confirm if they are still correct."
+
+Create Financial Profile Completion Score.
+
+Example:
+
+Profile Completion: 87%
+
+✓ Income
+✓ Loans
+✓ Expenses
+✓ Savings
+✗ Investments
+✗ Retirement Goal
+
+==================================================
+USER DATA ANALYSIS
+==================================================
+
+Collect and analyze:
+
+PERSONAL
+- Age
+- Occupation
+- Family Status
+- Dependents
+- Financial Goals
+
+INCOME
+- Salary
+- Business Income
+- Rental Income
+- Freelance Income
+- Other Income
+
+LOANS
+- Home Loan
+- Personal Loan
+- Car Loan
+- Education Loan
+- Credit Card Debt
+- Gold Loan
+- Other Loans
+
+For every loan:
+- Loan Amount
+- Outstanding Balance
+- Interest Rate
+- EMI
+- Remaining Tenure
+- Prepayment Rules
+
+EXPENSES
+- Housing
+- Food
+- Transport
+- Entertainment
+- Shopping
+- Insurance
+- Medical
+- Education
+- Subscriptions
+- Miscellaneous
+
+ASSETS
+- Bank Balance
+- Fixed Deposits
+- Mutual Funds
+- Stocks
+- Gold
+- Real Estate
+- Other Assets
+
+==================================================
+FINANCIAL HEALTH ENGINE
+==================================================
+
+Generate:
+
+- Financial Health Score
+- Debt Score
+- Savings Score
+- Wealth Score
+- Risk Score
+- Emergency Fund Score
+- Cash Flow Score
+
+Use:
+
+Green = Healthy
+Yellow = Moderate
+Red = Needs Attention
+
+==================================================
+LOAN CLOSURE AI ENGINE
+==================================================
+
+Compare:
+
+1. Current EMI Strategy
+2. Extra EMI Strategy
+3. Monthly Prepayment Strategy
+4. Annual Prepayment Strategy
+5. Debt Snowball Method
+6. Debt Avalanche Method
+
+Calculate:
+
+- Debt-Free Date
+- Interest Saved
+- Time Saved
+- Total Savings
+
+Recommend the best strategy.
+
+==================================================
+AI FINANCIAL ROADMAP TREE
+==================================================
+
+Create a visual roadmap.
+
+ROOT:
+Current Financial Position
+
+Branch 1:
+Expense Optimization
+
+Branch 2:
+Emergency Fund
+
+Branch 3:
+Loan Reduction
+
+Branch 4:
+Loan Closure
+
+Branch 5:
+Investment Growth
+
+Branch 6:
+Retirement Planning
+
+Branch 7:
+Financial Freedom
+
+For each branch:
+
+- Tasks
+- Priority
+- Expected Benefit
+- Timeline
+- Progress %
+- Estimated Savings
+
+==================================================
+AI INVESTMENT ADVISOR
+==================================================
+
+Recommend investment options based on:
+
+Age
+Income
+Risk Profile
+Financial Goals
+Debt Level
+
+Explain:
+
+LOW RISK
+- Savings Account
+- FD
+- RD
+- PPF
+- NPS
+- Government Bonds
+- Treasury Bills
+- Sovereign Gold Bonds
+
+MEDIUM RISK
+- Debt Funds
+- Hybrid Funds
+- REITs
+- Corporate Bonds
+- Balanced Funds
+
+HIGH RISK
+- Equity Mutual Funds
+- Index Funds
+- ETFs
+- Large Cap Stocks
+- Mid Cap Stocks
+- Small Cap Stocks
+- International Funds
+
+VERY HIGH RISK
+- Individual Stocks
+- Startup Investing
+- Angel Investing
+- Cryptocurrency
+- Futures
+- Options
+
+For every investment:
+
+Show:
+
+- Risk Level
+- Return Potential
+- Loss Risk
+- Liquidity
+- Time Horizon
+- Advantages
+- Disadvantages
+- Tax Impact
+
+==================================================
+VISUAL RISK EXPLAINER
+==================================================
+
+For every investment option:
+
+Display:
+
+1. Risk Meter
+2. Profit Potential Meter
+3. Loss Probability Meter
+4. Safety Score
+
+Use:
+
+- Pie Charts
+- Progress Bars
+- Risk Gauges
+- Comparison Tables
+
+Example:
+
+FD
+
+Safety = 70%
+Return Potential = 20%
+Risk = 10%
+
+Equity Mutual Fund
+
+Safety = 25%
+Return Potential = 45%
+Risk = 30%
+
+Cryptocurrency
+
+Safety = 5%
+Return Potential = 25%
+Risk = 70%
+
+Use colorful and beginner-friendly visuals.
+
+==================================================
+BEGINNER EDUCATION MODE
+==================================================
+
+Explain every financial term simply.
+
+Examples:
+
+SIP:
+"Investing a fixed amount every month."
+
+Index Fund:
+"A fund that tracks a market index."
+
+FD:
+"Low-risk investment with fixed returns."
+
+Cryptocurrency:
+"Very risky investment with high price fluctuations."
+
+Avoid financial jargon.
+
+==================================================
+LOAN VS INVESTMENT ANALYZER
+==================================================
+
+Compare:
+
+Option A:
+Use extra money for loan repayment.
+
+Option B:
+Use extra money for investing.
+
+Show:
+
+- Interest Saved
+- Estimated Investment Growth
+- Break-even Point
+- Risk Difference
+
+==================================================
+WHAT-IF SIMULATOR
+==================================================
+
+Allow users to test:
+
+- Increase EMI
+- Reduce Expenses
+- Increase Income
+- Prepayment Amount
+- Investment Amount
+
+Instantly update:
+
+- Loan Closure Date
+- Interest Savings
+- Wealth Projection
+
+==================================================
+AI COACH
+==================================================
+
+Provide:
+
+Daily Suggestions
+Weekly Suggestions
+Monthly Suggestions
+
+Examples:
+
+"Adding ₹2,000 to EMI may reduce your loan tenure."
+
+"Reducing subscriptions could improve monthly savings."
+
+==================================================
+REPORT GENERATOR
+==================================================
+
+Generate:
+
+- PDF Reports
+- Excel Reports
+- Financial Health Reports
+- Debt Freedom Reports
+- Wealth Growth Reports
+- Retirement Planning Reports
+
+==================================================
+NOTIFICATIONS
+==================================================
+
+- EMI Reminder
+- Loan Due Reminder
+- Investment Reminder
+- Weekly Report
+- Monthly Report
+
+==================================================
+SETTINGS PAGE
+==================================================
+
+Include:
+
+- Profile
+- Security
+- Privacy
+- Appearance
+- Language
+- Currency
+- Notifications
+- Data Backup
+- Export Data
+- Help & Support
+- About App
+- Legal Information
+
+==================================================
+ADMIN PANEL
+==================================================
+
+Admin can:
+
+- Manage Users
+- Manage Content
+- Manage AI Prompts
+- Manage Notifications
+- Manage Calculators
+- View Analytics
+- Manage Reports
+- Manage FAQs
+- Control Feature Flags
+
+==================================================
+SECURITY
+==================================================
+
+- Encryption
+- Secure Login
+- Role-Based Access
+- Audit Logs
+- Cloud Backup
+- Data Protection
+
+==================================================
+LEGAL DISCLAIMER
+==================================================
+
+Display prominently throughout the application:
+
+"This application is not a bank, NBFC, RBI-regulated financial institution, investment advisor, tax advisor, or loan provider."
+
+"This application is intended only for educational purposes and personal financial planning."
+
+"All calculations, projections, forecasts, and recommendations are estimates and should not be treated as professional financial advice."
+
+"Past performance does not guarantee future results."
+
+==================================================
+UI DESIGN
+==================================================
+
+- Modern Fintech Style
+- Mobile First
+- Responsive Design
+- Dark Mode
+- Light Mode
+- Interactive Charts
+- Pie Charts
+- Progress Bars
+- Financial Roadmap Tree
+- Beautiful Dashboard
+- Beginner-Friendly Experience
+
+Build complete production-ready frontend, backend, database schema, APIs, AI recommendation engine, roadmap engine, reporting system, admin panel, and deployment-ready architecture.

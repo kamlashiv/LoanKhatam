@@ -9,6 +9,97 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Get real-time public site statistics
+ */
+export const GetSiteStatsResponse = zod.object({
+  "activeVisitors": zod.number().describe('Visitors currently connected via WebSocket'),
+  "totalVisitors": zod.number(),
+  "todayVisitors": zod.number(),
+  "monthlyVisitors": zod.number(),
+  "totalLikes": zod.number(),
+  "registeredUsers": zod.number(),
+  "loansTracked": zod.number(),
+  "paymentsRecorded": zod.number(),
+  "amountTracked": zod.number(),
+  "totalReviews": zod.number()
+})
+
+
+/**
+ * @summary Record a public landing-page visit (de-duplicated per device)
+ */
+export const trackVisitBodyVisitorIdMin = 8;
+export const trackVisitBodyVisitorIdMax = 64;
+
+
+
+export const TrackVisitBody = zod.object({
+  "visitorId": zod.string().min(trackVisitBodyVisitorIdMin).max(trackVisitBodyVisitorIdMax)
+})
+
+export const TrackVisitResponse = zod.object({
+  "activeVisitors": zod.number().describe('Visitors currently connected via WebSocket'),
+  "totalVisitors": zod.number(),
+  "todayVisitors": zod.number(),
+  "monthlyVisitors": zod.number(),
+  "totalLikes": zod.number(),
+  "registeredUsers": zod.number(),
+  "loansTracked": zod.number(),
+  "paymentsRecorded": zod.number(),
+  "amountTracked": zod.number(),
+  "totalReviews": zod.number()
+})
+
+
+/**
+ * @summary Get the recent live activity feed
+ */
+export const GetActivityFeedResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "kind": zod.enum(['visit', 'like', 'review', 'account']),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Check whether a device has liked, and the total like count
+ */
+export const getLikeStatusQueryVisitorIdMin = 8;
+export const getLikeStatusQueryVisitorIdMax = 64;
+
+
+
+export const GetLikeStatusQueryParams = zod.object({
+  "visitorId": zod.coerce.string().min(getLikeStatusQueryVisitorIdMin).max(getLikeStatusQueryVisitorIdMax)
+})
+
+export const GetLikeStatusResponse = zod.object({
+  "liked": zod.boolean(),
+  "totalLikes": zod.number()
+})
+
+
+/**
+ * @summary Add a like for a device (idempotent, one per device)
+ */
+export const addLikeBodyVisitorIdMin = 8;
+export const addLikeBodyVisitorIdMax = 64;
+
+
+
+export const AddLikeBody = zod.object({
+  "visitorId": zod.string().min(addLikeBodyVisitorIdMin).max(addLikeBodyVisitorIdMax)
+})
+
+export const AddLikeResponse = zod.object({
+  "liked": zod.boolean(),
+  "totalLikes": zod.number()
+})
+
+
+/**
  * @summary Get the current user's global financial profile
  */
 export const GetProfileResponse = zod.object({

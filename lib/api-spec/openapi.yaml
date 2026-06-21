@@ -21,8 +21,99 @@ tags:
     description: User account preferences
   - name: feedback
     description: User feedback and feature requests
+  - name: site
+    description: Public landing-page live stats, likes, and activity
 
 paths:
+  /stats:
+    get:
+      operationId: getSiteStats
+      tags: [site]
+      summary: Get real-time public site statistics
+      responses:
+        "200":
+          description: Live site statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteStats"
+
+  /track/visit:
+    post:
+      operationId: trackVisit
+      tags: [site]
+      summary: Record a public landing-page visit (de-duplicated per device)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VisitInput"
+      responses:
+        "200":
+          description: Updated live site statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteStats"
+        "400":
+          description: Invalid input
+
+  /activity:
+    get:
+      operationId: getActivityFeed
+      tags: [site]
+      summary: Get the recent live activity feed
+      responses:
+        "200":
+          description: Recent activity items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityFeed"
+
+  /likes:
+    get:
+      operationId: getLikeStatus
+      tags: [site]
+      summary: Check whether a device has liked, and the total like count
+      parameters:
+        - name: visitorId
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 8
+            maxLength: 64
+      responses:
+        "200":
+          description: Like status for the device
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeStatus"
+        "400":
+          description: Invalid input
+    post:
+      operationId: addLike
+      tags: [site]
+      summary: Add a like for a device (idempotent, one per device)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LikeInput"
+      responses:
+        "200":
+          description: Like status after the operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeStatus"
+        "400":
+          description: Invalid input
+
   /profile:
     get:
       operationId: getProfile
@@ -791,3 +882,95 @@ components:
           type: number
         totalOutstanding:
           type: number
+
+    SiteStats:
+      type: object
+      required:
+        - activeVisitors
+        - totalVisitors
+        - todayVisitors
+        - monthlyVisitors
+        - totalLikes
+        - registeredUsers
+        - loansTracked
+        - paymentsRecorded
+        - amountTracked
+        - totalReviews
+      properties:
+        activeVisitors:
+          type: integer
+          description: Visitors currently connected via WebSocket
+        totalVisitors:
+          type: integer
+        todayVisitors:
+          type: integer
+        monthlyVisitors:
+          type: integer
+        totalLikes:
+          type: integer
+        registeredUsers:
+          type: integer
+        loansTracked:
+          type: integer
+        paymentsRecorded:
+          type: integer
+        amountTracked:
+          type: number
+        totalReviews:
+          type: integer
+
+    VisitInput:
+      type: object
+      required:
+        - visitorId
+      properties:
+        visitorId:
+          type: string
+          minLength: 8
+          maxLength: 64
+
+    LikeInput:
+      type: object
+      required:
+        - visitorId
+      properties:
+        visitorId:
+          type: string
+          minLength: 8
+          maxLength: 64
+
+    LikeStatus:
+      type: object
+      required:
+        - liked
+        - totalLikes
+      properties:
+        liked:
+          type: boolean
+        totalLikes:
+          type: integer
+
+    ActivityItem:
+      type: object
+      required:
+        - id
+        - kind
+        - createdAt
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [visit, like, review, account]
+        createdAt:
+          type: string
+
+    ActivityFeed:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityItem"

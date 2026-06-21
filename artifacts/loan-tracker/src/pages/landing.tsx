@@ -1,6 +1,8 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { SocialConnect } from "@/components/social-connect";
+import { LiveStats } from "@/components/live-stats";
+import { useTheme } from "@/lib/theme";
 import {
   Wallet,
   ShieldCheck,
@@ -9,7 +11,24 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   CheckCircle2,
+  Sun,
+  Moon,
 } from "lucide-react";
+
+function ThemeToggle() {
+  const { isDark, toggleTheme } = useTheme();
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={toggleTheme}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+    >
+      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+    </Button>
+  );
+}
 
 export function LandingPage() {
   const features = [
@@ -46,7 +65,8 @@ export function LandingPage() {
             </div>
             <span className="text-2xl font-extrabold tracking-tight text-foreground">Ledger</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <ThemeToggle />
             <Link href="/sign-in">
               <Button variant="ghost" className="font-medium hidden sm:inline-flex">Sign In</Button>
             </Link>
@@ -203,6 +223,9 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Live, real-time stats */}
+      <LiveStats />
 
       {/* CTA */}
       <section className="py-24 px-6 relative overflow-hidden bg-primary text-primary-foreground">

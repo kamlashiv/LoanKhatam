@@ -21,3 +21,4 @@
 - [Dark mode dark: variants](dark-mode-perl-variants.md) — additive dark mode via boundary-safe perl dark: injection; collapse duplicate variants; charts need JS theme values not dark: classes.
 - [EMI vs Investment Analyzer](emi-investment-analyzer.md) — /strategy section: deterministic SIP vs debt-payoff compare; derive payoff via amortization when tenure missing, flag unbounded EMI.
 - [Profile privacy tests & jest env](profile-privacy-tests.md) — cross-account isolation tested via real ProfileProvider+RQ with faked useAuth/global.fetch; jsdom lacks fetch/Response; dashboard+planner suites pre-existing red.
+- [Live presence + public counters](live-presence-counters.md) — WS presence must dedupe by client visitorId (not socket count); public in-memory maps need TTL sweep + size caps.

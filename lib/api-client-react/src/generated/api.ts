@@ -20,20 +20,26 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ActivityFeed,
   DashboardSummary,
   Feedback,
   FeedbackInput,
   FinancialProfile,
   FinancialProfileData,
+  GetLikeStatusParams,
   HealthStatus,
+  LikeInput,
+  LikeStatus,
   ListLoansParams,
   Loan,
   LoanInput,
   LoanUpdate,
   Payment,
   PaymentInput,
+  SiteStats,
   UserSettings,
-  UserSettingsData
+  UserSettingsData,
+  VisitInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -47,6 +53,386 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
+
+export const getGetSiteStatsUrl = () => {
+
+
+
+
+  return `/api/stats`
+}
+
+/**
+ * @summary Get real-time public site statistics
+ */
+export const getSiteStats = async ( options?: RequestInit): Promise<SiteStats> => {
+
+  return customFetch<SiteStats>(getGetSiteStatsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSiteStatsQueryKey = () => {
+    return [
+    `/api/stats`
+    ] as const;
+    }
+
+
+export const getGetSiteStatsQueryOptions = <TData = Awaited<ReturnType<typeof getSiteStats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSiteStatsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSiteStats>>> = ({ signal }) => getSiteStats({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSiteStats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSiteStatsQueryResult = NonNullable<Awaited<ReturnType<typeof getSiteStats>>>
+export type GetSiteStatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get real-time public site statistics
+ */
+
+export function useGetSiteStats<TData = Awaited<ReturnType<typeof getSiteStats>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSiteStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSiteStatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getTrackVisitUrl = () => {
+
+
+
+
+  return `/api/track/visit`
+}
+
+/**
+ * @summary Record a public landing-page visit (de-duplicated per device)
+ */
+export const trackVisit = async (visitInput: VisitInput, options?: RequestInit): Promise<SiteStats> => {
+
+  return customFetch<SiteStats>(getTrackVisitUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      visitInput,)
+  }
+);}
+
+
+
+
+export const getTrackVisitMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof trackVisit>>, TError,{data: BodyType<VisitInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof trackVisit>>, TError,{data: BodyType<VisitInput>}, TContext> => {
+
+const mutationKey = ['trackVisit'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof trackVisit>>, {data: BodyType<VisitInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  trackVisit(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TrackVisitMutationResult = NonNullable<Awaited<ReturnType<typeof trackVisit>>>
+    export type TrackVisitMutationBody = BodyType<VisitInput>
+    export type TrackVisitMutationError = ErrorType<void>
+
+    /**
+ * @summary Record a public landing-page visit (de-duplicated per device)
+ */
+export const useTrackVisit = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof trackVisit>>, TError,{data: BodyType<VisitInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof trackVisit>>,
+        TError,
+        {data: BodyType<VisitInput>},
+        TContext
+      > => {
+      return useMutation(getTrackVisitMutationOptions(options));
+    }
+
+export const getGetActivityFeedUrl = () => {
+
+
+
+
+  return `/api/activity`
+}
+
+/**
+ * @summary Get the recent live activity feed
+ */
+export const getActivityFeed = async ( options?: RequestInit): Promise<ActivityFeed> => {
+
+  return customFetch<ActivityFeed>(getGetActivityFeedUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetActivityFeedQueryKey = () => {
+    return [
+    `/api/activity`
+    ] as const;
+    }
+
+
+export const getGetActivityFeedQueryOptions = <TData = Awaited<ReturnType<typeof getActivityFeed>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActivityFeed>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetActivityFeedQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getActivityFeed>>> = ({ signal }) => getActivityFeed({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getActivityFeed>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetActivityFeedQueryResult = NonNullable<Awaited<ReturnType<typeof getActivityFeed>>>
+export type GetActivityFeedQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the recent live activity feed
+ */
+
+export function useGetActivityFeed<TData = Awaited<ReturnType<typeof getActivityFeed>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActivityFeed>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetActivityFeedQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetLikeStatusUrl = (params: GetLikeStatusParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/likes?${stringifiedParams}` : `/api/likes`
+}
+
+/**
+ * @summary Check whether a device has liked, and the total like count
+ */
+export const getLikeStatus = async (params: GetLikeStatusParams, options?: RequestInit): Promise<LikeStatus> => {
+
+  return customFetch<LikeStatus>(getGetLikeStatusUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLikeStatusQueryKey = (params?: GetLikeStatusParams,) => {
+    return [
+    `/api/likes`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetLikeStatusQueryOptions = <TData = Awaited<ReturnType<typeof getLikeStatus>>, TError = ErrorType<void>>(params: GetLikeStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLikeStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLikeStatusQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLikeStatus>>> = ({ signal }) => getLikeStatus(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLikeStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLikeStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getLikeStatus>>>
+export type GetLikeStatusQueryError = ErrorType<void>
+
+
+/**
+ * @summary Check whether a device has liked, and the total like count
+ */
+
+export function useGetLikeStatus<TData = Awaited<ReturnType<typeof getLikeStatus>>, TError = ErrorType<void>>(
+ params: GetLikeStatusParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLikeStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLikeStatusQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getAddLikeUrl = () => {
+
+
+
+
+  return `/api/likes`
+}
+
+/**
+ * @summary Add a like for a device (idempotent, one per device)
+ */
+export const addLike = async (likeInput: LikeInput, options?: RequestInit): Promise<LikeStatus> => {
+
+  return customFetch<LikeStatus>(getAddLikeUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      likeInput,)
+  }
+);}
+
+
+
+
+export const getAddLikeMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addLike>>, TError,{data: BodyType<LikeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof addLike>>, TError,{data: BodyType<LikeInput>}, TContext> => {
+
+const mutationKey = ['addLike'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addLike>>, {data: BodyType<LikeInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  addLike(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddLikeMutationResult = NonNullable<Awaited<ReturnType<typeof addLike>>>
+    export type AddLikeMutationBody = BodyType<LikeInput>
+    export type AddLikeMutationError = ErrorType<void>
+
+    /**
+ * @summary Add a like for a device (idempotent, one per device)
+ */
+export const useAddLike = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addLike>>, TError,{data: BodyType<LikeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof addLike>>,
+        TError,
+        {data: BodyType<LikeInput>},
+        TContext
+      > => {
+      return useMutation(getAddLikeMutationOptions(options));
+    }
 
 export const getGetProfileUrl = () => {
 

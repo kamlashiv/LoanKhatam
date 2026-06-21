@@ -489,6 +489,76 @@ describe("profileFromText", () => {
   });
 });
 
+describe("expense category routing — look-alike wording", () => {
+  // Each category regex runs independently over the whole statement, so an
+  // ambiguous line can leak into more than one bucket. These guard the
+  // intended routing for broad tokens ("premium", "prime", "apollo",
+  // "tuition", "gym", "health") against future regex edits.
+
+  it("routes 'Insurance Premium' to insurance, not the subscriptions bucket", () => {
+    const out = profileFromText("Insurance Premium: Rs. 3,500");
+    expect(out.insurance).toBe(3500);
+    expect(out.entertainment).toBeNull();
+    expect(out.medical).toBeNull();
+    expect(out.schoolFees).toBeNull();
+  });
+
+  it("does not confuse 'premium' with 'prime' (subscriptions)", () => {
+    const out = profileFromText("Premium Paid: Rs. 4,000");
+    expect(out.insurance).toBe(4000);
+    expect(out.entertainment).toBeNull();
+  });
+
+  it("routes 'Health Insurance Premium' to insurance, not medical", () => {
+    const out = profileFromText("Health Insurance Premium: Rs. 5,000");
+    expect(out.insurance).toBe(5000);
+    expect(out.medical).toBeNull();
+  });
+
+  it("routes 'Apollo Pharmacy' to medical only", () => {
+    const out = profileFromText("Apollo Pharmacy: Rs. 2,200");
+    expect(out.medical).toBe(2200);
+    expect(out.insurance).toBeNull();
+    expect(out.entertainment).toBeNull();
+    expect(out.food).toBeNull();
+  });
+
+  it("routes 'Prime Video' to subscriptions, not insurance", () => {
+    const out = profileFromText("Prime Video: Rs. 649");
+    expect(out.entertainment).toBe(649);
+    expect(out.insurance).toBeNull();
+    expect(out.medical).toBeNull();
+  });
+
+  it("routes 'Gym Membership' to subscriptions, not medical", () => {
+    const out = profileFromText("Gym Membership: Rs. 1,500");
+    expect(out.entertainment).toBe(1500);
+    expect(out.medical).toBeNull();
+  });
+
+  it("routes 'Tuition Fee' to school fees only", () => {
+    const out = profileFromText("Tuition Fee: Rs. 12,000");
+    expect(out.schoolFees).toBe(12000);
+    expect(out.medical).toBeNull();
+    expect(out.entertainment).toBeNull();
+    expect(out.insurance).toBeNull();
+  });
+
+  it("keeps each category separate when several appear together", () => {
+    const text = [
+      "Insurance Premium: Rs. 3,500",
+      "Prime Video: Rs. 649",
+      "Apollo Pharmacy: Rs. 2,200",
+      "Tuition Fee: Rs. 12,000",
+    ].join("\n");
+    const out = profileFromText(text);
+    expect(out.insurance).toBe(3500);
+    expect(out.entertainment).toBe(649);
+    expect(out.medical).toBe(2200);
+    expect(out.schoolFees).toBe(12000);
+  });
+});
+
 describe("profileFromJSON / profileFromCSV", () => {
   it("maps JSON keys via aliases", () => {
     const json = JSON.stringify({

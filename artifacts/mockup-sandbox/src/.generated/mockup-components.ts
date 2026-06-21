@@ -52,5 +52,6 @@ export const modules: ModuleMap = {
   "./components/mockups/planner-vibes/PlayfulFriendly.tsx": () => import("../components/mockups/planner-vibes/PlayfulFriendly.tsx"),
   "./components/mockups/planner-vibes/SereneTrust.tsx": () => import("../components/mockups/planner-vibes/SereneTrust.tsx"),
   "./components/mockups/planner-vibes/TechnicalDense.tsx": () => import("../components/mockups/planner-vibes/TechnicalDense.tsx"),
-  "./components/mockups/planner-vibes/WarmSunrise.tsx": () => import("../components/mockups/planner-vibes/WarmSunrise.tsx")
+  "./components/mockups/planner-vibes/WarmSunrise.tsx": () => import("../components/mockups/planner-vibes/WarmSunrise.tsx"),
+  "./components/mockups/share-loan/AllOptions.tsx": () => import("../components/mockups/share-loan/AllOptions.tsx")
 };

@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ShareApp } from "@/components/share-app";
+import { LogoGlyph } from "@/components/logo";
 
 const shareButtonClassName =
   "w-full justify-start gap-3 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100";
@@ -53,7 +54,7 @@ function Brand() {
   return (
     <div className="flex items-center gap-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/20">
-        <Wallet className="h-5 w-5 text-white" />
+        <LogoGlyph className="h-5 w-5 text-white" />
       </div>
       <div className="flex min-w-0 flex-col leading-tight">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">

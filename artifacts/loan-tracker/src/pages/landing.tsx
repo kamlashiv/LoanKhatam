@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { SocialConnect } from "@/components/social-connect";
 import { useTheme } from "@/lib/theme";
+import { LogoGlyph } from "@/components/logo";
 import {
   Wallet,
   ShieldCheck,
@@ -60,7 +61,7 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/20">
-              <Wallet className="h-5 w-5 text-white" />
+              <LogoGlyph className="h-5 w-5 text-white" />
             </div>
             <span className="text-2xl font-extrabold tracking-tight text-foreground">Ledger</span>
           </div>
@@ -248,7 +249,7 @@ export function LandingPage() {
         <div className="max-w-7xl mx-auto flex flex-col items-center justify-center gap-2 text-center">
           <div className="flex items-center gap-3 text-foreground">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/20">
-              <Wallet className="h-5 w-5 text-white" />
+              <LogoGlyph className="h-5 w-5 text-white" />
             </div>
             <span className="text-2xl font-extrabold tracking-tight">Ledger</span>
           </div>

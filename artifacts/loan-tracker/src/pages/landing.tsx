@@ -246,7 +246,7 @@ export function LandingPage() {
 
       {/* Footer */}
       <footer className="bg-background border-t border-border py-12 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center gap-2 text-center">
+        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center gap-4 text-center">
           <div className="flex items-center gap-3 text-foreground">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/20">
               <LogoGlyph className="h-5 w-5 text-white" />
@@ -256,6 +256,16 @@ export function LandingPage() {
           <p className="text-sm text-muted-foreground">
             Your trusted personal loan register.
           </p>
+          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
+            <Link href="/help" className="hover:text-foreground transition-colors">Help</Link>
+            <Link href="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link href="/disclaimer" className="hover:text-foreground transition-colors">Disclaimer</Link>
+            <Link href="/cookie-policy" className="hover:text-foreground transition-colors">Cookie Policy</Link>
+            <Link href="/data-usage" className="hover:text-foreground transition-colors">Data Usage</Link>
+            <Link href="/license" className="hover:text-foreground transition-colors">License</Link>
+          </nav>
         </div>
       </footer>
     </div>

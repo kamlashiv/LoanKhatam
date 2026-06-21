@@ -168,6 +168,21 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   );
 }
 
+function PublicRoute({ component: Component }: { component: React.ComponentType }) {
+  return (
+    <>
+      <Show when="signed-in">
+        <Layout>
+          <Component />
+        </Layout>
+      </Show>
+      <Show when="signed-out">
+        <Component />
+      </Show>
+    </>
+  );
+}
+
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
 
@@ -215,14 +230,14 @@ function ClerkProviderWithRoutes() {
           <Route path="/strategy" component={() => <ProtectedRoute component={Strategy} />} />
           <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} />} />
           <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
-          <Route path="/about" component={() => <ProtectedRoute component={AboutPage} />} />
-          <Route path="/help" component={() => <ProtectedRoute component={HelpPage} />} />
-          <Route path="/privacy-policy" component={() => <ProtectedRoute component={PrivacyPolicyPage} />} />
-          <Route path="/terms" component={() => <ProtectedRoute component={TermsPage} />} />
-          <Route path="/disclaimer" component={() => <ProtectedRoute component={DisclaimerPage} />} />
-          <Route path="/cookie-policy" component={() => <ProtectedRoute component={CookiePolicyPage} />} />
-          <Route path="/data-usage" component={() => <ProtectedRoute component={DataUsagePage} />} />
-          <Route path="/license" component={() => <ProtectedRoute component={LicensePage} />} />
+          <Route path="/about" component={() => <PublicRoute component={AboutPage} />} />
+          <Route path="/help" component={() => <PublicRoute component={HelpPage} />} />
+          <Route path="/privacy-policy" component={() => <PublicRoute component={PrivacyPolicyPage} />} />
+          <Route path="/terms" component={() => <PublicRoute component={TermsPage} />} />
+          <Route path="/disclaimer" component={() => <PublicRoute component={DisclaimerPage} />} />
+          <Route path="/cookie-policy" component={() => <PublicRoute component={CookiePolicyPage} />} />
+          <Route path="/data-usage" component={() => <PublicRoute component={DataUsagePage} />} />
+          <Route path="/license" component={() => <PublicRoute component={LicensePage} />} />
           
           <Route component={NotFound} />
         </Switch>

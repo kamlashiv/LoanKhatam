@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useSearch } from "wouter";
+import { Link, useSearch, useLocation } from "wouter";
 import { useListLoans } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Plus, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils";
+import { ShareLoan } from "@/components/share-loan";
 
 type StatusFilter = "all" | "active" | "overdue" | "paid";
 
@@ -15,6 +16,7 @@ const STATUS_VALUES: StatusFilter[] = ["all", "active", "overdue", "paid"];
 
 export function LoansList() {
   const queryString = useSearch();
+  const [, navigate] = useLocation();
   const statusParam = new URLSearchParams(queryString).get("status");
   const initialStatus: StatusFilter =
     statusParam && STATUS_VALUES.includes(statusParam as StatusFilter)
@@ -108,22 +110,46 @@ export function LoansList() {
             );
 
             return (
-              <Link key={loan.id} href={`/loans/${loan.id}`}>
-                <div className="bg-card rounded-xl border border-border p-5 hover:shadow-md hover:border-primary/30 transition-all duration-200 cursor-pointer group">
+              <div
+                key={loan.id}
+                onClick={() => navigate(`/loans/${loan.id}`)}
+                className="bg-card rounded-xl border border-border p-5 hover:shadow-md hover:border-primary/30 transition-all duration-200 cursor-pointer group"
+              >
+                <div>
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <p className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
+                      <Link
+                        href={`/loans/${loan.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="font-bold text-lg text-foreground group-hover:text-primary transition-colors rounded hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
                         {loan.borrowerName}
-                      </p>
+                      </Link>
                       {loan.description && (
                         <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">
                           {loan.description}
                         </p>
                       )}
                     </div>
-                    <Badge className={`${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border font-medium ml-3 shrink-0`}>
-                      {statusConfig.label}
-                    </Badge>
+                    <div className="ml-3 flex shrink-0 items-center gap-2">
+                      <Badge className={`${statusConfig.bg} ${statusConfig.text} ${statusConfig.border} border font-medium`}>
+                        {statusConfig.label}
+                      </Badge>
+                      <span
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        <ShareLoan
+                          borrowerName={loan.borrowerName}
+                          principalAmount={loan.principalAmount}
+                          remainingAmount={loan.remainingAmount}
+                          dueDate={loan.dueDate}
+                          bank={loan.bank}
+                        />
+                      </span>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
@@ -151,7 +177,7 @@ export function LoansList() {
                     <Progress value={progress} className="h-1.5" />
                   </div>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

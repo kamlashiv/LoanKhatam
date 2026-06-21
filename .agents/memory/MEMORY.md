@@ -6,7 +6,6 @@
 - [Local file extraction (web)](file-extract-local.md) — loan-tracker parses uploads locally (pdfjs/tesseract/JSON/CSV/regex), no AI; mobile still uses AI /api/extract-loan route.
 - [Mockup DESIGN subagent pitfalls](mockup-subagent-pitfalls.md) — variants ship escaped template literals (curl 200 still broken) + seed-data count mismatches; grep+screenshot+architect before presenting.
 - [Canvas reserved frames](canvas-reserved-frames.md) — pending_canvas_frames shape_ids aren't guaranteed to all exist; check update results, backfill missing ones with a new id at the intended rect.
-- [Bento planner artifact](bento-planner-artifact.md) — standalone frontend-only "Smart Loan Saver" reuses copied planner engine libs; second consumer of the engine, keep math/exports consistent with loan-tracker.
 - [Smart Financial Strategy engine](strategy-engine.md) — /strategy debt baseline must use rollover=false ("minimum only"); unbounded payoffs show "Not reachable"; persisted inputs sanitized not blind-merged.
 - [Loans list status query param](loans-status-query-param.md) — /loans seeds its filter tab from ?status=; sidebar overdue CTA depends on it. Keep param names in sync.
 - ["Smart Strategy" = /planner](smart-strategy-nav-mapping.md) — nav label "Smart Strategy"→/planner (not /strategy); planner→/loans/new CTAs must carry plan params or the form opens blank.

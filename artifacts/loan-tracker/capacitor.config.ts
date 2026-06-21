@@ -9,7 +9,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // this Replit workspace is running, so it's fine for a quick test but
 // you MUST swap it to your .replit.app URL before sharing the APK.
 const APP_URL =
-  "https://replit.com/@shivachand67p/Loan-Tracker";
+  "https://replit.com/@shivachand67p/Loan-Tracker-Home";
 
 const config: CapacitorConfig = {
   appId: "app.replit.ledger",

@@ -168,6 +168,32 @@ export interface UserNotificationPrefs {
   whatsappNumber?: string | null;
 }
 
+/**
+ * User-provided handles or profile links for social/messaging platforms.
+ */
+export interface UserSocialAccounts {
+  /**
+     * WhatsApp number (with country code) or wa.me link
+     * @nullable
+     */
+  whatsapp?: string | null;
+  /** @nullable */
+  facebook?: string | null;
+  /** @nullable */
+  instagram?: string | null;
+  /**
+     * X (Twitter) handle or profile URL
+     * @nullable
+     */
+  twitter?: string | null;
+  /** @nullable */
+  linkedin?: string | null;
+  /** @nullable */
+  telegram?: string | null;
+  /** @nullable */
+  youtube?: string | null;
+}
+
 export type UserSettingsDataDateFormat = typeof UserSettingsDataDateFormat[keyof typeof UserSettingsDataDateFormat];
 
 
@@ -187,6 +213,7 @@ export interface UserSettingsData {
   defaultTenureMonths: number;
   autoSaveCalculations: boolean;
   notifications: UserNotificationPrefs;
+  socialAccounts?: UserSocialAccounts;
 }
 
 export interface UserSettings {

@@ -29,3 +29,4 @@ export * from './userNotificationPrefs';
 export * from './userSettings';
 export * from './userSettingsData';
 export * from './userSettingsDataDateFormat';
+export * from './userSocialAccounts';

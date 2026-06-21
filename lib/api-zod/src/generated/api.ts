@@ -145,7 +145,16 @@ export const GetSettingsResponse = zod.object({
   "pushNotifications": zod.boolean(),
   "whatsappNotifications": zod.boolean(),
   "whatsappNumber": zod.string().nullish().describe('WhatsApp number (with country code) for WhatsApp reminders')
-})
+}),
+  "socialAccounts": zod.object({
+  "whatsapp": zod.string().nullish().describe('WhatsApp number (with country code) or wa.me link'),
+  "facebook": zod.string().nullish(),
+  "instagram": zod.string().nullish(),
+  "twitter": zod.string().nullish().describe('X (Twitter) handle or profile URL'),
+  "linkedin": zod.string().nullish(),
+  "telegram": zod.string().nullish(),
+  "youtube": zod.string().nullish()
+}).optional().describe('User-provided handles or profile links for social\/messaging platforms.')
 }),
   "updatedAt": zod.string().nullable()
 })
@@ -171,7 +180,16 @@ export const UpdateSettingsBody = zod.object({
   "pushNotifications": zod.boolean(),
   "whatsappNotifications": zod.boolean(),
   "whatsappNumber": zod.string().nullish().describe('WhatsApp number (with country code) for WhatsApp reminders')
-})
+}),
+  "socialAccounts": zod.object({
+  "whatsapp": zod.string().nullish().describe('WhatsApp number (with country code) or wa.me link'),
+  "facebook": zod.string().nullish(),
+  "instagram": zod.string().nullish(),
+  "twitter": zod.string().nullish().describe('X (Twitter) handle or profile URL'),
+  "linkedin": zod.string().nullish(),
+  "telegram": zod.string().nullish(),
+  "youtube": zod.string().nullish()
+}).optional().describe('User-provided handles or profile links for social\/messaging platforms.')
 })
 
 export const UpdateSettingsResponse = zod.object({
@@ -192,7 +210,16 @@ export const UpdateSettingsResponse = zod.object({
   "pushNotifications": zod.boolean(),
   "whatsappNotifications": zod.boolean(),
   "whatsappNumber": zod.string().nullish().describe('WhatsApp number (with country code) for WhatsApp reminders')
-})
+}),
+  "socialAccounts": zod.object({
+  "whatsapp": zod.string().nullish().describe('WhatsApp number (with country code) or wa.me link'),
+  "facebook": zod.string().nullish(),
+  "instagram": zod.string().nullish(),
+  "twitter": zod.string().nullish().describe('X (Twitter) handle or profile URL'),
+  "linkedin": zod.string().nullish(),
+  "telegram": zod.string().nullish(),
+  "youtube": zod.string().nullish()
+}).optional().describe('User-provided handles or profile links for social\/messaging platforms.')
 }),
   "updatedAt": zod.string().nullable()
 })

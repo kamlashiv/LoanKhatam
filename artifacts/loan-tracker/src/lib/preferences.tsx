@@ -33,6 +33,15 @@ export const DEFAULT_SETTINGS: UserSettingsData = {
     whatsappNotifications: false,
     whatsappNumber: null,
   },
+  socialAccounts: {
+    whatsapp: null,
+    facebook: null,
+    instagram: null,
+    twitter: null,
+    linkedin: null,
+    telegram: null,
+    youtube: null,
+  },
 };
 
 /**
@@ -45,6 +54,10 @@ function normalizeSettings(s: UserSettingsData): UserSettingsData {
     ...DEFAULT_SETTINGS,
     ...s,
     notifications: { ...DEFAULT_SETTINGS.notifications, ...s.notifications },
+    socialAccounts: {
+      ...DEFAULT_SETTINGS.socialAccounts,
+      ...s.socialAccounts,
+    },
   };
 }
 

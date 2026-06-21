@@ -665,6 +665,27 @@ components:
           type: ["string", "null"]
           description: WhatsApp number (with country code) for WhatsApp reminders
 
+    UserSocialAccounts:
+      type: object
+      description: User-provided handles or profile links for social/messaging platforms.
+      properties:
+        whatsapp:
+          type: ["string", "null"]
+          description: WhatsApp number (with country code) or wa.me link
+        facebook:
+          type: ["string", "null"]
+        instagram:
+          type: ["string", "null"]
+        twitter:
+          type: ["string", "null"]
+          description: X (Twitter) handle or profile URL
+        linkedin:
+          type: ["string", "null"]
+        telegram:
+          type: ["string", "null"]
+        youtube:
+          type: ["string", "null"]
+
     UserSettingsData:
       type: object
       required:
@@ -693,6 +714,8 @@ components:
           type: boolean
         notifications:
           $ref: "#/components/schemas/UserNotificationPrefs"
+        socialAccounts:
+          $ref: "#/components/schemas/UserSocialAccounts"
 
     UserSettings:
       type: object

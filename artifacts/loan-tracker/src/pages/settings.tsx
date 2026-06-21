@@ -22,6 +22,7 @@ import {
   FileText,
   ExternalLink,
   Trash2,
+  Share2,
 } from "lucide-react";
 import {
   useListLoans,
@@ -106,6 +107,23 @@ const DATE_FORMATS: UserSettingsData["dateFormat"][] = [
   "YYYY-MM-DD",
 ];
 
+type SocialAccounts = NonNullable<UserSettingsData["socialAccounts"]>;
+type SocialKey = keyof SocialAccounts;
+
+const SOCIAL_PLATFORMS: {
+  key: SocialKey;
+  label: string;
+  placeholder: string;
+}[] = [
+  { key: "whatsapp", label: "WhatsApp", placeholder: "+91 98765 43210" },
+  { key: "facebook", label: "Facebook", placeholder: "facebook.com/yourname" },
+  { key: "instagram", label: "Instagram", placeholder: "@yourhandle" },
+  { key: "twitter", label: "X (Twitter)", placeholder: "@yourhandle" },
+  { key: "linkedin", label: "LinkedIn", placeholder: "linkedin.com/in/yourname" },
+  { key: "telegram", label: "Telegram", placeholder: "@yourhandle" },
+  { key: "youtube", label: "YouTube", placeholder: "youtube.com/@yourchannel" },
+];
+
 type NotificationPrefs = UserSettingsData["notifications"];
 type BooleanNotificationKey = Extract<
   {
@@ -119,6 +137,7 @@ const SECTIONS = [
   { id: "region", title: "Language & Region", icon: Globe, keywords: "currency locale number date format language region rupee dollar" },
   { id: "calculator", title: "Calculator Defaults", icon: Calculator, keywords: "interest rate tenure emi default autosave calculation planner" },
   { id: "notifications", title: "Notifications", icon: Bell, keywords: "email push reminder emi due date weekly monthly summary alert prepayment" },
+  { id: "social", title: "Social Accounts", icon: Share2, keywords: "social media whatsapp facebook instagram twitter x linkedin telegram youtube share connect handle profile link account" },
   { id: "account", title: "Account & Security", icon: ShieldCheck, keywords: "profile password email phone delete account sessions security two factor passkey name" },
   { id: "data", title: "Data Management", icon: Database, keywords: "export import backup json csv download restore data loans" },
   { id: "feedback", title: "Feedback", icon: MessageSquare, keywords: "feedback rating feature request bug review suggestion" },
@@ -552,6 +571,40 @@ export function SettingsPage() {
               Reminders appear in-app today (e.g. overdue alerts on your dashboard).
               Your channel choices above are saved to your account and used for email,
               push, and WhatsApp delivery as those channels roll out.
+            </p>
+          </SectionCard>
+
+          {/* Social Accounts */}
+          <SectionCard
+            id="social"
+            title="Social Accounts"
+            description="Add your social media handles or profile links to share from."
+            icon={Share2}
+            visible={isVisible("social")}
+          >
+            {SOCIAL_PLATFORMS.map((p) => (
+              <Row key={p.key} label={p.label}>
+                <Input
+                  type="text"
+                  placeholder={p.placeholder}
+                  value={draft.socialAccounts?.[p.key] ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      socialAccounts: {
+                        ...d.socialAccounts,
+                        [p.key]: e.target.value || null,
+                      },
+                    }))
+                  }
+                  className="w-64"
+                  aria-label={`${p.label} account`}
+                />
+              </Row>
+            ))}
+            <p className="mt-3 rounded-xl bg-slate-50 p-3 text-xs font-medium text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+              Saved to your account. These are your own handles for quick sharing —
+              the app doesn't post on your behalf.
             </p>
           </SectionCard>
 

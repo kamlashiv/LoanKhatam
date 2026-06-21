@@ -35,7 +35,34 @@ export const DEFAULT_SETTINGS = {
     whatsappNotifications: false,
     whatsappNumber: null,
   },
+  socialAccounts: {
+    whatsapp: null,
+    facebook: null,
+    instagram: null,
+    twitter: null,
+    linkedin: null,
+    telegram: null,
+    youtube: null,
+  },
 };
+
+// Merge stored settings over defaults so legacy rows that predate newer fields
+// (e.g. socialAccounts) always return a schema-conformant shape to any client.
+function normalizeSettings(data: any) {
+  const stored = data ?? {};
+  return {
+    ...DEFAULT_SETTINGS,
+    ...stored,
+    notifications: {
+      ...DEFAULT_SETTINGS.notifications,
+      ...(stored.notifications ?? {}),
+    },
+    socialAccounts: {
+      ...DEFAULT_SETTINGS.socialAccounts,
+      ...(stored.socialAccounts ?? {}),
+    },
+  };
+}
 
 // GET /api/settings
 router.get("/", requireAuth, async (req: any, res) => {
@@ -49,7 +76,10 @@ router.get("/", requireAuth, async (req: any, res) => {
       return res.json({ data: DEFAULT_SETTINGS, updatedAt: null });
     }
 
-    return res.json({ data: row.data, updatedAt: row.updatedAt.toISOString() });
+    return res.json({
+      data: normalizeSettings(row.data),
+      updatedAt: row.updatedAt.toISOString(),
+    });
   } catch (err) {
     logger.error({ err }, "Error fetching user settings");
     return res.status(500).json({ error: "Internal server error" });

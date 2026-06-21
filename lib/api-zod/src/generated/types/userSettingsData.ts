@@ -7,6 +7,7 @@
  */
 import type { UserNotificationPrefs } from './userNotificationPrefs';
 import type { UserSettingsDataDateFormat } from './userSettingsDataDateFormat';
+import type { UserSocialAccounts } from './userSocialAccounts';
 
 export interface UserSettingsData {
   /** ISO 4217 currency code, e.g. INR, USD */
@@ -18,4 +19,5 @@ export interface UserSettingsData {
   defaultTenureMonths: number;
   autoSaveCalculations: boolean;
   notifications: UserNotificationPrefs;
+  socialAccounts?: UserSocialAccounts;
 }

@@ -643,6 +643,7 @@ components:
         - monthlySummary
         - emailNotifications
         - pushNotifications
+        - whatsappNotifications
       properties:
         emiReminder:
           type: boolean
@@ -658,6 +659,11 @@ components:
           type: boolean
         pushNotifications:
           type: boolean
+        whatsappNotifications:
+          type: boolean
+        whatsappNumber:
+          type: ["string", "null"]
+          description: WhatsApp number (with country code) for WhatsApp reminders
 
     UserSettingsData:
       type: object

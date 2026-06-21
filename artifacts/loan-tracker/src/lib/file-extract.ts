@@ -10,8 +10,10 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
 export interface ExtractedData {
   borrowerName: string | null;
+  bankName: string | null;
   principalAmount: number | null;
   interestRate: number | null;
+  tenureMonths: number | null;
   startDate: string | null;
   dueDate: string | null;
   description: string | null;
@@ -33,8 +35,10 @@ function mb(bytes: number): string {
 
 const EMPTY: Omit<ExtractedData, "confidence" | "notes"> = {
   borrowerName: null,
+  bankName: null,
   principalAmount: null,
   interestRate: null,
+  tenureMonths: null,
   startDate: null,
   dueDate: null,
   description: null,
@@ -191,12 +195,77 @@ function pickTenureMonths(flat: string): number | null {
   return months > 0 && months <= 600 ? months : null;
 }
 
+// Coerces a structured tenure value (JSON/CSV) into a month count. Numbers are
+// treated as months; strings reuse the free-text tenure parser so "20 years",
+// "240 months", "5 yrs" all work.
+export function parseTenure(raw: string | number | null | undefined): number | null {
+  if (raw == null) return null;
+  if (typeof raw === "number") {
+    return Number.isFinite(raw) && raw > 0 && raw <= 600 ? Math.round(raw) : null;
+  }
+  const s = raw.toString().trim();
+  if (!s) return null;
+  const fromText = pickTenureMonths(s);
+  if (fromText != null) return fromText;
+  // Bare number string with no unit → assume months.
+  const n = Number(s.replace(/[^\d.]/g, ""));
+  return Number.isFinite(n) && n > 0 && n <= 600 ? Math.round(n) : null;
+}
+
+// Canonical bank/NBFC names matched against free text or structured values, so
+// the extracted bank lines up with the loan form's bank dropdown. Each entry is
+// the canonical label plus the substrings that should map to it. Order matters:
+// more specific names first. Anything unmatched falls back to "Other".
+const BANK_MATCHERS: { label: string; needles: RegExp }[] = [
+  { label: "State Bank of India (SBI)", needles: /state\s*bank|\bsbi\b/i },
+  { label: "HDFC Bank", needles: /\bhdfc\b/i },
+  { label: "ICICI Bank", needles: /\bicici\b/i },
+  { label: "Axis Bank", needles: /\baxis\b/i },
+  { label: "Kotak Mahindra Bank", needles: /kotak/i },
+  { label: "Punjab National Bank (PNB)", needles: /punjab\s*national|\bpnb\b/i },
+  { label: "Bank of Baroda", needles: /bank\s*of\s*baroda|\bbob\b/i },
+  { label: "Canara Bank", needles: /canara/i },
+  { label: "Union Bank of India", needles: /union\s*bank/i },
+  { label: "Bank of India", needles: /bank\s*of\s*india|\bboi\b/i },
+  { label: "IndusInd Bank", needles: /indusind/i },
+  { label: "Yes Bank", needles: /\byes\s*bank\b/i },
+  { label: "IDFC First Bank", needles: /idfc/i },
+  { label: "Indian Bank", needles: /\bindian\s*bank\b/i },
+  { label: "Central Bank of India", needles: /central\s*bank/i },
+  { label: "Bajaj Finserv", needles: /bajaj/i },
+];
+
+// Maps an arbitrary bank string to a canonical dropdown label (or "Other").
+export function normalizeBank(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const s = raw.trim();
+  if (!s) return null;
+  for (const m of BANK_MATCHERS) if (m.needles.test(s)) return m.label;
+  return "Other";
+}
+
+// Detects a lender in free text: first a labelled value ("Bank: HDFC Bank",
+// "Lender - ICICI"), then any known bank name appearing anywhere in the text.
+export function pickBank(flat: string): string | null {
+  const labeled = flat.match(
+    /(?:bank\s*name|lender|financier|lending\s*institution|bank)\s*[:\-]\s*([A-Za-z][A-Za-z.&'() ]{2,40})/i
+  );
+  if (labeled) {
+    const norm = normalizeBank(labeled[1]);
+    if (norm && norm !== "Other") return norm;
+  }
+  for (const m of BANK_MATCHERS) if (m.needles.test(flat)) return m.label;
+  return labeled ? "Other" : null;
+}
+
 // ─── Structured parsers (JSON / CSV) ─────────────────────────────────────────
 
 const KEY_ALIASES: Record<keyof typeof EMPTY, string[]> = {
   borrowerName: ["borrowername", "borrower", "name", "lentto", "customer", "party", "person"],
+  bankName: ["bankname", "bank", "lender", "financier", "institution", "nbfc", "lendername", "lendinginstitution"],
   principalAmount: ["principalamount", "principal", "loanamount", "amount", "loan", "sanctioned", "disbursed"],
   interestRate: ["interestrate", "interest", "rate", "roi", "apr", "annualrate"],
+  tenureMonths: ["tenuremonths", "tenure", "tenor", "term", "loanterm", "duration", "period", "repaymentperiod", "months"],
   startDate: ["startdate", "start", "disbursaldate", "disbursementdate", "loandate", "from", "issued"],
   dueDate: ["duedate", "due", "enddate", "end", "maturity", "maturitydate", "to", "repaymentdate"],
   description: ["description", "desc", "notes", "remark", "remarks", "purpose"],
@@ -216,8 +285,13 @@ function mapRecord(rec: Record<string, unknown>): Omit<ExtractedData, "confidenc
       const v = pick(KEY_ALIASES.borrowerName);
       return v == null ? null : String(v).trim() || null;
     })(),
+    bankName: ((): string | null => {
+      const v = pick(KEY_ALIASES.bankName);
+      return v == null ? null : normalizeBank(String(v));
+    })(),
     principalAmount: parseAmount(pick(KEY_ALIASES.principalAmount) as string | number | null),
     interestRate: parseRate(pick(KEY_ALIASES.interestRate) as string | number | null),
+    tenureMonths: parseTenure(pick(KEY_ALIASES.tenureMonths) as string | number | null),
     startDate: normalizeDate(pick(KEY_ALIASES.startDate) as string | null),
     dueDate: normalizeDate(pick(KEY_ALIASES.dueDate) as string | null),
     description: ((): string | null => {
@@ -321,12 +395,15 @@ export function fromText(text: string): Omit<ExtractedData, "confidence" | "note
     if (!out.startDate && sorted[0]) out.startDate = sorted[0];
     if (!out.dueDate && sorted.length > 1) out.dueDate = sorted[sorted.length - 1];
   }
-  // If a start date is known but the due date isn't, derive it from the tenure
-  // (e.g. "Tenure: 240 months" → start + 240 months).
-  if (out.startDate && !out.dueDate) {
-    const months = pickTenureMonths(flat);
-    if (months) out.dueDate = addMonths(out.startDate, months);
+  // Tenure (in months) as a first-class field. Also used to derive a due date
+  // when only a start date is present ("Tenure: 240 months" → start + 240).
+  out.tenureMonths = pickTenureMonths(flat);
+  if (out.startDate && !out.dueDate && out.tenureMonths) {
+    out.dueDate = addMonths(out.startDate, out.tenureMonths);
   }
+
+  // Lender / bank, normalised to a known dropdown label where possible.
+  out.bankName = pickBank(flat);
 
   // Borrower name. Matched on the raw text (not "flat") so a newline ends the
   // name; a colon/dash separator is required to avoid grabbing prose like
@@ -371,9 +448,11 @@ function score(
   const got: string[] = [];
   if (d.principalAmount != null) got.push("amount");
   if (d.interestRate != null) got.push("rate");
+  if (d.tenureMonths != null) got.push("tenure");
   if (d.startDate) got.push("start date");
   if (d.dueDate) got.push("due date");
   if (d.borrowerName) got.push("name");
+  if (d.bankName) got.push("bank");
 
   let confidence: ExtractedData["confidence"];
   if (got.length >= 4) confidence = "high";

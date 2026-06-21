@@ -106,6 +106,14 @@ const DATE_FORMATS: UserSettingsData["dateFormat"][] = [
   "YYYY-MM-DD",
 ];
 
+type NotificationPrefs = UserSettingsData["notifications"];
+type BooleanNotificationKey = Extract<
+  {
+    [K in keyof NotificationPrefs]-?: NotificationPrefs[K] extends boolean ? K : never;
+  }[keyof NotificationPrefs],
+  string
+>;
+
 const SECTIONS = [
   { id: "appearance", title: "Appearance", icon: Palette, keywords: "theme dark light system font size text motion accessibility display reduce animation" },
   { id: "region", title: "Language & Region", icon: Globe, keywords: "currency locale number date format language region rupee dollar" },
@@ -186,14 +194,6 @@ function Row({
       </div>
       <div className="shrink-0">{children}</div>
     </div>
-  );
-}
-
-function ComingSoon() {
-  return (
-    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
-      Coming soon
-    </span>
   );
 }
 
@@ -476,7 +476,7 @@ export function SettingsPage() {
                 { key: "prepaymentReminder", label: "Prepayment nudges", hint: "Suggestions when prepaying saves interest." },
                 { key: "weeklySummary", label: "Weekly summary", hint: "A weekly digest of your loans." },
                 { key: "monthlySummary", label: "Monthly summary", hint: "A monthly overview of progress." },
-              ] as { key: keyof UserSettingsData["notifications"]; label: string; hint: string }[]
+              ] as { key: BooleanNotificationKey; label: string; hint: string }[]
             ).map((n) => (
               <Row key={n.key} label={n.label} hint={n.hint}>
                 <Switch
@@ -491,21 +491,67 @@ export function SettingsPage() {
                 />
               </Row>
             ))}
-            <Row label="Email notifications" hint="Delivery channel — not yet available.">
-              <div className="flex items-center gap-3">
-                <ComingSoon />
-                <Switch checked={false} disabled aria-label="Email notifications" />
-              </div>
+            <Row label="Email notifications" hint="Receive reminders and summaries by email.">
+              <Switch
+                checked={draft.notifications.emailNotifications}
+                onCheckedChange={(v) =>
+                  setDraft((d) => ({
+                    ...d,
+                    notifications: { ...d.notifications, emailNotifications: v },
+                  }))
+                }
+                aria-label="Email notifications"
+              />
             </Row>
-            <Row label="Push notifications" hint="Delivery channel — not yet available.">
-              <div className="flex items-center gap-3">
-                <ComingSoon />
-                <Switch checked={false} disabled aria-label="Push notifications" />
-              </div>
+            <Row label="Push notifications" hint="Get push alerts on your devices.">
+              <Switch
+                checked={draft.notifications.pushNotifications}
+                onCheckedChange={(v) =>
+                  setDraft((d) => ({
+                    ...d,
+                    notifications: { ...d.notifications, pushNotifications: v },
+                  }))
+                }
+                aria-label="Push notifications"
+              />
             </Row>
+            <Row label="WhatsApp notifications" hint="Get reminders on WhatsApp.">
+              <Switch
+                checked={draft.notifications.whatsappNotifications}
+                onCheckedChange={(v) =>
+                  setDraft((d) => ({
+                    ...d,
+                    notifications: { ...d.notifications, whatsappNotifications: v },
+                  }))
+                }
+                aria-label="WhatsApp notifications"
+              />
+            </Row>
+            {draft.notifications.whatsappNotifications && (
+              <Row label="WhatsApp number" hint="Include country code, e.g. +91 98765 43210.">
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="+91 98765 43210"
+                  value={draft.notifications.whatsappNumber ?? ""}
+                  onChange={(e) =>
+                    setDraft((d) => ({
+                      ...d,
+                      notifications: {
+                        ...d.notifications,
+                        whatsappNumber: e.target.value || null,
+                      },
+                    }))
+                  }
+                  className="w-56"
+                  aria-label="WhatsApp number"
+                />
+              </Row>
+            )}
             <p className="mt-3 rounded-xl bg-slate-50 p-3 text-xs font-medium text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
-              Reminders currently appear in-app (e.g. overdue alerts on your dashboard).
-              Email and push delivery are on the roadmap.
+              Reminders appear in-app today (e.g. overdue alerts on your dashboard).
+              Your channel choices above are saved to your account and used for email,
+              push, and WhatsApp delivery as those channels roll out.
             </p>
           </SectionCard>
 

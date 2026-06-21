@@ -142,7 +142,9 @@ export const GetSettingsResponse = zod.object({
   "weeklySummary": zod.boolean(),
   "monthlySummary": zod.boolean(),
   "emailNotifications": zod.boolean(),
-  "pushNotifications": zod.boolean()
+  "pushNotifications": zod.boolean(),
+  "whatsappNotifications": zod.boolean(),
+  "whatsappNumber": zod.string().nullish().describe('WhatsApp number (with country code) for WhatsApp reminders')
 })
 }),
   "updatedAt": zod.string().nullable()
@@ -166,7 +168,9 @@ export const UpdateSettingsBody = zod.object({
   "weeklySummary": zod.boolean(),
   "monthlySummary": zod.boolean(),
   "emailNotifications": zod.boolean(),
-  "pushNotifications": zod.boolean()
+  "pushNotifications": zod.boolean(),
+  "whatsappNotifications": zod.boolean(),
+  "whatsappNumber": zod.string().nullish().describe('WhatsApp number (with country code) for WhatsApp reminders')
 })
 })
 
@@ -185,7 +189,9 @@ export const UpdateSettingsResponse = zod.object({
   "weeklySummary": zod.boolean(),
   "monthlySummary": zod.boolean(),
   "emailNotifications": zod.boolean(),
-  "pushNotifications": zod.boolean()
+  "pushNotifications": zod.boolean(),
+  "whatsappNotifications": zod.boolean(),
+  "whatsappNumber": zod.string().nullish().describe('WhatsApp number (with country code) for WhatsApp reminders')
 })
 }),
   "updatedAt": zod.string().nullable()

@@ -162,8 +162,10 @@ describe("fromJSON", () => {
     });
     expect(fromJSON(json)).toEqual({
       borrowerName: "Asha",
+      bankName: null,
       principalAmount: 200000,
       interestRate: 12,
+      tenureMonths: null,
       startDate: "2025-01-12",
       dueDate: "2026-01-12",
       description: "Home repair",
@@ -181,12 +183,26 @@ describe("fromJSON", () => {
     });
     expect(fromJSON(json)).toEqual({
       borrowerName: "Ravi",
+      bankName: null,
       principalAmount: 50000,
       interestRate: 8.5,
+      tenureMonths: null,
       startDate: "2025-02-01",
       dueDate: "2026-02-01",
       description: "Bike loan",
     });
+  });
+
+  it("maps bank and tenure fields", () => {
+    const json = JSON.stringify({
+      borrower: "Kiran",
+      bank: "HDFC Bank",
+      principal: 500000,
+      tenure: "20 years",
+    });
+    const out = fromJSON(json);
+    expect(out.bankName).toBe("HDFC Bank");
+    expect(out.tenureMonths).toBe(240);
   });
 
   it("uses the first element when given an array", () => {
@@ -199,8 +215,10 @@ describe("fromJSON", () => {
   it("returns nulls for missing fields", () => {
     expect(fromJSON("{}")).toEqual({
       borrowerName: null,
+      bankName: null,
       principalAmount: null,
       interestRate: null,
+      tenureMonths: null,
       startDate: null,
       dueDate: null,
       description: null,
@@ -218,8 +236,10 @@ describe("fromCSV", () => {
     const csv = "Borrower,Amount,Rate,Start,Due,Purpose\nNeha,75000,9%,01/03/2025,01/03/2026,Education";
     expect(fromCSV(csv)).toEqual({
       borrowerName: "Neha",
+      bankName: null,
       principalAmount: 75000,
       interestRate: 9,
+      tenureMonths: null,
       startDate: "2025-03-01",
       dueDate: "2026-03-01",
       description: "Education",
@@ -280,6 +300,25 @@ describe("fromText", () => {
   it("extracts the borrower name from a label", () => {
     const out = fromText("Borrower: Ramesh Kumar\nAmount due soon.");
     expect(out.borrowerName).toBe("Ramesh Kumar");
+  });
+
+  it("extracts a known bank name to its canonical label", () => {
+    expect(fromText("Loan sanctioned by HDFC Bank Ltd.").bankName).toBe("HDFC Bank");
+    expect(fromText("Lender: State Bank of India").bankName).toBe(
+      "State Bank of India (SBI)"
+    );
+    expect(fromText("Issued by ICICI for home purchase.").bankName).toBe("ICICI Bank");
+  });
+
+  it("maps an unknown labelled lender to \"Other\"", () => {
+    expect(fromText("Bank name: Acme Cooperative Society").bankName).toBe("Other");
+  });
+
+  it("extracts tenure in months and derives the due date from the start date", () => {
+    const out = fromText("Start date: 01/01/2025. Tenure: 24 months.");
+    expect(out.tenureMonths).toBe(24);
+    expect(out.startDate).toBe("2025-01-01");
+    expect(out.dueDate).toBe("2027-01-01");
   });
 
   it("returns all-null when nothing matches", () => {

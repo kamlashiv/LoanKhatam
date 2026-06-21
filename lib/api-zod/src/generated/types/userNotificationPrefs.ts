@@ -14,4 +14,10 @@ export interface UserNotificationPrefs {
   monthlySummary: boolean;
   emailNotifications: boolean;
   pushNotifications: boolean;
+  whatsappNotifications: boolean;
+  /**
+     * WhatsApp number (with country code) for WhatsApp reminders
+     * @nullable
+     */
+  whatsappNumber?: string | null;
 }

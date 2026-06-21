@@ -30,8 +30,23 @@ export const DEFAULT_SETTINGS: UserSettingsData = {
     monthlySummary: false,
     emailNotifications: false,
     pushNotifications: false,
+    whatsappNotifications: false,
+    whatsappNumber: null,
   },
 };
+
+/**
+ * Settings stored before a notification field existed won't have it. Merge the
+ * loaded blob over the defaults so newer toggles (e.g. WhatsApp) are always
+ * present and controlled, rather than `undefined`.
+ */
+function normalizeSettings(s: UserSettingsData): UserSettingsData {
+  return {
+    ...DEFAULT_SETTINGS,
+    ...s,
+    notifications: { ...DEFAULT_SETTINGS.notifications, ...s.notifications },
+  };
+}
 
 interface PreferencesContextValue {
   settings: UserSettingsData;
@@ -63,9 +78,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (data?.data) {
-      setLocal(data.data);
+      const normalized = normalizeSettings(data.data);
+      setLocal(normalized);
       setUpdatedAt(data.updatedAt ?? null);
-      applyFormat(data.data);
+      applyFormat(normalized);
     }
   }, [data]);
 

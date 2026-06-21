@@ -32,6 +32,8 @@ export const DEFAULT_SETTINGS = {
     monthlySummary: false,
     emailNotifications: false,
     pushNotifications: false,
+    whatsappNotifications: false,
+    whatsappNumber: null,
   },
 };
 

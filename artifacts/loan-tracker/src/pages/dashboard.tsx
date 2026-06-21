@@ -21,8 +21,10 @@ import { OverspendAlert } from "@/components/budget-warnings";
 
 interface ExtractedLoan {
   borrowerName: string | null;
+  bankName: string | null;
   principalAmount: number | null;
   interestRate: number | null;
+  tenureMonths: number | null;
   startDate: string | null;
   dueDate: string | null;
   description: string | null;
@@ -77,8 +79,10 @@ function ImportModal({ onClose }: { onClose: () => void }) {
     if (!data) return;
     const params = new URLSearchParams();
     if (data.borrowerName) params.set("borrowerName", data.borrowerName);
+    if (data.bankName) params.set("bank", data.bankName);
     if (data.principalAmount) params.set("principalAmount", data.principalAmount.toString());
     if (data.interestRate) params.set("interestRate", data.interestRate.toString());
+    if (data.tenureMonths) params.set("tenureMonths", data.tenureMonths.toString());
     if (data.startDate) params.set("startDate", data.startDate);
     if (data.dueDate) params.set("dueDate", data.dueDate);
     if (data.description) params.set("description", data.description);
@@ -214,8 +218,10 @@ function ImportModal({ onClose }: { onClose: () => void }) {
               <div className="border border-border rounded-lg divide-y divide-border overflow-hidden">
                 {[
                   { label: "Borrower", value: data.borrowerName },
+                  { label: "Bank", value: data.bankName },
                   { label: "Principal", value: data.principalAmount ? `₹${data.principalAmount.toLocaleString("en-IN")}` : null },
                   { label: "Interest Rate", value: data.interestRate ? `${data.interestRate}% p.a.` : null },
+                  { label: "Tenure", value: data.tenureMonths ? `${data.tenureMonths} months` : null },
                   { label: "Start Date", value: data.startDate },
                   { label: "Due Date", value: data.dueDate },
                   { label: "Description", value: data.description },

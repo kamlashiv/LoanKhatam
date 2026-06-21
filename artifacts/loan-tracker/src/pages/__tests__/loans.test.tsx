@@ -18,6 +18,7 @@ import userEvent from "@testing-library/user-event";
 jest.mock("wouter", () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
   useSearch: () => "",
+  useLocation: () => ["/loans", jest.fn()],
 }));
 
 // Control the list hook. It is called with `{ status }` (or undefined for

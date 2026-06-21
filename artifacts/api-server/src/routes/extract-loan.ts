@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import multer from "multer";
 import OpenAI from "openai";
 import { logger } from "../lib/logger";
+import { rateLimitPerUser } from "../lib/rate-limit";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
@@ -43,7 +44,12 @@ Rules:
 - Do NOT guess. If a value is genuinely unclear or absent, use null and lower the confidence accordingly. Set "confidence" to "high" only when the core fields (amount, rate, dates) are read with certainty.
 - Return ONLY the JSON, no markdown, no explanation`;
 
-router.post("/", requireAuth, upload.single("file"), async (req: any, res) => {
+router.post(
+  "/",
+  requireAuth,
+  rateLimitPerUser(20, 60 * 1000),
+  upload.single("file"),
+  async (req: any, res) => {
   try {
     let buffer: Buffer;
     let mimetype: string;
@@ -134,6 +140,7 @@ router.post("/", requireAuth, upload.single("file"), async (req: any, res) => {
     }
     res.status(500).json({ error: err.message ?? "Extraction failed" });
   }
-});
+  },
+);
 
 export default router;

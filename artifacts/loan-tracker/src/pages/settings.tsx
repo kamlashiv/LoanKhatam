@@ -762,7 +762,10 @@ function DataManagementSection({ visible }: { visible: boolean }) {
       "remainingAmount",
     ];
     const escape = (v: unknown) => {
-      const s = v == null ? "" : String(v);
+      let s = v == null ? "" : String(v);
+      // Guard against CSV formula injection: a leading =, +, -, @, tab or CR
+      // can be executed as a formula when the file is opened in a spreadsheet.
+      if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const csv = [

@@ -5,6 +5,7 @@ import {
   scanGmailForFinancials,
   GmailNotConnectedError,
 } from "../lib/gmail";
+import { rateLimitPerUser } from "../lib/rate-limit";
 
 const router = Router();
 
@@ -43,25 +44,33 @@ router.get("/status", requireAuth, requireGmailOwner, async (req: any, res) => {
 });
 
 // POST /api/gmail/scan
-router.post("/scan", requireAuth, requireGmailOwner, async (req: any, res) => {
-  try {
-    const result = await scanGmailForFinancials();
-    req.log.info(
-      {
-        cards: result.cards.length,
-        loans: result.loans.length,
-        emailsScanned: result.emailsScanned,
-      },
-      "gmail scan complete",
-    );
-    return res.json(result);
-  } catch (err: any) {
-    if (err instanceof GmailNotConnectedError) {
-      return res.status(503).json({ error: "Gmail is not connected" });
+router.post(
+  "/scan",
+  requireAuth,
+  requireGmailOwner,
+  rateLimitPerUser(6, 60 * 1000),
+  async (req: any, res) => {
+    try {
+      const result = await scanGmailForFinancials();
+      req.log.info(
+        {
+          cards: result.cards.length,
+          loans: result.loans.length,
+          emailsScanned: result.emailsScanned,
+        },
+        "gmail scan complete",
+      );
+      return res.json(result);
+    } catch (err: any) {
+      if (err instanceof GmailNotConnectedError) {
+        return res.status(503).json({ error: "Gmail is not connected" });
+      }
+      req.log.error({ err }, "gmail scan failed");
+      return res
+        .status(500)
+        .json({ error: err.message ?? "Gmail scan failed" });
     }
-    req.log.error({ err }, "gmail scan failed");
-    return res.status(500).json({ error: err.message ?? "Gmail scan failed" });
-  }
-});
+  },
+);
 
 export default router;

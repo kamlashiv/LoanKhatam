@@ -5,10 +5,14 @@ import { useTheme } from "@/lib/theme";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
 import {
   Wallet, LayoutDashboard, List, LogOut, Plus, Menu, BarChart3, Target, Flame,
-  Sun, Moon, Sparkles, UserCircle, Settings,
+  Sun, Moon, Sparkles, UserCircle, Settings, Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { ShareApp } from "@/components/share-app";
+
+const shareButtonClassName =
+  "w-full justify-start gap-3 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100";
 
 function ThemeToggle({ className }: { className?: string }) {
   const { isDark, toggleTheme } = useTheme();
@@ -149,6 +153,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="mt-auto space-y-3">
               <StayOnTopCard />
+              <ShareApp
+                trigger={
+                  <Button variant="ghost" className={shareButtonClassName}>
+                    <Share2 className="h-5 w-5" />
+                    Share app
+                  </Button>
+                }
+              />
               <Button
                 variant="ghost"
                 className="w-full justify-start gap-3 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
@@ -181,6 +193,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
         <div className="space-y-3">
           <StayOnTopCard />
+          <ShareApp
+            trigger={
+              <Button variant="ghost" className={shareButtonClassName}>
+                <Share2 className="h-5 w-5" />
+                Share app
+              </Button>
+            }
+          />
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"

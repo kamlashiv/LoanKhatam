@@ -28,12 +28,15 @@ jest.mock("recharts", () => {
 // drive its budget hints; both rely on providers we don't mount here, so stub
 // the hooks (an empty profile / no loans). The page's loan parameters default
 // to static values, so this does not affect any engine assertions below.
+// `mockProfile` lets a test inject a specific profile (e.g. one with a
+// fractional monthly surplus); it defaults to the empty profile otherwise.
+let mockProfile: unknown = null;
 jest.mock("@/lib/profile", () => {
   const actual = jest.requireActual("@/lib/profile");
   return {
     ...actual,
     useProfile: () => ({
-      profile: actual.EMPTY_PROFILE,
+      profile: mockProfile ?? actual.EMPTY_PROFILE,
       update: jest.fn(),
       isLoading: false,
       saveStatus: "idle",
@@ -52,6 +55,7 @@ jest.mock("@/lib/loan-derive", () => ({
 
 import { Planner } from "../planner";
 import { ThemeProvider } from "@/lib/theme";
+import { EMPTY_PROFILE } from "@/lib/profile";
 import { formatRupees } from "@/lib/loan-utils";
 import { simulatePlan, type PlannerInput } from "@/lib/planner-engine";
 
@@ -116,6 +120,12 @@ function hasText(expected: string) {
 }
 
 describe("Planner page", () => {
+  beforeEach(() => {
+    // Reset the injected profile so each test starts from the empty profile
+    // unless it opts into a specific one.
+    mockProfile = null;
+  });
+
   it("renders the baseline plan's numbers from the engine", () => {
     renderPlanner();
 
@@ -300,5 +310,40 @@ describe("Planner page", () => {
     expect(
       within(row).getByText(formatRupees(planFirstYear.closing))
     ).toBeInTheDocument();
+  });
+
+  it("applies the floored surplus from the nudge so it never goes over budget", () => {
+    // A profile whose monthly surplus has a fractional part: income only, no
+    // expenses, so surplus = 12345.6. Math.floor → 12345, Math.round → 12346.
+    // If the nudge rounded up it would set extraEMI ABOVE the real surplus and
+    // immediately trip the over-budget caution — this test locks in flooring.
+    const surplus = 12345.6;
+    mockProfile = { ...EMPTY_PROFILE, monthlyIncome: surplus };
+    const safeAmount = Math.floor(surplus); // 12345
+    const roundedUp = Math.round(surplus); // 12346
+    expect(roundedUp).toBeGreaterThan(safeAmount); // sanity: rounding up exceeds
+
+    renderPlanner();
+
+    // The nudge advertises the floored surplus, not the rounded-up value.
+    const nudge = screen.getByRole("button", {
+      name: /Tap to apply it as extra EMI/,
+    });
+    expect(nudge).toHaveTextContent(formatRupees(safeAmount));
+    expect(nudge).not.toHaveTextContent(formatRupees(roundedUp));
+
+    fireEvent.click(nudge);
+
+    // Extra EMI is set to the floored surplus (whole rupees, within budget).
+    expect(inputByLabel(/Extra Monthly Payment/).value).toBe(String(safeAmount));
+
+    // Because the applied amount stays at or below the real surplus, the
+    // over-budget caution and its "use a safe amount" shortcut never appear.
+    expect(
+      screen.queryByText(/more than your estimated monthly surplus/)
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /Use a safe amount/ })
+    ).toBeNull();
   });
 });

@@ -5,7 +5,7 @@ import { useTheme } from "@/lib/theme";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
 import {
   Wallet, LayoutDashboard, List, LogOut, Plus, Menu, BarChart3, Target, Flame,
-  Sun, Moon, Sparkles, UserCircle, Settings, Share2,
+  Sun, Moon, Sparkles, UserCircle, Settings, Share2, CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -32,6 +32,7 @@ function ThemeToggle({ className }: { className?: string }) {
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/credit-cards", label: "Cards & Accounts", icon: CreditCard },
   { href: "/profile", label: "Financial Profile", icon: UserCircle },
   { href: "/planner", label: "Smart Strategy", icon: Target },
   { href: "/strategy", label: "Financial Strategy", icon: Sparkles },

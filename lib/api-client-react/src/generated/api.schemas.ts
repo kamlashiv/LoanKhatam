@@ -84,6 +84,58 @@ export interface LoanUpdate {
   rateChanges?: RateChange[];
 }
 
+export interface CreditCard {
+  id: number;
+  userId: string;
+  bank: string;
+  cardName: string;
+  last4: string;
+  network: string;
+  creditLimit: number;
+  outstanding: number;
+  /** @nullable */
+  dueDate?: string | null;
+  createdAt: string;
+}
+
+export interface CreditCardInput {
+  /** @minLength 1 */
+  bank: string;
+  /** @minLength 1 */
+  cardName: string;
+  /**
+     * @minLength 4
+     * @maxLength 4
+     */
+  last4: string;
+  /** @minLength 1 */
+  network: string;
+  /** @minimum 0 */
+  creditLimit: number;
+  /** @minimum 0 */
+  outstanding?: number;
+  dueDate?: string;
+}
+
+export interface CreditCardUpdate {
+  /** @minLength 1 */
+  bank?: string;
+  /** @minLength 1 */
+  cardName?: string;
+  /**
+     * @minLength 4
+     * @maxLength 4
+     */
+  last4?: string;
+  /** @minLength 1 */
+  network?: string;
+  /** @minimum 0 */
+  creditLimit?: number;
+  /** @minimum 0 */
+  outstanding?: number;
+  dueDate?: string;
+}
+
 export interface Payment {
   id: number;
   loanId: number;

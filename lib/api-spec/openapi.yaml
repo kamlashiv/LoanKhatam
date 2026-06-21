@@ -408,6 +408,111 @@ paths:
         "401":
           description: Unauthorized
 
+  /credit-cards:
+    get:
+      operationId: listCreditCards
+      tags: [credit-cards]
+      summary: List all credit cards for current user
+      responses:
+        "200":
+          description: List of credit cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CreditCard"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: createCreditCard
+      tags: [credit-cards]
+      summary: Create a new credit card
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditCardInput"
+      responses:
+        "201":
+          description: Credit card created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditCard"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+
+  /credit-cards/{id}:
+    get:
+      operationId: getCreditCard
+      tags: [credit-cards]
+      summary: Get a credit card by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Credit card details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditCard"
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+    patch:
+      operationId: updateCreditCard
+      tags: [credit-cards]
+      summary: Update a credit card
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreditCardUpdate"
+      responses:
+        "200":
+          description: Updated credit card
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditCard"
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+    delete:
+      operationId: deleteCreditCard
+      tags: [credit-cards]
+      summary: Delete a credit card
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+        "401":
+          description: Unauthorized
+
   /dashboard/summary:
     get:
       operationId: getDashboardSummary
@@ -571,6 +676,96 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RateChange"
+
+    CreditCard:
+      type: object
+      required:
+        - id
+        - userId
+        - bank
+        - cardName
+        - last4
+        - network
+        - creditLimit
+        - outstanding
+        - createdAt
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        bank:
+          type: string
+        cardName:
+          type: string
+        last4:
+          type: string
+        network:
+          type: string
+        creditLimit:
+          type: number
+        outstanding:
+          type: number
+        dueDate:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    CreditCardInput:
+      type: object
+      required:
+        - bank
+        - cardName
+        - last4
+        - network
+        - creditLimit
+      properties:
+        bank:
+          type: string
+          minLength: 1
+        cardName:
+          type: string
+          minLength: 1
+        last4:
+          type: string
+          minLength: 4
+          maxLength: 4
+        network:
+          type: string
+          minLength: 1
+        creditLimit:
+          type: number
+          minimum: 0
+        outstanding:
+          type: number
+          minimum: 0
+        dueDate:
+          type: string
+
+    CreditCardUpdate:
+      type: object
+      properties:
+        bank:
+          type: string
+          minLength: 1
+        cardName:
+          type: string
+          minLength: 1
+        last4:
+          type: string
+          minLength: 4
+          maxLength: 4
+        network:
+          type: string
+          minLength: 1
+        creditLimit:
+          type: number
+          minimum: 0
+        outstanding:
+          type: number
+          minimum: 0
+        dueDate:
+          type: string
 
     Payment:
       type: object

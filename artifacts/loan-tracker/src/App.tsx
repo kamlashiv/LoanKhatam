@@ -14,6 +14,7 @@ import { Layout } from "@/components/layout";
 import { LandingPage } from "@/pages/landing";
 import { Dashboard } from "@/pages/dashboard";
 import { LoansList } from "@/pages/loans";
+import { CreditCardsList } from "@/pages/credit-cards";
 import { LoanDetail } from "@/pages/loan-detail";
 import { LoanForm } from "@/pages/loan-form";
 import { AllAmortization } from "@/pages/all-amortization";
@@ -205,6 +206,7 @@ function ClerkProviderWithRoutes() {
           
           <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
           <Route path="/loans" component={() => <ProtectedRoute component={LoansList} />} />
+          <Route path="/credit-cards" component={() => <ProtectedRoute component={CreditCardsList} />} />
           <Route path="/loans/new" component={() => <ProtectedRoute component={LoanForm} />} />
           <Route path="/loans/:id/edit" component={() => <ProtectedRoute component={LoanForm} />} />
           <Route path="/loans/:id" component={() => <ProtectedRoute component={LoanDetail} />} />

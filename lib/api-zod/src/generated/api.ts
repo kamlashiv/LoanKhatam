@@ -542,6 +542,122 @@ export const DeletePaymentParams = zod.object({
 
 
 /**
+ * @summary List all credit cards for current user
+ */
+export const ListCreditCardsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "bank": zod.string(),
+  "cardName": zod.string(),
+  "last4": zod.string(),
+  "network": zod.string(),
+  "creditLimit": zod.number(),
+  "outstanding": zod.number(),
+  "dueDate": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListCreditCardsResponse = zod.array(ListCreditCardsResponseItem)
+
+
+/**
+ * @summary Create a new credit card
+ */
+
+
+export const createCreditCardBodyLast4Min = 4;
+export const createCreditCardBodyLast4Max = 4;
+
+
+export const createCreditCardBodyCreditLimitMin = 0;
+
+export const createCreditCardBodyOutstandingMin = 0;
+
+
+
+export const CreateCreditCardBody = zod.object({
+  "bank": zod.string().min(1),
+  "cardName": zod.string().min(1),
+  "last4": zod.string().min(createCreditCardBodyLast4Min).max(createCreditCardBodyLast4Max),
+  "network": zod.string().min(1),
+  "creditLimit": zod.number().min(createCreditCardBodyCreditLimitMin),
+  "outstanding": zod.number().min(createCreditCardBodyOutstandingMin).optional(),
+  "dueDate": zod.string().optional()
+})
+
+
+/**
+ * @summary Get a credit card by ID
+ */
+export const GetCreditCardParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetCreditCardResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "bank": zod.string(),
+  "cardName": zod.string(),
+  "last4": zod.string(),
+  "network": zod.string(),
+  "creditLimit": zod.number(),
+  "outstanding": zod.number(),
+  "dueDate": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update a credit card
+ */
+export const UpdateCreditCardParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+export const updateCreditCardBodyLast4Min = 4;
+export const updateCreditCardBodyLast4Max = 4;
+
+
+export const updateCreditCardBodyCreditLimitMin = 0;
+
+export const updateCreditCardBodyOutstandingMin = 0;
+
+
+
+export const UpdateCreditCardBody = zod.object({
+  "bank": zod.string().min(1).optional(),
+  "cardName": zod.string().min(1).optional(),
+  "last4": zod.string().min(updateCreditCardBodyLast4Min).max(updateCreditCardBodyLast4Max).optional(),
+  "network": zod.string().min(1).optional(),
+  "creditLimit": zod.number().min(updateCreditCardBodyCreditLimitMin).optional(),
+  "outstanding": zod.number().min(updateCreditCardBodyOutstandingMin).optional(),
+  "dueDate": zod.string().optional()
+})
+
+export const UpdateCreditCardResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.string(),
+  "bank": zod.string(),
+  "cardName": zod.string(),
+  "last4": zod.string(),
+  "network": zod.string(),
+  "creditLimit": zod.number(),
+  "outstanding": zod.number(),
+  "dueDate": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a credit card
+ */
+export const DeleteCreditCardParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
  * @summary Get dashboard summary stats
  */
 export const GetDashboardSummaryResponse = zod.object({

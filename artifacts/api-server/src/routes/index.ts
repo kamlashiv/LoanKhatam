@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import loansRouter from "./loans";
+import creditCardsRouter from "./credit-cards";
 import paymentsRouter from "./payments";
 import dashboardRouter from "./dashboard";
 import extractLoanRouter from "./extract-loan";
@@ -14,6 +15,7 @@ const router: IRouter = Router();
 router.use(healthRouter);
 router.use(siteRouter);
 router.use("/loans", loansRouter);
+router.use("/credit-cards", creditCardsRouter);
 router.use("/loans/:id/payments", paymentsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/extract-loan", extractLoanRouter);

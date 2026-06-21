@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { SocialConnect } from "@/components/social-connect";
 import {
   Wallet,
   ShieldCheck,
@@ -219,6 +220,9 @@ export function LandingPage() {
           </Link>
         </div>
       </section>
+
+      {/* Connect with us */}
+      <SocialConnect />
 
       {/* Footer */}
       <footer className="bg-background border-t border-border py-12 px-6">

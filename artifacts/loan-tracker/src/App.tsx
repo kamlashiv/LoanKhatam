@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme";
+import { FramePreviewBanner } from "@/components/frame-preview-banner";
 
 import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/layout";
@@ -234,6 +235,7 @@ function App() {
   return (
     <ThemeProvider>
       <TooltipProvider>
+        <FramePreviewBanner />
         <WouterRouter base={basePath}>
           <ClerkProviderWithRoutes />
         </WouterRouter>

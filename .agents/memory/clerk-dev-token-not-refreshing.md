@@ -42,10 +42,12 @@ Clerk secrets, or changing `clerkProxyMiddleware` — the wiring is already cano
 token is simply stale. Remove the temporary JWT-decode logging once diagnosed.
 
 ## User-facing recovery
-Users often read the 401 as "the form/button is broken" (e.g. "create loan not working").
-Two mitigations already shipped in loan-tracker:
-- Mutation `onError` handlers are status-aware: 401/403 show a "Session expired — open the
-  app in its own tab and sign in again" toast, not a generic "review the details" message.
-- Settings → Data Management has a "Clear cookies & saved data" control (AlertDialog →
-  clears local/session storage + JS cookies + Clerk `signOut()` + reload to BASE_URL) as a
-  one-click reset when a session gets stuck.
+Non-technical users read the 401 as "the feature is broken" (e.g. "create loan not working"),
+not as a session/iframe issue, and chat instructions to "open in a new tab" often don't land.
+Surface the fix *in the UI* rather than only in chat:
+- Detect iframe context (`window.self !== window.top`) and show an in-app banner with an
+  "Open in new tab" button. Gate on iframe so it never shows top-level or in production.
+- Make mutation `onError` 401/403-aware (actionable "session expired" copy, not generic
+  validation copy).
+- Offer a one-click local reset (clear storage + JS cookies + Clerk `signOut()` + reload)
+  for when a session gets wedged.

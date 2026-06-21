@@ -12,8 +12,10 @@ import { Progress } from "@/components/ui/progress";
 import {
   UserCircle, Wallet, Receipt, ShoppingBag, Landmark, Target, Gauge,
   RefreshCw, Sparkles, TrendingUp, FileText, Upload, X, Loader2,
-  CheckCircle, CheckCircle2, AlertTriangle, AlertCircle,
+  CheckCircle, CheckCircle2, AlertTriangle, AlertCircle, Undo2,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { averageMonths, type MonthState } from "@/lib/month-breakdown";
 import { formatRupees } from "@/lib/loan-utils";
 import { GOAL_OPTIONS, type RiskProfile } from "@/lib/strategy-engine";
 import {
@@ -48,19 +50,68 @@ const MONTH_NAMES = [
 
 // Shows the per-month totals that were averaged into a category's figure, so
 // the user can spot an off month (e.g. a one-off purchase) before applying.
-function MonthBreakdown({ months }: { months: ExpenseMonth[] }) {
+// Each month can be edited or excluded, and the category's value recomputes
+// from the kept months.
+function MonthBreakdown({
+  fieldKey,
+  months,
+  state,
+  disabled,
+  onEditMonth,
+  onToggleMonth,
+}: {
+  fieldKey: ExpenseKey;
+  months: ExpenseMonth[];
+  state: Record<string, MonthState>;
+  disabled: boolean;
+  onEditMonth: (key: ExpenseKey, month: string, value: string) => void;
+  onToggleMonth: (key: ExpenseKey, month: string) => void;
+}) {
   const multiYear = new Set(months.map((m) => m.month.slice(0, 4))).size > 1;
+  const keptCount = months.filter((m) => !state[m.month]?.excluded).length;
   return (
-    <div className="mt-1.5 ml-7 flex flex-wrap gap-x-3 gap-y-1">
+    <div className="mt-1.5 ml-7 flex flex-wrap items-center gap-x-2 gap-y-1.5">
       <span className="text-[11px] text-muted-foreground/70">
-        Avg of {months.length} months:
+        Avg of {keptCount} {keptCount === 1 ? "month" : "months"}:
       </span>
-      {months.map((m) => (
-        <span key={m.month} className="text-[11px] text-muted-foreground tabular-nums">
-          <span className="font-medium text-foreground/80">{formatRupees(m.total)}</span>{" "}
-          {monthLabel(m.month, multiYear)}
-        </span>
-      ))}
+      {months.map((m) => {
+        const st = state[m.month] ?? { value: String(m.total), excluded: false };
+        const label = monthLabel(m.month, multiYear);
+        return (
+          <span
+            key={m.month}
+            className={cn(
+              "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] tabular-nums",
+              st.excluded ? "border-dashed border-border/60 opacity-50" : "border-border",
+            )}
+          >
+            <span className="text-muted-foreground/80">₹</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={st.value}
+              disabled={disabled || st.excluded}
+              onChange={(e) => onEditMonth(fieldKey, m.month, e.target.value)}
+              aria-label={`${PROFILE_FIELD_LABELS[fieldKey]} amount for ${label}`}
+              className={cn(
+                "w-12 bg-transparent text-right font-medium text-foreground/80 outline-none",
+                st.excluded && "line-through",
+              )}
+            />
+            <span className="text-muted-foreground">{label}</span>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onToggleMonth(fieldKey, m.month)}
+              aria-label={`${st.excluded ? "Include" : "Exclude"} ${label}`}
+              title={st.excluded ? "Include this month" : "Exclude this month"}
+              className="text-muted-foreground/60 transition-colors hover:text-foreground disabled:opacity-40"
+            >
+              {st.excluded ? <Undo2 className="h-3 w-3" /> : <X className="h-3 w-3" />}
+            </button>
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -97,6 +148,12 @@ function ImportProfileModal({
   const [edits, setEdits] = useState<
     Partial<Record<keyof ExtractedProfileFields, string>>
   >({});
+  // Per-month state for averaged categories, so the user can edit or exclude an
+  // off month and have the category's average recompute. Keyed by category, then
+  // by "YYYY-MM".
+  const [monthEdits, setMonthEdits] = useState<
+    Partial<Record<ExpenseKey, Record<string, MonthState>>>
+  >({});
   const inputRef = useRef<HTMLInputElement>(null);
 
   const processFile = useCallback(async (file: File) => {
@@ -118,8 +175,18 @@ function ImportProfileModal({
         en[key] = true;
         ed[key] = String(v);
       }
+      // Seed per-month state from the breakdown so the chips are editable and
+      // start unchanged (no month excluded).
+      const me: Partial<Record<ExpenseKey, Record<string, MonthState>>> = {};
+      for (const [k, months] of Object.entries(extracted.breakdown)) {
+        if (!months) continue;
+        const rec: Record<string, MonthState> = {};
+        for (const m of months) rec[m.month] = { value: String(m.total), excluded: false };
+        me[k as ExpenseKey] = rec;
+      }
       setEnabled(en);
       setEdits(ed);
+      setMonthEdits(me);
       setData(extracted);
       setStatus("success");
     } catch (e) {
@@ -134,7 +201,33 @@ function ImportProfileModal({
     setFileName("");
     setEnabled({});
     setEdits({});
+    setMonthEdits({});
   };
+
+  // Apply a per-month mutation for a category and recompute that category's
+  // averaged value into `edits` so the row's final figure and what gets applied
+  // both stay in sync with the kept months. Uses functional updaters so rapid
+  // sequential edits/toggles never clobber each other (no stale-closure reads).
+  const mutateMonth = (
+    key: ExpenseKey,
+    month: string,
+    mutate: (cur: MonthState) => MonthState,
+  ) => {
+    setMonthEdits((prev) => {
+      const rec = { ...(prev[key] ?? {}) };
+      const cur = rec[month] ?? { value: "", excluded: false };
+      rec[month] = mutate(cur);
+      const avg = averageMonths(rec);
+      setEdits((e) => ({ ...e, [key]: avg == null ? "" : String(avg) }));
+      return { ...prev, [key]: rec };
+    });
+  };
+
+  const editMonth = (key: ExpenseKey, month: string, value: string) =>
+    mutateMonth(key, month, (cur) => ({ ...cur, value }));
+
+  const toggleMonth = (key: ExpenseKey, month: string) =>
+    mutateMonth(key, month, (cur) => ({ ...cur, excluded: !cur.excluded }));
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -337,7 +430,14 @@ function ImportProfileModal({
                             />
                           </div>
                           {months && months.length > 1 && (
-                            <MonthBreakdown months={months} />
+                            <MonthBreakdown
+                              fieldKey={key as ExpenseKey}
+                              months={months}
+                              state={monthEdits[key as ExpenseKey] ?? {}}
+                              disabled={!checked}
+                              onEditMonth={editMonth}
+                              onToggleMonth={toggleMonth}
+                            />
                           )}
                         </div>
                       );

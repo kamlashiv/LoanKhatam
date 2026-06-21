@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "wouter";
-import { UserProfile } from "@clerk/react";
+import { UserProfile, useClerk } from "@clerk/react";
 import {
   Palette,
   Globe,
@@ -21,6 +21,7 @@ import {
   Info,
   FileText,
   ExternalLink,
+  Trash2,
 } from "lucide-react";
 import {
   useListLoans,
@@ -39,6 +40,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -576,7 +588,39 @@ function DataManagementSection({ visible }: { visible: boolean }) {
   const { data: loans } = useListLoans();
   const { mutateAsync: createLoan } = useCreateLoan();
   const [importing, setImporting] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { signOut } = useClerk();
+
+  const handleClearAll = async () => {
+    setClearing(true);
+    try {
+      try {
+        window.localStorage.clear();
+      } catch {
+        /* storage may be unavailable */
+      }
+      try {
+        window.sessionStorage.clear();
+      } catch {
+        /* storage may be unavailable */
+      }
+      // Expire every cookie readable from JS, across host variants.
+      for (const cookie of document.cookie.split(";")) {
+        const name = cookie.split("=")[0]?.trim();
+        if (!name) continue;
+        const base = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+        document.cookie = base;
+        document.cookie = `${base};domain=${window.location.hostname}`;
+        document.cookie = `${base};domain=.${window.location.hostname}`;
+      }
+      await signOut();
+    } catch {
+      /* sign-out best effort — fall through to hard reload */
+    } finally {
+      window.location.replace(import.meta.env.BASE_URL);
+    }
+  };
 
   const download = (filename: string, content: string, type: string) => {
     const blob = new Blob([content], { type });
@@ -749,6 +793,47 @@ function DataManagementSection({ visible }: { visible: boolean }) {
         <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
           Imports create new loans from a previously exported JSON backup. Existing
           loans are never overwritten.
+        </p>
+      </div>
+      <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="gap-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/40"
+            >
+              <Trash2 className="h-4 w-4" />
+              Clear cookies & saved data
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Clear cookies & saved data?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This signs you out and erases everything saved on this device —
+                cookies, theme, preferences, planner inputs, and unsaved drafts.
+                Your loans stay safe in your account; you&apos;ll just need to sign
+                in again.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={clearing}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={clearing}
+                onClick={(e) => {
+                  e.preventDefault();
+                  void handleClearAll();
+                }}
+                className="bg-rose-600 hover:bg-rose-700 focus-visible:ring-rose-600"
+              >
+                {clearing ? "Clearing…" : "Clear everything"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+          Useful if the app gets stuck on a stale login. Loans saved to your
+          account are not deleted.
         </p>
       </div>
     </SectionCard>

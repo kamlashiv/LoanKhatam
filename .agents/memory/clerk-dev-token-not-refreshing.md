@@ -40,3 +40,12 @@ domain, so this never affects production.
 **Do NOT** "fix" this by adding `setAuthTokenGetter`/Bearer tokens to web, hand-editing
 Clerk secrets, or changing `clerkProxyMiddleware` — the wiring is already canonical; the
 token is simply stale. Remove the temporary JWT-decode logging once diagnosed.
+
+## User-facing recovery
+Users often read the 401 as "the form/button is broken" (e.g. "create loan not working").
+Two mitigations already shipped in loan-tracker:
+- Mutation `onError` handlers are status-aware: 401/403 show a "Session expired — open the
+  app in its own tab and sign in again" toast, not a generic "review the details" message.
+- Settings → Data Management has a "Clear cookies & saved data" control (AlertDialog →
+  clears local/session storage + JS cookies + Clerk `signOut()` + reload to BASE_URL) as a
+  one-click reset when a session gets stuck.

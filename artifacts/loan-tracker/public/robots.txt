@@ -1,2 +1,6 @@
 User-agent: *
 Allow: /
+
+# Replace the domain below with Ledger's canonical published URL
+# (your .replit.app deployment URL or custom domain) before relying on it.
+Sitemap: https://ledger.replit.app/sitemap.xml

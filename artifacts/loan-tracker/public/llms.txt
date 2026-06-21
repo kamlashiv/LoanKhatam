@@ -1,0 +1,10 @@
+# Ledger
+> Personal loan tracker for money lent to friends and family. Log loans, record repayments, and watch outstanding balances settle. Amounts are shown in Indian Rupees (₹) and dates in DD/MM/YYYY.
+
+## Public pages
+- /: Marketing landing page describing what Ledger does
+- /sign-in: Sign in to an existing Ledger account
+- /sign-up: Create a new Ledger account
+
+## Notes
+- All product features (dashboard, loans, repayment planner, strategy, profile) live behind authentication and are not part of the public, crawlable surface.

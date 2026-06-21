@@ -47,6 +47,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+const userProfileAppearance = {
+  elements: {
+    rootBox: "w-full",
+    cardBox:
+      "!w-full !max-w-full !shadow-none !border-0 !rounded-none !bg-transparent",
+    card: "!w-full !shadow-none !border-0 !bg-transparent",
+    navbar:
+      "border-r border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/30",
+    navbarButton:
+      "text-slate-600 font-medium rounded-lg hover:bg-white/80 dark:text-slate-300 dark:hover:bg-slate-800/50",
+    navbarButtonIcon: "text-slate-400",
+    scrollBox: "!bg-card",
+    pageScrollBox: "p-6",
+    headerTitle: "text-xl font-bold text-foreground tracking-tight",
+    headerSubtitle: "text-muted-foreground text-sm",
+    profileSection: "border-slate-100 dark:border-slate-800",
+    profileSectionTitleText: "text-foreground font-semibold",
+    profileSectionPrimaryButton:
+      "text-primary font-semibold rounded-lg hover:bg-primary/5",
+    accordionTriggerButton:
+      "rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50",
+    formButtonPrimary:
+      "bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90",
+    formFieldInput: "rounded-lg border-border",
+    badge: "rounded-full bg-primary/10 text-primary",
+    avatarBox: "rounded-full",
+    menuButton: "rounded-lg",
+  },
+};
+
 const CURRENCIES: { code: string; locale: string; label: string }[] = [
   { code: "INR", locale: "en-IN", label: "Indian Rupee (₹)" },
   { code: "USD", locale: "en-US", label: "US Dollar ($)" },
@@ -475,8 +505,8 @@ export function SettingsPage() {
             icon={ShieldCheck}
             visible={isVisible("account")}
           >
-            <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
-              <UserProfile routing="hash" />
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-card shadow-sm dark:border-slate-800">
+              <UserProfile routing="hash" appearance={userProfileAppearance} />
             </div>
           </SectionCard>
 

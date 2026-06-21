@@ -6,6 +6,10 @@ import {
   fromCSV,
   fromText,
   extractFromFile,
+  profileFromText,
+  profileFromJSON,
+  profileFromCSV,
+  extractProfileFromFile,
 } from "../file-extract";
 
 function makeFile(content: string, name: string, type: string): File {
@@ -372,6 +376,106 @@ describe("extractFromFile — confidence scoring & notes", () => {
   it("rejects unsupported file types", async () => {
     await expect(
       extractFromFile(makeFile("data", "loan.xyz", "application/octet-stream"))
+    ).rejects.toThrow("Unsupported file");
+  });
+});
+
+describe("profileFromText", () => {
+  it("prefers net pay over gross from a salary slip", () => {
+    const text =
+      "Employee Name: Anita Sharma\nGross Salary: Rs. 1,20,000\nNet Pay: Rs. 95,000";
+    const out = profileFromText(text);
+    expect(out.name).toBe("Anita Sharma");
+    expect(out.monthlyIncome).toBe(95000);
+  });
+
+  it("falls back to gross when no net pay is present", () => {
+    const out = profileFromText("Gross Salary Rs. 80,000 for the month");
+    expect(out.monthlyIncome).toBe(80000);
+  });
+
+  it("extracts recurring expenses from a bank statement", () => {
+    const text = [
+      "House Rent: Rs. 25,000",
+      "Electricity Bill: Rs. 2,400",
+      "Broadband: Rs. 999",
+      "Insurance Premium: Rs. 3,500",
+      "Groceries: Rs. 8,000",
+      "Petrol: Rs. 4,000",
+    ].join("\n");
+    const out = profileFromText(text);
+    expect(out.rent).toBe(25000);
+    expect(out.utilities).toBe(2400);
+    expect(out.internet).toBe(999);
+    expect(out.insurance).toBe(3500);
+    expect(out.food).toBe(8000);
+    expect(out.fuel).toBe(4000);
+  });
+
+  it("returns all-null when nothing relevant is present", () => {
+    const out = profileFromText("This document has no financial figures.");
+    expect(out.monthlyIncome).toBeNull();
+    expect(out.rent).toBeNull();
+    expect(out.name).toBeNull();
+  });
+});
+
+describe("profileFromJSON / profileFromCSV", () => {
+  it("maps JSON keys via aliases", () => {
+    const json = JSON.stringify({
+      name: "Ravi",
+      netPay: "70000",
+      rent: "20000",
+      otherIncome: "5000",
+    });
+    const out = profileFromJSON(json);
+    expect(out.name).toBe("Ravi");
+    expect(out.monthlyIncome).toBe(70000);
+    expect(out.additionalIncome).toBe(5000);
+    expect(out.rent).toBe(20000);
+  });
+
+  it("maps CSV header/value rows via aliases", () => {
+    const csv = "Name,Salary,Rent,Groceries\nNeha,85000,22000,9000";
+    const out = profileFromCSV(csv);
+    expect(out.name).toBe("Neha");
+    expect(out.monthlyIncome).toBe(85000);
+    expect(out.rent).toBe(22000);
+    expect(out.food).toBe(9000);
+  });
+});
+
+describe("extractProfileFromFile", () => {
+  it("scores 4+ extracted fields as high and labels the source", async () => {
+    const json = JSON.stringify({
+      name: "Anita",
+      netPay: "95000",
+      rent: "25000",
+      groceries: "8000",
+    });
+    const out = await extractProfileFromFile(makeFile(json, "p.json", "application/json"));
+    expect(out.confidence).toBe("high");
+    expect(out.notes).toContain("Extracted from JSON");
+    expect(out.notes).toContain("Please review before saving");
+  });
+
+  it("scores 2-3 fields as medium", async () => {
+    const csv = "Salary,Rent\n60000,18000";
+    const out = await extractProfileFromFile(makeFile(csv, "p.csv", "text/csv"));
+    expect(out.confidence).toBe("medium");
+  });
+
+  it("reports nothing found when no fields are extracted", async () => {
+    const out = await extractProfileFromFile(
+      makeFile("nothing useful here", "p.txt", "text/plain"),
+    );
+    expect(out.confidence).toBe("low");
+    expect(out.notes).toContain("No income or expense details found");
+  });
+
+  it("rejects unsupported file types", async () => {
+    await expect(
+      extractProfileFromFile(makeFile("data", "p.xyz", "application/octet-stream"))
     ).rejects.toThrow("Unsupported file");
   });
 });

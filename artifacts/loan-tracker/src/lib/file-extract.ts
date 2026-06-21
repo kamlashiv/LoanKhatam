@@ -464,3 +464,223 @@ export async function extractFromFile(
       throw new Error("Unsupported file. Please upload a JSON, CSV, PDF, or image (PNG/JPG) file.");
   }
 }
+
+// ─── Financial-profile extraction ────────────────────────────────────────────
+// Reuses the same on-device file→text pipeline as loan extraction, but maps the
+// content onto Global Financial Profile fields: monthly income from salary
+// slips, recurring expenses from bank statements. All values are best-effort
+// and reviewed by the user before anything is saved.
+
+export interface ExtractedProfileFields {
+  name: string | null;
+  monthlyIncome: number | null;
+  additionalIncome: number | null;
+  rent: number | null;
+  insurance: number | null;
+  utilities: number | null;
+  internet: number | null;
+  food: number | null;
+  fuel: number | null;
+}
+
+export interface ExtractedProfile extends ExtractedProfileFields {
+  confidence: "high" | "medium" | "low";
+  notes: string;
+}
+
+// Human labels for each field, used in review UI and confidence notes. The key
+// order also drives the order fields appear in the review card.
+export const PROFILE_FIELD_LABELS: Record<keyof ExtractedProfileFields, string> = {
+  name: "Name",
+  monthlyIncome: "Monthly Income",
+  additionalIncome: "Additional Income",
+  rent: "Rent",
+  insurance: "Insurance",
+  utilities: "Utilities",
+  internet: "Internet",
+  food: "Food",
+  fuel: "Fuel",
+};
+
+const EMPTY_PROFILE_FIELDS: ExtractedProfileFields = {
+  name: null,
+  monthlyIncome: null,
+  additionalIncome: null,
+  rent: null,
+  insurance: null,
+  utilities: null,
+  internet: null,
+  food: null,
+  fuel: null,
+};
+
+// Net/take-home pay wins over gross — it's what actually lands in the account.
+const NET_INCOME_RE =
+  /net\s*(?:pay|salary|payable|amount|earnings)|take[-\s]*home(?:\s*(?:pay|salary))?|amount\s*credited|salary\s*credited/i;
+const GROSS_INCOME_RE = /gross\s*(?:pay|salary|earnings)|total\s*earnings/i;
+
+// Per-category recurring-expense labels seen on Indian bank statements.
+const EXPENSE_RE: Record<
+  Exclude<keyof ExtractedProfileFields, "name" | "monthlyIncome" | "additionalIncome">,
+  RegExp
+> = {
+  rent: /house\s*rent|monthly\s*rent|\brent\b|landlord/i,
+  insurance: /insurance\s*premium|premium\s*paid|insurance|\blic\b|policy\s*premium/i,
+  utilities:
+    /electricity\s*bill|water\s*bill|gas\s*bill|utility\s*bill|utilities|power\s*bill|\bbescom\b|\bmseb\b|\btneb\b/i,
+  internet: /internet\s*bill|broadband|wi-?fi|fibernet|telecom\s*bill|mobile\s*(?:bill|recharge)/i,
+  food: /groceries|grocery|supermarket|big\s*basket|swiggy|zomato|food\s*expenses/i,
+  fuel: /fuel\s*(?:expense|cost)?|petrol|diesel|indian\s*oil|bharat\s*petroleum|hp\s*petrol/i,
+};
+
+const ADDITIONAL_INCOME_RE =
+  /additional\s*income|other\s*income|secondary\s*income|side\s*income|rental\s*income|freelance|bonus|incentive/i;
+
+// Finds an amount that sits just after a label (e.g. "Net Pay: Rs. 85,000").
+function labeledAmount(flat: string, label: RegExp): number | null {
+  const re = new RegExp(
+    `(?:${label.source})\\D{0,25}(₹|rs\\.?|inr)?\\s*([\\d,]+(?:\\.\\d+)?)\\s*(crore|cr|lakh|lac)?(?!\\s*%)`,
+    "i"
+  );
+  const m = flat.match(re);
+  if (!m) return null;
+  return parseAmount(`${m[2]} ${m[3] ?? ""}`);
+}
+
+export function profileFromText(text: string): ExtractedProfileFields {
+  const out = { ...EMPTY_PROFILE_FIELDS };
+  const flat = text.replace(/\s+/g, " ");
+
+  out.monthlyIncome = labeledAmount(flat, NET_INCOME_RE) ?? labeledAmount(flat, GROSS_INCOME_RE);
+  out.additionalIncome = labeledAmount(flat, ADDITIONAL_INCOME_RE);
+
+  for (const key of Object.keys(EXPENSE_RE) as (keyof typeof EXPENSE_RE)[]) {
+    out[key] = labeledAmount(flat, EXPENSE_RE[key]);
+  }
+
+  // Name on a salary slip / statement — colon or dash separated.
+  const name = text.match(
+    /(?:employee(?:'s)?\s*name|account\s*holder|name\s*of\s*(?:the\s*)?employee|customer\s*name|\bname)\s*[:\-]\s*([A-Za-z][A-Za-z.'\- ]{1,40})/i
+  );
+  if (name) {
+    const nm = name[1]
+      .trim()
+      .replace(/\s+/g, " ")
+      .split(/\s+(?:net|gross|pay|salary|date|account|emp|id|designation|department)\b/i)[0]
+      .trim();
+    if (nm) out.name = nm;
+  }
+
+  return out;
+}
+
+const PROFILE_KEY_ALIASES: Record<keyof ExtractedProfileFields, string[]> = {
+  name: ["name", "employeename", "accountholder", "fullname"],
+  monthlyIncome: [
+    "monthlyincome", "netpay", "netsalary", "takehome", "netamount", "income", "salary",
+  ],
+  additionalIncome: ["additionalincome", "otherincome", "secondaryincome", "bonus", "incentive"],
+  rent: ["rent", "houserent", "monthlyrent"],
+  insurance: ["insurance", "premium", "insurancepremium"],
+  utilities: ["utilities", "utility", "electricity", "power", "waterbill"],
+  internet: ["internet", "broadband", "wifi"],
+  food: ["food", "groceries", "grocery"],
+  fuel: ["fuel", "petrol", "diesel"],
+};
+
+function profileFromRecord(rec: Record<string, unknown>): ExtractedProfileFields {
+  const norm: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(rec)) {
+    norm[k.toLowerCase().replace(/[^a-z]/g, "")] = v;
+  }
+  const pick = (aliases: string[]): unknown => {
+    for (const a of aliases) if (norm[a] != null && norm[a] !== "") return norm[a];
+    return null;
+  };
+  return {
+    name: ((): string | null => {
+      const v = pick(PROFILE_KEY_ALIASES.name);
+      return v == null ? null : String(v).trim() || null;
+    })(),
+    monthlyIncome: parseAmount(pick(PROFILE_KEY_ALIASES.monthlyIncome) as string | number | null),
+    additionalIncome: parseAmount(pick(PROFILE_KEY_ALIASES.additionalIncome) as string | number | null),
+    rent: parseAmount(pick(PROFILE_KEY_ALIASES.rent) as string | number | null),
+    insurance: parseAmount(pick(PROFILE_KEY_ALIASES.insurance) as string | number | null),
+    utilities: parseAmount(pick(PROFILE_KEY_ALIASES.utilities) as string | number | null),
+    internet: parseAmount(pick(PROFILE_KEY_ALIASES.internet) as string | number | null),
+    food: parseAmount(pick(PROFILE_KEY_ALIASES.food) as string | number | null),
+    fuel: parseAmount(pick(PROFILE_KEY_ALIASES.fuel) as string | number | null),
+  };
+}
+
+export function profileFromJSON(text: string): ExtractedProfileFields {
+  const data = JSON.parse(text);
+  const rec = Array.isArray(data) ? data[0] : data;
+  if (!rec || typeof rec !== "object") throw new Error("No profile object found in the JSON file.");
+  return profileFromRecord(rec as Record<string, unknown>);
+}
+
+export function profileFromCSV(text: string): ExtractedProfileFields {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) throw new Error("CSV needs a header row and at least one data row.");
+  const headers = splitCSVLine(lines[0]);
+  const values = splitCSVLine(lines[1]);
+  const rec: Record<string, unknown> = {};
+  headers.forEach((h, i) => (rec[h] = values[i] ?? ""));
+  return profileFromRecord(rec);
+}
+
+function scoreProfile(d: ExtractedProfileFields, source: string): ExtractedProfile {
+  const got: string[] = [];
+  for (const key of Object.keys(PROFILE_FIELD_LABELS) as (keyof ExtractedProfileFields)[]) {
+    if (d[key] != null && d[key] !== "") got.push(PROFILE_FIELD_LABELS[key].toLowerCase());
+  }
+
+  let confidence: ExtractedProfile["confidence"];
+  if (got.length >= 4) confidence = "high";
+  else if (got.length >= 2) confidence = "medium";
+  else confidence = "low";
+
+  const notes =
+    got.length === 0
+      ? `No income or expense details found in ${source} — please fill the fields below manually.`
+      : `Extracted from ${source}: ${got.join(", ")}. Please review before saving.`;
+
+  return { ...d, confidence, notes };
+}
+
+export async function extractProfileFromFile(
+  file: File,
+  onProgress?: ExtractProgress
+): Promise<ExtractedProfile> {
+  const kind = fileKind(file);
+  switch (kind) {
+    case "json": {
+      onProgress?.({ stage: "reading" });
+      return scoreProfile(profileFromJSON(await file.text()), "JSON");
+    }
+    case "csv": {
+      onProgress?.({ stage: "reading" });
+      return scoreProfile(profileFromCSV(await file.text()), "CSV");
+    }
+    case "text": {
+      onProgress?.({ stage: "reading" });
+      return scoreProfile(profileFromText(await file.text()), "Text");
+    }
+    case "pdf": {
+      onProgress?.({ stage: "pdf" });
+      const text = await pdfToText(file);
+      if (!text.trim()) {
+        throw new Error("No text found in this PDF (it may be a scanned image) — upload a screenshot instead, or fill the form manually.");
+      }
+      return scoreProfile(profileFromText(text), "PDF");
+    }
+    case "image": {
+      onProgress?.({ stage: "ocr", percent: 0 });
+      const text = await imageToText(file, onProgress);
+      return scoreProfile(profileFromText(text), "Image (OCR)");
+    }
+    default:
+      throw new Error("Unsupported file. Please upload a JSON, CSV, PDF, or image (PNG/JPG) file.");
+  }
+}

@@ -6,6 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -53,6 +54,14 @@ function ImportProfileModal({
   const [errorMsg, setErrorMsg] = useState("");
   const [progress, setProgress] = useState<number | null>(null);
   const [drag, setDrag] = useState(false);
+  // Per-field state for the review card: which extracted fields are checked to
+  // apply, and the (editable) string value for each. Both keyed by field name.
+  const [enabled, setEnabled] = useState<
+    Partial<Record<keyof ExtractedProfileFields, boolean>>
+  >({});
+  const [edits, setEdits] = useState<
+    Partial<Record<keyof ExtractedProfileFields, string>>
+  >({});
   const inputRef = useRef<HTMLInputElement>(null);
 
   const processFile = useCallback(async (file: File) => {
@@ -64,6 +73,18 @@ function ImportProfileModal({
       const extracted = await extractProfileFromFile(file, (info) => {
         if (info.stage === "ocr" && info.percent != null) setProgress(info.percent);
       });
+      // Seed per-field selection (all on by default) and editable values from
+      // the non-empty extracted fields.
+      const en: Partial<Record<keyof ExtractedProfileFields, boolean>> = {};
+      const ed: Partial<Record<keyof ExtractedProfileFields, string>> = {};
+      for (const key of PROFILE_FIELD_ORDER) {
+        const v = extracted[key];
+        if (v == null || v === "") continue;
+        en[key] = true;
+        ed[key] = String(v);
+      }
+      setEnabled(en);
+      setEdits(ed);
       setData(extracted);
       setStatus("success");
     } catch (e) {
@@ -72,6 +93,14 @@ function ImportProfileModal({
     }
   }, []);
 
+  const resetUpload = () => {
+    setStatus("idle");
+    setData(null);
+    setFileName("");
+    setEnabled({});
+    setEdits({});
+  };
+
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDrag(false);
@@ -79,32 +108,47 @@ function ImportProfileModal({
     if (file) processFile(file);
   };
 
-  // Build a profile patch from the non-null extracted fields. Nothing is saved
-  // until the user clicks confirm — this just hands the patch to the page.
+  // Build a profile patch from only the checked fields, using the (possibly
+  // edited) values. Unchecked fields are omitted so the existing profile keeps
+  // its value. Nothing is saved until the user clicks confirm.
   const handleApply = () => {
     if (!data) return;
     const patch: Partial<ProfileData> = {};
-    if (data.name) patch.name = data.name;
-    if (data.monthlyIncome != null) patch.monthlyIncome = data.monthlyIncome;
-    if (data.additionalIncome != null) patch.additionalIncome = data.additionalIncome;
-    if (data.rent != null) patch.rent = data.rent;
-    if (data.insurance != null) patch.insurance = data.insurance;
-    if (data.utilities != null) patch.utilities = data.utilities;
-    if (data.internet != null) patch.internet = data.internet;
-    if (data.food != null) patch.food = data.food;
-    if (data.fuel != null) patch.fuel = data.fuel;
+    for (const key of reviewKeys) {
+      if (!enabled[key]) continue;
+      const raw = (edits[key] ?? "").trim();
+      if (raw === "") continue;
+      if (key === "name") {
+        patch.name = raw;
+      } else {
+        const n = Number(raw);
+        if (Number.isFinite(n)) (patch as Record<string, number>)[key] = n;
+      }
+    }
     onApply(patch);
     onClose();
   };
 
-  const reviewRows = data
-    ? PROFILE_FIELD_ORDER.map((key) => {
+  const toggleField = (key: keyof ExtractedProfileFields, on: boolean) =>
+    setEnabled((prev) => ({ ...prev, [key]: on }));
+  const editField = (key: keyof ExtractedProfileFields, value: string) =>
+    setEdits((prev) => ({ ...prev, [key]: value }));
+
+  // Keys with a non-empty extracted value, in display order — these are the
+  // rows shown for review.
+  const reviewKeys = data
+    ? PROFILE_FIELD_ORDER.filter((key) => {
         const v = data[key];
-        if (v == null || v === "") return null;
-        const value = key === "name" ? String(v) : formatRupees(Number(v));
-        return { label: PROFILE_FIELD_LABELS[key], value };
-      }).filter((r): r is { label: string; value: string } => r !== null)
+        return v != null && v !== "";
+      })
     : [];
+  const appliedCount = reviewKeys.filter((key) => {
+    if (!enabled[key]) return false;
+    const raw = (edits[key] ?? "").trim();
+    if (raw === "") return false;
+    // Numeric fields must parse to a finite number to actually be applied.
+    return key === "name" || Number.isFinite(Number(raw));
+  }).length;
 
   return (
     <div
@@ -226,15 +270,40 @@ function ImportProfileModal({
                 </span>
               </div>
 
-              {reviewRows.length > 0 ? (
+              {reviewKeys.length > 0 ? (
                 <>
                   <div className="border border-border rounded-lg divide-y divide-border overflow-hidden">
-                    {reviewRows.map(({ label, value }) => (
-                      <div key={label} className="flex justify-between items-center px-4 py-2.5">
-                        <span className="text-xs text-muted-foreground">{label}</span>
-                        <span className="text-xs font-semibold text-foreground max-w-[60%] text-right truncate">{value}</span>
-                      </div>
-                    ))}
+                    {reviewKeys.map((key) => {
+                      const checked = enabled[key] ?? false;
+                      return (
+                        <div
+                          key={key}
+                          className="flex items-center gap-3 px-4 py-2.5"
+                        >
+                          <Checkbox
+                            id={`field-${key}`}
+                            checked={checked}
+                            onCheckedChange={(c) => toggleField(key, c === true)}
+                            aria-label={`Apply ${PROFILE_FIELD_LABELS[key]}`}
+                          />
+                          <Label
+                            htmlFor={`field-${key}`}
+                            className="text-xs text-muted-foreground flex-1 min-w-0 truncate cursor-pointer"
+                          >
+                            {PROFILE_FIELD_LABELS[key]}
+                          </Label>
+                          <Input
+                            type={key === "name" ? "text" : "number"}
+                            inputMode={key === "name" ? undefined : "numeric"}
+                            value={edits[key] ?? ""}
+                            disabled={!checked}
+                            onChange={(e) => editField(key, e.target.value)}
+                            aria-label={`${PROFILE_FIELD_LABELS[key]} value`}
+                            className="h-8 w-32 text-xs text-right disabled:opacity-50"
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {data.confidence === "low" && (
@@ -245,11 +314,17 @@ function ImportProfileModal({
                   )}
 
                   <p className="text-[11px] text-muted-foreground text-center">
-                    Applying fills these fields in your profile. You can edit them before they save.
+                    Only the checked fields are written to your profile. Untick any value you don't trust, or edit it inline.
                   </p>
-                  <Button className="w-full gap-2" onClick={handleApply}>
+                  <Button
+                    className="w-full gap-2"
+                    onClick={handleApply}
+                    disabled={appliedCount === 0}
+                  >
                     <CheckCircle2 className="h-4 w-4" />
-                    Apply to profile
+                    {appliedCount === 0
+                      ? "Select a field to apply"
+                      : `Apply ${appliedCount} ${appliedCount === 1 ? "field" : "fields"} to profile`}
                   </Button>
                 </>
               ) : (
@@ -261,7 +336,7 @@ function ImportProfileModal({
 
               <button
                 className="text-xs text-muted-foreground hover:text-foreground font-medium text-center w-full transition-colors"
-                onClick={() => { setStatus("idle"); setData(null); setFileName(""); }}
+                onClick={resetUpload}
               >
                 Upload another file
               </button>

@@ -16,8 +16,23 @@ function requireAuth(req: any, res: any, next: any) {
   next();
 }
 
+// The Gmail connector is bound to the whole Repl (a single connected mailbox),
+// so its derived data belongs to whoever connected it. In a multi-user
+// deployment, set GMAIL_OWNER_USER_ID to that owner's Clerk user id to prevent
+// other signed-in users from reading the owner's financial data. When unset,
+// the feature runs in personal/single-user mode for the authenticated user.
+function requireGmailOwner(req: any, res: any, next: any) {
+  const owner = process.env.GMAIL_OWNER_USER_ID;
+  if (owner && req.userId !== owner) {
+    return res
+      .status(403)
+      .json({ error: "Gmail sync is restricted to the account owner" });
+  }
+  next();
+}
+
 // GET /api/gmail/status
-router.get("/status", requireAuth, async (req: any, res) => {
+router.get("/status", requireAuth, requireGmailOwner, async (req: any, res) => {
   try {
     const status = await getGmailStatus();
     return res.json(status);
@@ -28,7 +43,7 @@ router.get("/status", requireAuth, async (req: any, res) => {
 });
 
 // POST /api/gmail/scan
-router.post("/scan", requireAuth, async (req: any, res) => {
+router.post("/scan", requireAuth, requireGmailOwner, async (req: any, res) => {
   try {
     const result = await scanGmailForFinancials();
     req.log.info(

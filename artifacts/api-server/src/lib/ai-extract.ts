@@ -88,8 +88,14 @@ function cleanJson(raw: string): string {
 function toNum(v: unknown): number | null {
   if (typeof v === "number" && Number.isFinite(v)) return v;
   if (typeof v === "string") {
-    const n = parseFloat(v.replace(/[^\d.]/g, ""));
-    return Number.isFinite(n) ? n : null;
+    const lower = v.toLowerCase();
+    // Defensive: if the model ever returns a unit-bearing string like
+    // "2.5 lakh" or "1.2 crore" despite numeric-only instructions, scale it.
+    let multiplier = 1;
+    if (/\bcr\b|crore/.test(lower)) multiplier = 10000000;
+    else if (/\blakh|\blac\b|lakhs/.test(lower)) multiplier = 100000;
+    const n = parseFloat(lower.replace(/[^\d.]/g, ""));
+    return Number.isFinite(n) ? n * multiplier : null;
   }
   return null;
 }

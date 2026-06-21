@@ -164,13 +164,16 @@ overrides:
   # Each entry pins a transitive dependency up to its first non-vulnerable
   # release. Re-audit and prune these once upstream packages bump on their own.
   # ============================================================================
-  postcss: ">=8.5.10"          # GHSA-qx2v-qp2m-jg93 (XSS via </style> in stringify)
-  uuid: ">=11.1.1"             # GHSA-w5hq-g745-h8pq (missing buffer bounds check)
-  qs: ">=6.15.2"               # GHSA-q8mj-m7cp-5q26 (DoS via comma-format arrays)
-  "@clerk/clerk-expo": ">=2.19.36"   # GHSA-w24r-5266-9c3c (authorization bypass)
-  "@clerk/clerk-react": ">=5.61.6"   # GHSA-w24r-5266-9c3c (authorization bypass)
-  ws: ">=8.21.0"              # GHSA-96hv-2xvq-fx4p (memory-exhaustion DoS)
-  vite: ">=7.3.5"            # GHSA-fx2h-pf6j-xcff + GHSA-v6wh-96g9-6wx3 (fs.deny bypass / NTLM)
-  js-yaml: ">=4.2.0"         # GHSA-h67p-54hq-rp68 (quadratic DoS in merge keys)
-  "@babel/core": ">=7.29.6"  # GHSA-4x5r-pxfx-6jf8 (arbitrary file read via sourceMappingURL)
-  markdown-it: ">=14.2.0"    # GHSA-6v5v-wf23-fmfq (quadratic DoS in smartquotes)
+  # Ranges are bounded to the current major so the override only pulls the
+  # patched release, never a major-version upgrade (avoids silent breaking drift).
+  postcss: ">=8.5.10 <9"            # GHSA-qx2v-qp2m-jg93 (XSS via </style> in stringify)
+  uuid: ">=11.1.1 <12"              # GHSA-w5hq-g745-h8pq (missing buffer bounds check)
+  qs: ">=6.15.2 <7"                 # GHSA-q8mj-m7cp-5q26 (DoS via comma-format arrays)
+  "@clerk/clerk-expo": ">=2.19.36 <3"   # GHSA-w24r-5266-9c3c (authorization bypass)
+  "@clerk/clerk-react": ">=5.61.6 <6"   # GHSA-w24r-5266-9c3c (authorization bypass)
+  ws: ">=8.21.0 <9"                # GHSA-96hv-2xvq-fx4p (memory-exhaustion DoS)
+  # vite is fixed via the catalog pin (^7.3.5) which keeps all artifacts on the
+  # 7.x line; an override here would loosen the upper bound and pull in vite 8.
+  js-yaml: ">=4.2.0 <5"            # GHSA-h67p-54hq-rp68 (quadratic DoS in merge keys)
+  "@babel/core": ">=7.29.6 <8"     # GHSA-4x5r-pxfx-6jf8 (arbitrary file read via sourceMappingURL)
+  markdown-it: ">=14.2.0 <15"      # GHSA-6v5v-wf23-fmfq (quadratic DoS in smartquotes)

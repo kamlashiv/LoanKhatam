@@ -21,6 +21,7 @@ import {
   Linkedin,
   Twitter,
   MessageSquare,
+  ChevronRight,
 } from "lucide-react";
 import { formatRupees, formatDate } from "@/lib/loan-utils";
 import { useToast } from "@/hooks/use-toast";
@@ -72,6 +73,13 @@ export function ShareLoan(props: ShareLoanProps) {
   const encMsg = encodeURIComponent(message);
   const encUrl = encodeURIComponent(appUrl);
   const encSubject = encodeURIComponent(`Loan reminder for ${props.borrowerName}`);
+
+  // Break the message into a bold lead line, a middle body, and a muted footer
+  // so the slim banner preview can render it inline.
+  const messageLines = message.split("\n");
+  const leadLine = messageLines[0];
+  const footerLine = messageLines[messageLines.length - 1];
+  const bodyLines = messageLines.slice(1, -1);
 
   const openShare = (url: string) => {
     window.open(url, "_blank", "noopener,noreferrer");
@@ -188,6 +196,9 @@ export function ShareLoan(props: ShareLoanProps) {
     },
   ];
 
+  const featured = channels.slice(0, 2);
+  const secondary = channels.slice(2);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -196,117 +207,150 @@ export function ShareLoan(props: ShareLoanProps) {
           Share
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl gap-0 overflow-hidden p-0 sm:max-w-3xl">
-        <div className="bg-gradient-to-br from-slate-50 via-indigo-50/60 to-slate-50 p-6 dark:from-slate-950 dark:via-indigo-950/30 dark:to-slate-950">
-          <DialogHeader className="mb-5 flex-row items-center gap-3 space-y-0 text-left">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30">
-              <Share2 className="h-5 w-5" />
-            </div>
-            <div>
-              <DialogTitle className="text-lg font-bold tracking-tight">
-                Share payment reminder
-              </DialogTitle>
-              <DialogDescription className="text-sm">
-                Choose any channel — the message is filled in for you
-              </DialogDescription>
-            </div>
-          </DialogHeader>
+      <DialogContent className="max-w-2xl gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        {/* Header block */}
+        <DialogHeader className="flex-row items-center gap-4 space-y-0 border-b border-border px-6 py-5 text-left">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/30">
+            <Share2 className="h-6 w-6" />
+          </div>
+          <div>
+            <DialogTitle className="text-xl font-extrabold tracking-tight">
+              Share payment reminder
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Choose any channel — the message is filled in for you
+            </DialogDescription>
+          </div>
+        </DialogHeader>
 
-          <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
-            {/* Message preview */}
-            <div className="flex flex-col gap-4 rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                  {props.borrowerName.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-bold leading-tight">{props.borrowerName}</p>
-                  <p className="text-xs text-muted-foreground">Payment reminder</p>
-                </div>
+        {/* Slim banner message preview */}
+        <div className="border-b border-emerald-200/60 bg-emerald-50 px-6 py-4 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+          <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+                {props.borrowerName.charAt(0).toUpperCase()}
               </div>
+              <div className="text-sm leading-snug text-slate-700 dark:text-emerald-100/90">
+                <span className="font-bold text-slate-900 dark:text-emerald-50">
+                  {leadLine}
+                </span>
+                <br />
+                {bodyLines.join(" • ")}{" "}
+                <span className="text-xs text-slate-500 dark:text-emerald-400/60">
+                  {footerLine}
+                </span>
+              </div>
+            </div>
 
-              <div className="rounded-xl bg-[#dcf8c6] p-3 text-[13px] leading-relaxed text-slate-800 shadow-sm dark:bg-emerald-900/30 dark:text-emerald-100">
-                {message.split("\n").map((line, i, arr) => (
-                  <p
-                    key={i}
-                    className={
-                      i === 0
-                        ? "font-bold"
-                        : i === arr.length - 1
-                          ? "mt-1.5 text-[11px] text-slate-500 dark:text-emerald-300/70"
-                          : ""
-                    }
-                  >
-                    {line}
+            <div className="flex items-center gap-4 sm:shrink-0 sm:border-l sm:border-emerald-200/60 sm:pl-5 dark:sm:border-emerald-800/50">
+              <div className="text-left sm:text-right">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-600/70 dark:text-emerald-400/60">
+                  Outstanding
+                </p>
+                <p className="font-extrabold text-emerald-700 dark:text-emerald-300">
+                  {formatRupees(props.remainingAmount)}
+                </p>
+              </div>
+              {props.dueDate && (
+                <div className="text-left sm:text-right">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-600/70 dark:text-emerald-400/60">
+                    Due
                   </p>
-                ))}
-              </div>
-
+                  <p className="font-extrabold text-emerald-700 dark:text-emerald-300">
+                    {formatDate(props.dueDate)}
+                  </p>
+                </div>
+              )}
               <Button
                 onClick={handleCopyMessage}
-                className="mt-auto w-full gap-2"
-                variant="default"
+                variant="outline"
+                size="sm"
+                className="gap-2 border-emerald-200 bg-white/80 text-emerald-800 hover:bg-white dark:border-emerald-800/50 dark:bg-emerald-900/40 dark:text-emerald-200 dark:hover:bg-emerald-800/60"
               >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? "Copied" : "Copy message"}
+                {copied ? "Copied" : "Copy"}
               </Button>
             </div>
-
-            {/* Channels grid */}
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {channels.map((c) => (
-                  <button
-                    key={c.key}
-                    onClick={c.onClick}
-                    aria-label={`Share via ${c.label}`}
-                    className={`group flex flex-col items-start gap-2.5 rounded-2xl bg-card p-3.5 text-left shadow-sm ring-1 ring-border transition hover:-translate-y-0.5 hover:shadow-lg hover:ring-2 ${c.ring}`}
-                  >
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-xl text-white shadow-md ${c.bg}`}
-                    >
-                      <c.icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold leading-tight">{c.label}</p>
-                      <p className="text-[11px] text-muted-foreground">{c.hint}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Secondary row */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <button
-                  onClick={() => copyText(appUrl, "Link copied to clipboard")}
-                  aria-label="Copy link to this loan"
-                  className="flex items-center gap-3 rounded-xl bg-card p-3 text-left shadow-sm ring-1 ring-border transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-foreground">
-                    <Link2 className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-semibold">Copy link</span>
-                </button>
-                {canNativeShare && (
-                  <button
-                    onClick={handleNativeShare}
-                    aria-label="Open device share sheet"
-                    className="flex items-center gap-3 rounded-xl bg-card p-3 text-left shadow-sm ring-1 ring-border transition hover:-translate-y-0.5 hover:shadow-md"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-foreground">
-                      <Share2 className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm font-semibold">Device share sheet</span>
-                  </button>
-                )}
-              </div>
-
-              <p className="mt-auto rounded-xl bg-muted/50 p-3 text-center text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
-                Each option opens the app with your reminder pre-filled — Loan Tracker
-                never posts on your behalf.
-              </p>
-            </div>
           </div>
+        </div>
+
+        {/* Channels */}
+        <div className="bg-muted/30 p-6">
+          {/* Spotlight tier — primary channels */}
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {featured.map((c) => (
+              <button
+                key={c.key}
+                onClick={c.onClick}
+                aria-label={`Share via ${c.label}`}
+                className={`group flex items-center justify-between rounded-3xl bg-card p-5 shadow-sm ring-1 ring-border transition hover:-translate-y-0.5 hover:shadow-xl hover:ring-2 ${c.ring}`}
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white shadow-md ${c.bg}`}
+                  >
+                    <c.icon className="h-7 w-7" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-lg font-bold leading-tight">{c.label}</p>
+                    <p className="text-sm text-muted-foreground">{c.hint}</p>
+                  </div>
+                </div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors group-hover:bg-indigo-100 group-hover:text-indigo-600 dark:group-hover:bg-indigo-900/30 dark:group-hover:text-indigo-400">
+                  <ChevronRight className="h-5 w-5" />
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Other channels */}
+          <h3 className="mb-3 px-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            Other channels
+          </h3>
+          <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {secondary.map((c) => (
+              <button
+                key={c.key}
+                onClick={c.onClick}
+                aria-label={`Share via ${c.label}`}
+                className="group flex items-center gap-3 rounded-2xl bg-card p-3.5 text-left shadow-sm ring-1 ring-border transition hover:-translate-y-0.5 hover:shadow-md hover:ring-2 hover:ring-border"
+              >
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white shadow-sm ${c.bg}`}
+                >
+                  <c.icon className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-bold leading-tight">{c.label}</p>
+              </button>
+            ))}
+          </div>
+
+          {/* Tertiary actions */}
+          <div className="grid grid-cols-1 gap-3 border-t border-border pt-6 sm:grid-cols-2">
+            <button
+              onClick={() => copyText(appUrl, "Link copied to clipboard")}
+              aria-label="Copy link to this loan"
+              className="flex items-center justify-center gap-2 rounded-xl bg-card px-4 py-3 text-sm font-semibold text-foreground shadow-sm ring-1 ring-border transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <Link2 className="h-4 w-4 text-muted-foreground" />
+              Copy link
+            </button>
+            {canNativeShare && (
+              <button
+                onClick={handleNativeShare}
+                aria-label="Open device share sheet"
+                className="flex items-center justify-center gap-2 rounded-xl bg-card px-4 py-3 text-sm font-semibold text-foreground shadow-sm ring-1 ring-border transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <Share2 className="h-4 w-4 text-muted-foreground" />
+                Device share sheet
+              </button>
+            )}
+          </div>
+
+          <p className="mt-5 text-center text-[11px] font-medium text-muted-foreground">
+            Each option opens the app with your reminder pre-filled — Loan Tracker
+            never posts on your behalf.
+          </p>
         </div>
       </DialogContent>
     </Dialog>

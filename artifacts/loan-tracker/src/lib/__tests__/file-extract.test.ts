@@ -574,6 +574,51 @@ describe("extractProfileFromFile", () => {
     expect(out.notes).not.toContain("averaged across");
   });
 
+  it("exposes a per-month breakdown for categories spanning months", async () => {
+    const text = [
+      "05/01/2025 House Rent Rs. 25,000",
+      "10/01/2025 Groceries Rs. 8,000",
+      "05/02/2025 House Rent Rs. 25,000",
+      "11/02/2025 Groceries Rs. 6,000",
+    ].join("\n");
+    const out = await extractProfileFromFile(makeFile(text, "stmt.txt", "text/plain"));
+    expect(out.breakdown.food).toEqual([
+      { month: "2025-01", total: 8000 },
+      { month: "2025-02", total: 6000 },
+    ]);
+    expect(out.breakdown.rent).toEqual([
+      { month: "2025-01", total: 25000 },
+      { month: "2025-02", total: 25000 },
+    ]);
+  });
+
+  it("omits the breakdown for a single-month or dateless statement", async () => {
+    const text = "House Rent: Rs. 25,000\nGroceries: Rs. 8,000";
+    const out = await extractProfileFromFile(makeFile(text, "stmt.txt", "text/plain"));
+    expect(out.breakdown.rent).toBeUndefined();
+    expect(out.breakdown.food).toBeUndefined();
+  });
+
+  it("omits the breakdown for a category paid in only one month", async () => {
+    const text = [
+      "05/01/2025 House Rent Rs. 30,000",
+      "10/01/2025 Groceries Rs. 5,000",
+      "11/02/2025 Groceries Rs. 7,000",
+    ].join("\n");
+    const out = await extractProfileFromFile(makeFile(text, "stmt.txt", "text/plain"));
+    expect(out.breakdown.rent).toBeUndefined();
+    expect(out.breakdown.food).toEqual([
+      { month: "2025-01", total: 5000 },
+      { month: "2025-02", total: 7000 },
+    ]);
+  });
+
+  it("returns an empty breakdown for JSON/CSV imports", async () => {
+    const json = JSON.stringify({ netPay: "70000", rent: "20000" });
+    const out = await extractProfileFromFile(makeFile(json, "p.json", "application/json"));
+    expect(out.breakdown).toEqual({});
+  });
+
   it("rejects unsupported file types", async () => {
     await expect(
       extractProfileFromFile(makeFile("data", "p.xyz", "application/octet-stream"))

@@ -25,10 +25,45 @@ import { useDerivedLoans } from "@/lib/loan-derive";
 import { SaveIndicator } from "@/components/save-indicator";
 import {
   extractProfileFromFile, PROFILE_FIELD_LABELS,
-  type ExtractedProfile, type ExtractedProfileFields,
+  type ExtractedProfile, type ExtractedProfileFields, type ExpenseMonth,
+  type ExpenseKey,
 } from "@/lib/file-extract";
 
 type UploadStatus = "idle" | "loading" | "success" | "error";
+
+// "YYYY-MM" → short month label, with the year appended only when the
+// breakdown straddles more than one calendar year (so "Jan" stays "Jan" but a
+// Dec-2025/Jan-2026 split reads "Dec '25" / "Jan '26").
+function monthLabel(month: string, withYear: boolean): string {
+  const [y, m] = month.split("-");
+  const idx = Number(m) - 1;
+  const name = MONTH_NAMES[idx] ?? month;
+  return withYear ? `${name} '${y.slice(2)}` : name;
+}
+
+const MONTH_NAMES = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+// Shows the per-month totals that were averaged into a category's figure, so
+// the user can spot an off month (e.g. a one-off purchase) before applying.
+function MonthBreakdown({ months }: { months: ExpenseMonth[] }) {
+  const multiYear = new Set(months.map((m) => m.month.slice(0, 4))).size > 1;
+  return (
+    <div className="mt-1.5 ml-7 flex flex-wrap gap-x-3 gap-y-1">
+      <span className="text-[11px] text-muted-foreground/70">
+        Avg of {months.length} months:
+      </span>
+      {months.map((m) => (
+        <span key={m.month} className="text-[11px] text-muted-foreground tabular-nums">
+          <span className="font-medium text-foreground/80">{formatRupees(m.total)}</span>{" "}
+          {monthLabel(m.month, multiYear)}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 const confStyle = {
   high: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800",
@@ -275,32 +310,35 @@ function ImportProfileModal({
                   <div className="border border-border rounded-lg divide-y divide-border overflow-hidden">
                     {reviewKeys.map((key) => {
                       const checked = enabled[key] ?? false;
+                      const months = data.breakdown[key as ExpenseKey];
                       return (
-                        <div
-                          key={key}
-                          className="flex items-center gap-3 px-4 py-2.5"
-                        >
-                          <Checkbox
-                            id={`field-${key}`}
-                            checked={checked}
-                            onCheckedChange={(c) => toggleField(key, c === true)}
-                            aria-label={`Apply ${PROFILE_FIELD_LABELS[key]}`}
-                          />
-                          <Label
-                            htmlFor={`field-${key}`}
-                            className="text-xs text-muted-foreground flex-1 min-w-0 truncate cursor-pointer"
-                          >
-                            {PROFILE_FIELD_LABELS[key]}
-                          </Label>
-                          <Input
-                            type={key === "name" ? "text" : "number"}
-                            inputMode={key === "name" ? undefined : "numeric"}
-                            value={edits[key] ?? ""}
-                            disabled={!checked}
-                            onChange={(e) => editField(key, e.target.value)}
-                            aria-label={`${PROFILE_FIELD_LABELS[key]} value`}
-                            className="h-8 w-32 text-xs text-right disabled:opacity-50"
-                          />
+                        <div key={key} className="px-4 py-2.5">
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              id={`field-${key}`}
+                              checked={checked}
+                              onCheckedChange={(c) => toggleField(key, c === true)}
+                              aria-label={`Apply ${PROFILE_FIELD_LABELS[key]}`}
+                            />
+                            <Label
+                              htmlFor={`field-${key}`}
+                              className="text-xs text-muted-foreground flex-1 min-w-0 truncate cursor-pointer"
+                            >
+                              {PROFILE_FIELD_LABELS[key]}
+                            </Label>
+                            <Input
+                              type={key === "name" ? "text" : "number"}
+                              inputMode={key === "name" ? undefined : "numeric"}
+                              value={edits[key] ?? ""}
+                              disabled={!checked}
+                              onChange={(e) => editField(key, e.target.value)}
+                              aria-label={`${PROFILE_FIELD_LABELS[key]} value`}
+                              className="h-8 w-32 text-xs text-right disabled:opacity-50"
+                            />
+                          </div>
+                          {months && months.length > 1 && (
+                            <MonthBreakdown months={months} />
+                          )}
                         </div>
                       );
                     })}

@@ -486,9 +486,27 @@ export interface ExtractedProfileFields {
   medical: number | null;
 }
 
+// One month's total for a recurring expense category. `month` is the "YYYY-MM"
+// bucket the spend was tagged to.
+export interface ExpenseMonth {
+  month: string;
+  total: number;
+}
+
+// Expense categories that can be averaged across months (everything except the
+// non-recurring fields).
+export type ExpenseKey = Exclude<
+  keyof ExtractedProfileFields,
+  "name" | "monthlyIncome" | "additionalIncome"
+>;
+
 export interface ExtractedProfile extends ExtractedProfileFields {
   confidence: "high" | "medium" | "low";
   notes: string;
+  // Per-month totals behind each averaged expense category. Only present for
+  // categories detected across more than one month; single-month (or dateless)
+  // categories are omitted since there's nothing to average.
+  breakdown: Partial<Record<ExpenseKey, ExpenseMonth[]>>;
 }
 
 // Human labels for each field, used in review UI and confidence notes. The key
@@ -612,15 +630,16 @@ function monthForIndex(
 // Sums every labelled amount for a category per month, then averages across the
 // months it appears in. A statement that repeats "Groceries" five times in one
 // month yields that month's total; one spanning several months yields the
-// per-month average. Returns the figure plus the number of months averaged over
-// (1 = a single month, i.e. no averaging applied).
+// per-month average. Returns the figure, the number of months averaged over
+// (1 = a single month, i.e. no averaging applied), and the per-month totals so
+// the review UI can show what went into the average.
 function aggregateExpense(
   flat: string,
   label: RegExp,
   dates: { index: number; month: string }[]
-): { value: number | null; months: number } {
+): { value: number | null; months: number; breakdown: ExpenseMonth[] } {
   const matches = labeledAmounts(flat, label);
-  if (!matches.length) return { value: null, months: 0 };
+  if (!matches.length) return { value: null, months: 0, breakdown: [] };
   const perMonth = new Map<string, number>();
   for (const { amount, index } of matches) {
     const key = monthForIndex(index, dates) ?? "__single__";
@@ -628,7 +647,13 @@ function aggregateExpense(
   }
   const sums = [...perMonth.values()];
   const total = sums.reduce((a, b) => a + b, 0);
-  return { value: Math.round(total / sums.length), months: sums.length };
+  // Per-month totals, oldest first, excluding the synthetic single-bucket key
+  // (a dateless statement has nothing to break down).
+  const breakdown: ExpenseMonth[] = [...perMonth.entries()]
+    .filter(([month]) => month !== "__single__")
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, amount]) => ({ month, total: amount }));
+  return { value: Math.round(total / sums.length), months: sums.length, breakdown };
 }
 
 // Full free-text profile parse, including the multi-month averaging metadata
@@ -638,6 +663,7 @@ function aggregateExpense(
 function profileFromTextDetailed(text: string): {
   fields: ExtractedProfileFields;
   averagedMonths: number;
+  breakdown: Partial<Record<ExpenseKey, ExpenseMonth[]>>;
 } {
   const out = { ...EMPTY_PROFILE_FIELDS };
   const flat = text.replace(/\s+/g, " ");
@@ -648,10 +674,13 @@ function profileFromTextDetailed(text: string): {
   // Recurring expenses are aggregated across the whole statement, not read once.
   const dates = datesByIndex(flat);
   let averagedMonths = 1;
-  for (const key of Object.keys(EXPENSE_RE) as (keyof typeof EXPENSE_RE)[]) {
-    const { value, months } = aggregateExpense(flat, EXPENSE_RE[key], dates);
+  const breakdown: Partial<Record<ExpenseKey, ExpenseMonth[]>> = {};
+  for (const key of Object.keys(EXPENSE_RE) as ExpenseKey[]) {
+    const { value, months, breakdown: perMonth } = aggregateExpense(flat, EXPENSE_RE[key], dates);
     out[key] = value;
     if (months > averagedMonths) averagedMonths = months;
+    // Only keep a breakdown when there's more than one month to compare.
+    if (perMonth.length > 1) breakdown[key] = perMonth;
   }
 
   // Name on a salary slip / statement — colon or dash separated.
@@ -667,7 +696,7 @@ function profileFromTextDetailed(text: string): {
     if (nm) out.name = nm;
   }
 
-  return { fields: out, averagedMonths };
+  return { fields: out, averagedMonths, breakdown };
 }
 
 export function profileFromText(text: string): ExtractedProfileFields {
@@ -739,7 +768,8 @@ export function profileFromCSV(text: string): ExtractedProfileFields {
 function scoreProfile(
   d: ExtractedProfileFields,
   source: string,
-  averagedMonths = 1
+  averagedMonths = 1,
+  breakdown: Partial<Record<ExpenseKey, ExpenseMonth[]>> = {}
 ): ExtractedProfile {
   const got: string[] = [];
   for (const key of Object.keys(PROFILE_FIELD_LABELS) as (keyof ExtractedProfileFields)[]) {
@@ -764,7 +794,7 @@ function scoreProfile(
       ? `No income or expense details found in ${source} — please fill the fields below manually.`
       : `Extracted from ${source}: ${got.join(", ")}.${averagedNote} Please review before saving.`;
 
-  return { ...d, confidence, notes };
+  return { ...d, confidence, notes, breakdown };
 }
 
 export async function extractProfileFromFile(
@@ -783,8 +813,8 @@ export async function extractProfileFromFile(
     }
     case "text": {
       onProgress?.({ stage: "reading" });
-      const { fields, averagedMonths } = profileFromTextDetailed(await file.text());
-      return scoreProfile(fields, "Text", averagedMonths);
+      const { fields, averagedMonths, breakdown } = profileFromTextDetailed(await file.text());
+      return scoreProfile(fields, "Text", averagedMonths, breakdown);
     }
     case "pdf": {
       onProgress?.({ stage: "pdf" });
@@ -792,14 +822,14 @@ export async function extractProfileFromFile(
       if (!text.trim()) {
         throw new Error("No text found in this PDF (it may be a scanned image) — upload a screenshot instead, or fill the form manually.");
       }
-      const { fields, averagedMonths } = profileFromTextDetailed(text);
-      return scoreProfile(fields, "PDF", averagedMonths);
+      const { fields, averagedMonths, breakdown } = profileFromTextDetailed(text);
+      return scoreProfile(fields, "PDF", averagedMonths, breakdown);
     }
     case "image": {
       onProgress?.({ stage: "ocr", percent: 0 });
       const text = await imageToText(file, onProgress);
-      const { fields, averagedMonths } = profileFromTextDetailed(text);
-      return scoreProfile(fields, "Image (OCR)", averagedMonths);
+      const { fields, averagedMonths, breakdown } = profileFromTextDetailed(text);
+      return scoreProfile(fields, "Image (OCR)", averagedMonths, breakdown);
     }
     default:
       throw new Error("Unsupported file. Please upload a JSON, CSV, PDF, or image (PNG/JPG) file.");

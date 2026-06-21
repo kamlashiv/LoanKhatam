@@ -418,6 +418,43 @@ describe("profileFromText", () => {
     expect(out.rent).toBeNull();
     expect(out.name).toBeNull();
   });
+
+  it("sums repeated category amounts within a single month", () => {
+    // No dates -> treated as one month, so all groceries sum together.
+    const text = [
+      "Groceries Big Basket Rs. 3,000",
+      "Groceries supermarket Rs. 2,500",
+      "Swiggy Rs. 1,500",
+    ].join("\n");
+    expect(profileFromText(text).food).toBe(7000);
+  });
+
+  it("averages a category across the months a statement spans", () => {
+    // Rent of 25,000 in Jan and 25,000 in Feb averages to 25,000;
+    // groceries 8,000 (Jan) + 6,000 (Feb) averages to 7,000.
+    const text = [
+      "05/01/2025 House Rent Rs. 25,000",
+      "10/01/2025 Groceries Rs. 8,000",
+      "05/02/2025 House Rent Rs. 25,000",
+      "11/02/2025 Groceries Rs. 6,000",
+    ].join("\n");
+    const out = profileFromText(text);
+    expect(out.rent).toBe(25000);
+    expect(out.food).toBe(7000);
+  });
+
+  it("does not divide a once-paid expense by the full statement span", () => {
+    // Rent appears in only one month even though the statement spans two, so
+    // it should not be diluted by the empty month.
+    const text = [
+      "05/01/2025 House Rent Rs. 30,000",
+      "10/01/2025 Groceries Rs. 5,000",
+      "11/02/2025 Groceries Rs. 7,000",
+    ].join("\n");
+    const out = profileFromText(text);
+    expect(out.rent).toBe(30000);
+    expect(out.food).toBe(6000);
+  });
 });
 
 describe("profileFromJSON / profileFromCSV", () => {
@@ -471,6 +508,25 @@ describe("extractProfileFromFile", () => {
     );
     expect(out.confidence).toBe("low");
     expect(out.notes).toContain("No income or expense details found");
+  });
+
+  it("notes when recurring expenses are averaged across multiple months", async () => {
+    const text = [
+      "05/01/2025 House Rent Rs. 25,000",
+      "10/01/2025 Groceries Rs. 8,000",
+      "05/02/2025 House Rent Rs. 25,000",
+      "11/02/2025 Groceries Rs. 6,000",
+    ].join("\n");
+    const out = await extractProfileFromFile(makeFile(text, "stmt.txt", "text/plain"));
+    expect(out.rent).toBe(25000);
+    expect(out.food).toBe(7000);
+    expect(out.notes).toContain("averaged across 2 months");
+  });
+
+  it("does not mention averaging for a single-month statement", async () => {
+    const text = "House Rent: Rs. 25,000\nGroceries: Rs. 8,000";
+    const out = await extractProfileFromFile(makeFile(text, "stmt.txt", "text/plain"));
+    expect(out.notes).not.toContain("averaged across");
   });
 
   it("rejects unsupported file types", async () => {

@@ -547,15 +547,96 @@ function labeledAmount(flat: string, label: RegExp): number | null {
   return parseAmount(`${m[2]} ${m[3] ?? ""}`);
 }
 
-export function profileFromText(text: string): ExtractedProfileFields {
+// Like labeledAmount, but returns EVERY labelled amount together with its
+// position in the text, so multiple occurrences (across a multi-month bank
+// statement) can be grouped by month rather than just reading the first.
+function labeledAmounts(flat: string, label: RegExp): { amount: number; index: number }[] {
+  const re = new RegExp(
+    `(?:${label.source})\\D{0,25}(₹|rs\\.?|inr)?\\s*([\\d,]+(?:\\.\\d+)?)\\s*(crore|cr|lakh|lac)?(?!\\s*%)`,
+    "gi"
+  );
+  const out: { amount: number; index: number }[] = [];
+  for (const m of flat.matchAll(re)) {
+    const amt = parseAmount(`${m[2]} ${m[3] ?? ""}`);
+    if (amt != null) out.push({ amount: amt, index: m.index ?? 0 });
+  }
+  return out;
+}
+
+// Matches a single date token (same shapes accepted by normalizeDate).
+const DATE_TOKEN_RE =
+  /(\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}\s*[a-z]{3,}\s*\d{4})/gi;
+
+// Every parseable date in the text, as { index, month } where month is the
+// "YYYY-MM" bucket. Ordered by position (matchAll yields ascending indices).
+function datesByIndex(flat: string): { index: number; month: string }[] {
+  const out: { index: number; month: string }[] = [];
+  for (const m of flat.matchAll(DATE_TOKEN_RE)) {
+    const iso = normalizeDate(m[1]);
+    if (!iso) continue;
+    out.push({ index: m.index ?? 0, month: iso.slice(0, 7) });
+  }
+  return out;
+}
+
+// The month bucket for an amount at `index`: the nearest date at or before it,
+// otherwise the nearest date after it. Null when the text has no dates.
+function monthForIndex(
+  index: number,
+  dates: { index: number; month: string }[]
+): string | null {
+  if (!dates.length) return null;
+  let before: string | null = null;
+  for (const d of dates) {
+    if (d.index <= index) before = d.month;
+    else return before ?? d.month;
+  }
+  return before;
+}
+
+// Sums every labelled amount for a category per month, then averages across the
+// months it appears in. A statement that repeats "Groceries" five times in one
+// month yields that month's total; one spanning several months yields the
+// per-month average. Returns the figure plus the number of months averaged over
+// (1 = a single month, i.e. no averaging applied).
+function aggregateExpense(
+  flat: string,
+  label: RegExp,
+  dates: { index: number; month: string }[]
+): { value: number | null; months: number } {
+  const matches = labeledAmounts(flat, label);
+  if (!matches.length) return { value: null, months: 0 };
+  const perMonth = new Map<string, number>();
+  for (const { amount, index } of matches) {
+    const key = monthForIndex(index, dates) ?? "__single__";
+    perMonth.set(key, (perMonth.get(key) ?? 0) + amount);
+  }
+  const sums = [...perMonth.values()];
+  const total = sums.reduce((a, b) => a + b, 0);
+  return { value: Math.round(total / sums.length), months: sums.length };
+}
+
+// Full free-text profile parse, including the multi-month averaging metadata
+// (the largest number of months any expense category was averaged over). The
+// public profileFromText returns just the fields; the file pipeline uses the
+// metadata to note averaging in the confidence summary.
+function profileFromTextDetailed(text: string): {
+  fields: ExtractedProfileFields;
+  averagedMonths: number;
+} {
   const out = { ...EMPTY_PROFILE_FIELDS };
   const flat = text.replace(/\s+/g, " ");
 
   out.monthlyIncome = labeledAmount(flat, NET_INCOME_RE) ?? labeledAmount(flat, GROSS_INCOME_RE);
   out.additionalIncome = labeledAmount(flat, ADDITIONAL_INCOME_RE);
 
+  // Recurring expenses are aggregated across the whole statement, not read once.
+  const dates = datesByIndex(flat);
+  let averagedMonths = 1;
   for (const key of Object.keys(EXPENSE_RE) as (keyof typeof EXPENSE_RE)[]) {
-    out[key] = labeledAmount(flat, EXPENSE_RE[key]);
+    const { value, months } = aggregateExpense(flat, EXPENSE_RE[key], dates);
+    out[key] = value;
+    if (months > averagedMonths) averagedMonths = months;
   }
 
   // Name on a salary slip / statement — colon or dash separated.
@@ -571,7 +652,11 @@ export function profileFromText(text: string): ExtractedProfileFields {
     if (nm) out.name = nm;
   }
 
-  return out;
+  return { fields: out, averagedMonths };
+}
+
+export function profileFromText(text: string): ExtractedProfileFields {
+  return profileFromTextDetailed(text).fields;
 }
 
 const PROFILE_KEY_ALIASES: Record<keyof ExtractedProfileFields, string[]> = {
@@ -630,7 +715,11 @@ export function profileFromCSV(text: string): ExtractedProfileFields {
   return profileFromRecord(rec);
 }
 
-function scoreProfile(d: ExtractedProfileFields, source: string): ExtractedProfile {
+function scoreProfile(
+  d: ExtractedProfileFields,
+  source: string,
+  averagedMonths = 1
+): ExtractedProfile {
   const got: string[] = [];
   for (const key of Object.keys(PROFILE_FIELD_LABELS) as (keyof ExtractedProfileFields)[]) {
     if (d[key] != null && d[key] !== "") got.push(PROFILE_FIELD_LABELS[key].toLowerCase());
@@ -641,10 +730,18 @@ function scoreProfile(d: ExtractedProfileFields, source: string): ExtractedProfi
   else if (got.length >= 2) confidence = "medium";
   else confidence = "low";
 
+  // When a statement spans multiple months, the recurring expenses are an
+  // average of each month's total — call that out so the figures aren't taken
+  // as a single month's spend.
+  const averagedNote =
+    averagedMonths > 1
+      ? ` Recurring expenses are averaged across ${averagedMonths} months of statement data.`
+      : "";
+
   const notes =
     got.length === 0
       ? `No income or expense details found in ${source} — please fill the fields below manually.`
-      : `Extracted from ${source}: ${got.join(", ")}. Please review before saving.`;
+      : `Extracted from ${source}: ${got.join(", ")}.${averagedNote} Please review before saving.`;
 
   return { ...d, confidence, notes };
 }
@@ -665,7 +762,8 @@ export async function extractProfileFromFile(
     }
     case "text": {
       onProgress?.({ stage: "reading" });
-      return scoreProfile(profileFromText(await file.text()), "Text");
+      const { fields, averagedMonths } = profileFromTextDetailed(await file.text());
+      return scoreProfile(fields, "Text", averagedMonths);
     }
     case "pdf": {
       onProgress?.({ stage: "pdf" });
@@ -673,12 +771,14 @@ export async function extractProfileFromFile(
       if (!text.trim()) {
         throw new Error("No text found in this PDF (it may be a scanned image) — upload a screenshot instead, or fill the form manually.");
       }
-      return scoreProfile(profileFromText(text), "PDF");
+      const { fields, averagedMonths } = profileFromTextDetailed(text);
+      return scoreProfile(fields, "PDF", averagedMonths);
     }
     case "image": {
       onProgress?.({ stage: "ocr", percent: 0 });
       const text = await imageToText(file, onProgress);
-      return scoreProfile(profileFromText(text), "Image (OCR)");
+      const { fields, averagedMonths } = profileFromTextDetailed(text);
+      return scoreProfile(fields, "Image (OCR)", averagedMonths);
     }
     default:
       throw new Error("Unsupported file. Please upload a JSON, CSV, PDF, or image (PNG/JPG) file.");

@@ -6,9 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from './activityFeed';
-export * from './activityItem';
-export * from './activityItemKind';
 export * from './creditCard';
 export * from './creditCardInput';
 export * from './creditCardUpdate';
@@ -25,11 +22,8 @@ export * from './financialProfile';
 export * from './financialProfileData';
 export * from './financialProfileDataRiskProfile';
 export * from './financialScanResult';
-export * from './getLikeStatusParams';
 export * from './gmailStatus';
 export * from './healthStatus';
-export * from './likeInput';
-export * from './likeStatus';
 export * from './listLoansParams';
 export * from './listLoansStatus';
 export * from './loan';
@@ -41,10 +35,8 @@ export * from './payment';
 export * from './paymentInput';
 export * from './profileDebtItem';
 export * from './rateChange';
-export * from './siteStats';
 export * from './userNotificationPrefs';
 export * from './userSettings';
 export * from './userSettingsData';
 export * from './userSettingsDataDateFormat';
 export * from './userSocialAccounts';
-export * from './visitInput';

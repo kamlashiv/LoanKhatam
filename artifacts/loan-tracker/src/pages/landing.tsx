@@ -1,7 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { SocialConnect } from "@/components/social-connect";
-import { LiveStats } from "@/components/live-stats";
 import { useTheme } from "@/lib/theme";
 import {
   Wallet,
@@ -223,9 +222,6 @@ export function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* Live, real-time stats */}
-      <LiveStats />
 
       {/* CTA */}
       <section className="py-24 px-6 relative overflow-hidden bg-primary text-primary-foreground">

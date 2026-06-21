@@ -10,12 +10,10 @@ import gmailRouter from "./gmail";
 import profileRouter from "./profile";
 import settingsRouter from "./settings";
 import feedbackRouter from "./feedback";
-import siteRouter from "./site";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use(siteRouter);
 router.use("/loans", loansRouter);
 router.use("/credit-cards", creditCardsRouter);
 router.use("/loans/:id/payments", paymentsRouter);

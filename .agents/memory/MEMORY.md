@@ -22,7 +22,7 @@
 - [EMI vs Investment Analyzer](emi-investment-analyzer.md) — /strategy section: deterministic SIP vs debt-payoff compare; derive payoff via amortization when tenure missing, flag unbounded EMI.
 - [Credit Cards feature](credit-cards-feature.md) — /credit-cards: real per-user card CRUD + real Auto-Sync (paste AI + Gmail scan, confirm-before-add); Gmail is one Repl-bound mailbox, gate /gmail/* on GMAIL_OWNER_USER_ID; PATCH/DELETE authz in write predicate.
 - [Profile privacy tests & jest env](profile-privacy-tests.md) — cross-account isolation tested via real ProfileProvider+RQ with faked useAuth/global.fetch; jsdom lacks fetch/Response; dashboard+planner suites pre-existing red.
-- [Deploy needs Reserved VM](deploy-needs-reserved-vm.md) — publish fails at "Creating Autoscale service" promote (build OK, app healthy); api-server WS+in-memory live-stats+timers are Autoscale-hostile; switch to Reserved VM.
+- [Autoscale publish + live-stats removal](deploy-needs-reserved-vm.md) — WS+in-memory live-stats made publish fail at "Creating Autoscale service"; feature removed end-to-end to stay stateless on Autoscale.
 - [API security hardening](api-security-hardening.md) — credentialed CORS must be exact-origin allowlist (no *.replit.dev wildcard); security headers; per-user in-memory rate limit needs requireAuth→req.userId ordering; CSV formula-injection guard.
 - [Live presence + public counters](live-presence-counters.md) — WS presence must dedupe by client visitorId (not socket count); public in-memory maps need TTL sweep + size caps.
 - [Cards & Auto-Sync mockup](cards-autosync-mockup.md) — canvas-only design for credit-card wallet + Gmail/mobile-OTP/AI-bank-detect auto-import; real all-bank sync infeasible (needs Account Aggregator/Plaid).

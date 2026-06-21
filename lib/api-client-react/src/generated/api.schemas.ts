@@ -385,69 +385,6 @@ export interface DashboardSummary {
   totalOutstanding: number;
 }
 
-export interface SiteStats {
-  /** Visitors currently connected via WebSocket */
-  activeVisitors: number;
-  totalVisitors: number;
-  todayVisitors: number;
-  monthlyVisitors: number;
-  totalLikes: number;
-  registeredUsers: number;
-  loansTracked: number;
-  paymentsRecorded: number;
-  amountTracked: number;
-  totalReviews: number;
-}
-
-export interface VisitInput {
-  /**
-     * @minLength 8
-     * @maxLength 64
-     */
-  visitorId: string;
-}
-
-export interface LikeInput {
-  /**
-     * @minLength 8
-     * @maxLength 64
-     */
-  visitorId: string;
-}
-
-export interface LikeStatus {
-  liked: boolean;
-  totalLikes: number;
-}
-
-export type ActivityItemKind = typeof ActivityItemKind[keyof typeof ActivityItemKind];
-
-
-export const ActivityItemKind = {
-  visit: 'visit',
-  like: 'like',
-  review: 'review',
-  account: 'account',
-} as const;
-
-export interface ActivityItem {
-  id: string;
-  kind: ActivityItemKind;
-  createdAt: string;
-}
-
-export interface ActivityFeed {
-  items: ActivityItem[];
-}
-
-export type GetLikeStatusParams = {
-/**
- * @minLength 8
- * @maxLength 64
- */
-visitorId: string;
-};
-
 export type ListLoansParams = {
 status?: ListLoansStatus;
 };

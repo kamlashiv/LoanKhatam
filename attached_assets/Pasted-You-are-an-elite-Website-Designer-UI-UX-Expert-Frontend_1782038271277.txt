@@ -1,0 +1,144 @@
+You are an elite Website Designer, UI/UX Expert, Frontend Architect, Backend Engineer, Security Expert, and Conversion Rate Optimization Specialist.
+
+Transform my website into a premium, modern, enterprise-grade platform that looks world-class, highly trustworthy, visually stunning, and optimized for maximum user engagement and conversions.
+
+MAIN OBJECTIVE:
+Create a website that feels premium, professional, fast, secure, and intelligent while displaying accurate real-time visitor and engagement statistics.
+
+DESIGN STYLE:
+- Modern SaaS design
+- Premium user experience
+- Clean layout with proper spacing
+- Elegant typography
+- Professional color system
+- Glassmorphism effects where appropriate
+- Smooth animations and transitions
+- Mobile-first responsive design
+- Accessibility-friendly design
+- Fast loading performance
+
+REAL-TIME LIVE COUNTERS:
+Create a dedicated statistics section with animated cards showing:
+
+👥 Active Visitors Online
+- Display actual live visitors currently on the website
+- Update automatically in real time
+- No page refresh required
+
+📈 Total Website Visitors
+- Show total visitors count
+- Persist data permanently
+- Increase automatically with new visits
+
+❤️ Total Likes
+- Real-time like counter
+- One like per user/device/account
+- Prevent duplicate likes
+
+🔥 Today's Visitors
+- Show daily traffic
+
+📊 Monthly Visitors
+- Show monthly traffic
+
+⭐ Total Registered Users
+- Show actual user registrations
+
+COUNTER FEATURES:
+- Count-up animation
+- Real-time updates using WebSocket/Socket.io
+- Database-backed storage
+- Accurate tracking
+- Anti-spam protection
+- Bot filtering
+- Persistent after server restart
+- High-performance implementation
+
+LIVE ACTIVITY SECTION:
+Display recent activities such as:
+- New visitor joined
+- New account created
+- New like received
+- New review submitted
+
+Show updates in real time.
+
+HERO SECTION:
+- Powerful headline
+- Professional subheadline
+- Call-to-action buttons
+- Trust indicators
+- Animated statistics
+- Premium visuals
+
+TRUST SECTION:
+Display:
+- Total users
+- Success rate
+- User satisfaction score
+- Total transactions
+- Total reviews
+- Community size
+
+ADMIN DASHBOARD:
+Create a professional admin panel with:
+
+- Live Visitors
+- Today's Visitors
+- Weekly Visitors
+- Monthly Visitors
+- Total Visitors
+- Total Likes
+- Registered Users
+- Conversion Rate
+- Bounce Rate
+- Visitor Sources
+- Country-wise Traffic
+- Device Analytics
+- Real-Time Visitor Feed
+- Growth Charts
+- Performance Reports
+
+Provide interactive charts and graphs.
+
+SECURITY:
+- Secure authentication
+- Encrypted database storage
+- Bot detection
+- Spam prevention
+- Rate limiting
+- Secure API endpoints
+- Session protection
+- DDoS protection readiness
+
+PERFORMANCE:
+- Lighthouse Score 95+
+- Lazy loading
+- Image optimization
+- Code splitting
+- Fast rendering
+- SEO optimization
+- Structured metadata
+
+MOBILE EXPERIENCE:
+- Fully responsive
+- Touch-friendly controls
+- Mobile optimized animations
+- Fast mobile performance
+
+ADVANCED FEATURES:
+- Dark Mode
+- Light Mode
+- Notification Center
+- Real-Time Analytics
+- Visitor Heatmap
+- Progressive Web App (PWA)
+- Offline Support
+- Modern Loading Animations
+
+VISUAL QUALITY:
+The final website should look better than a typical startup website and feel like a premium enterprise product used by millions of users.
+
+Every section should be visually polished, highly professional, conversion-focused, and optimized for trust, engagement, and growth.
+
+Do not use placeholders or fake counters. Use actual real-time data connected to the backend database and update all statistics automatically.

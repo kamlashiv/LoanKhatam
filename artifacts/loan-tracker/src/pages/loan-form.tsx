@@ -113,12 +113,22 @@ export function LoanForm() {
         toast({ title: "Loan created successfully" });
         setLocation(`/loans/${data.id}`);
       },
-      onError: () => {
-        toast({
-          title: "Could not create loan",
-          description: "Please review the details and try again.",
-          variant: "destructive",
-        });
+      onError: (error) => {
+        const status = (error as { status?: number } | undefined)?.status;
+        toast(
+          status === 401 || status === 403
+            ? {
+                title: "Session expired",
+                description:
+                  "Please open the app in its own browser tab and sign in again, then retry.",
+                variant: "destructive",
+              }
+            : {
+                title: "Could not create loan",
+                description: "Please review the details and try again.",
+                variant: "destructive",
+              },
+        );
       },
     },
   });
@@ -134,12 +144,22 @@ export function LoanForm() {
         toast({ title: "Loan updated successfully" });
         setLocation(`/loans/${id}`);
       },
-      onError: () => {
-        toast({
-          title: "Could not update loan",
-          description: "Please review the details and try again.",
-          variant: "destructive",
-        });
+      onError: (error) => {
+        const status = (error as { status?: number } | undefined)?.status;
+        toast(
+          status === 401 || status === 403
+            ? {
+                title: "Session expired",
+                description:
+                  "Please open the app in its own browser tab and sign in again, then retry.",
+                variant: "destructive",
+              }
+            : {
+                title: "Could not update loan",
+                description: "Please review the details and try again.",
+                variant: "destructive",
+              },
+        );
       },
     },
   });

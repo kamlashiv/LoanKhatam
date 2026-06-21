@@ -299,3 +299,95 @@ describe("ImportProfileModal multi-category review card", () => {
     });
   });
 });
+
+// A profile where extraction produced nothing usable: every field is null and
+// there is no month breakdown. Drives the "No income or expense values were
+// found" empty state inside the success branch.
+function emptyProfile(): ExtractedProfile {
+  return {
+    name: null,
+    monthlyIncome: null,
+    additionalIncome: null,
+    rent: null,
+    insurance: null,
+    utilities: null,
+    internet: null,
+    schoolFees: null,
+    food: null,
+    fuel: null,
+    travel: null,
+    entertainment: null,
+    shopping: null,
+    medical: null,
+    confidence: "low",
+    notes: "Nothing recognizable",
+    breakdown: {},
+  };
+}
+
+// Drive the (mocked) upload to reach whatever state the resolved/rejected
+// extraction lands in, without asserting on the review card.
+function uploadFile(container: HTMLElement) {
+  const fileInput = container.querySelector(
+    'input[type="file"]',
+  ) as HTMLInputElement;
+  const file = new File(["statement"], "statement.csv", { type: "text/csv" });
+  fireEvent.change(fileInput, { target: { files: [file] } });
+}
+
+describe("ImportProfileModal error and empty states", () => {
+  beforeEach(() => mockExtract.mockReset());
+
+  it("shows the error card on a failed extraction and 'Try again' returns to the idle uploader", async () => {
+    mockExtract.mockRejectedValue(new Error("Couldn't read the file"));
+    const { container } = render(
+      <ImportProfileModal onClose={jest.fn()} onApply={jest.fn()} />,
+    );
+    uploadFile(container);
+
+    // The extraction-failed card surfaces with the thrown message.
+    await screen.findByText("Extraction failed");
+    expect(screen.getByText("Couldn't read the file")).toBeInTheDocument();
+
+    // "Try again" clears the error and returns to the idle dropzone.
+    fireEvent.click(screen.getByRole("button", { name: /Try again/ }));
+    await screen.findByText("Upload or drag a file");
+    expect(screen.queryByText("Extraction failed")).not.toBeInTheDocument();
+    expect(container.querySelector('input[type="file"]')).toBeInTheDocument();
+  });
+
+  it("shows the empty message and hides Apply when no values were extracted", async () => {
+    mockExtract.mockResolvedValue(emptyProfile());
+    const { container } = render(
+      <ImportProfileModal onClose={jest.fn()} onApply={jest.fn()} />,
+    );
+    uploadFile(container);
+
+    // The all-null profile lands in the success branch but with no review rows.
+    await screen.findByText(/No income or expense values were found/);
+    // The Apply button is absent (no rows to apply).
+    expect(
+      screen.queryByRole("button", { name: /to profile/ }),
+    ).not.toBeInTheDocument();
+    // No category value inputs render either.
+    expect(screen.queryByLabelText("Food value")).not.toBeInTheDocument();
+  });
+
+  it("'Upload another file' resets the review card back to the idle dropzone", async () => {
+    mockExtract.mockResolvedValue(foodProfile());
+    const { container } = render(
+      <ImportProfileModal onClose={jest.fn()} onApply={jest.fn()} />,
+    );
+    uploadFile(container);
+    // Confirm we reached the review card with seeded per-field/per-month state.
+    await screen.findByText(/Avg of 3 months/);
+    expect(screen.getByLabelText("Food value")).toHaveValue(6000);
+
+    // Reset wipes status/data/enabled/edits/monthEdits and shows the dropzone.
+    fireEvent.click(screen.getByRole("button", { name: /Upload another file/ }));
+    await screen.findByText("Upload or drag a file");
+    expect(screen.queryByText(/Avg of 3 months/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Food value")).not.toBeInTheDocument();
+    expect(container.querySelector('input[type="file"]')).toBeInTheDocument();
+  });
+});

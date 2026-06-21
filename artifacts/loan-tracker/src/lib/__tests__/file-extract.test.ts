@@ -426,6 +426,31 @@ describe("profileFromText", () => {
     expect(out.medical).toBe(2200);
   });
 
+  it("extracts travel and shopping spending from a bank statement", () => {
+    const text = [
+      "Uber: Rs. 450",
+      "IRCTC: Rs. 1,200",
+      "Flipkart: Rs. 2,300",
+      "Myntra Apparel: Rs. 1,700",
+    ].join("\n");
+    const out = profileFromText(text);
+    // Uber + IRCTC both fall under the travel bucket.
+    expect(out.travel).toBe(1650);
+    // Flipkart + Myntra both fall under the shopping bucket.
+    expect(out.shopping).toBe(4000);
+  });
+
+  it("keeps an Amazon Prime charge in subscriptions, not shopping", () => {
+    const text = [
+      "Amazon Prime: Rs. 199",
+      "Amazon: Rs. 3,500",
+    ].join("\n");
+    const out = profileFromText(text);
+    expect(out.entertainment).toBe(199);
+    // Only the plain Amazon order counts toward shopping.
+    expect(out.shopping).toBe(3500);
+  });
+
   it("averages the newer categories across the months a statement spans", () => {
     const text = [
       "05/01/2025 Tuition Fee Rs. 10,000",
@@ -439,6 +464,18 @@ describe("profileFromText", () => {
     expect(out.schoolFees).toBe(10000);
     expect(out.entertainment).toBe(200);
     expect(out.medical).toBe(3000);
+  });
+
+  it("averages travel and shopping across the months a statement spans", () => {
+    const text = [
+      "05/01/2025 Ola Rs. 600",
+      "10/01/2025 Amazon Rs. 4,000",
+      "05/02/2025 Ola Rs. 400",
+      "11/02/2025 Amazon Rs. 2,000",
+    ].join("\n");
+    const out = profileFromText(text);
+    expect(out.travel).toBe(500);
+    expect(out.shopping).toBe(3000);
   });
 
   it("returns all-null when nothing relevant is present", () => {

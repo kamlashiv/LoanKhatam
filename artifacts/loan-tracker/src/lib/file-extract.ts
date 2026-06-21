@@ -482,7 +482,9 @@ export interface ExtractedProfileFields {
   schoolFees: number | null;
   food: number | null;
   fuel: number | null;
+  travel: number | null;
   entertainment: number | null;
+  shopping: number | null;
   medical: number | null;
 }
 
@@ -522,7 +524,9 @@ export const PROFILE_FIELD_LABELS: Record<keyof ExtractedProfileFields, string> 
   schoolFees: "School Fees",
   food: "Food",
   fuel: "Fuel",
+  travel: "Travel",
   entertainment: "Subscriptions",
+  shopping: "Shopping",
   medical: "Medical",
 };
 
@@ -537,7 +541,9 @@ const EMPTY_PROFILE_FIELDS: ExtractedProfileFields = {
   schoolFees: null,
   food: null,
   fuel: null,
+  travel: null,
   entertainment: null,
+  shopping: null,
   medical: null,
 };
 
@@ -560,8 +566,12 @@ const EXPENSE_RE: Record<
     /school\s*fee|tuition\s*fee|tuition|college\s*fee|education\s*fee|class\s*fee|coaching\s*fee|coaching|university\s*fee|exam\s*fee/i,
   food: /groceries|grocery|supermarket|big\s*basket|swiggy|zomato|food\s*expenses/i,
   fuel: /fuel\s*(?:expense|cost)?|petrol|diesel|indian\s*oil|bharat\s*petroleum|hp\s*petrol/i,
+  travel:
+    /\buber\b|\bola\b|irctc|flights?|airlines?|air\s*ticket|\bcab\b|\bmetro\b|redbus|makemytrip|goibibo|travel\s*(?:expense|booking)?|\btravel\b/i,
   entertainment:
     /netflix|amazon\s*prime|prime\s*video|hotstar|disney\+?|spotify|youtube\s*premium|sony\s*liv|sonyliv|zee5|\bott\b|gym\s*(?:membership|fee|subscription)?|subscription\s*(?:fee|charge)?|subscriptions?/i,
+  shopping:
+    /amazon(?!\s*prime)|flipkart|myntra|ajio|nykaa|meesho|snapdeal|tatacliq|\bmall\b|apparel|clothing|\bshopping\b/i,
   medical:
     /medical\s*(?:expense|bill)?|hospital|pharmacy|chemist|doctor\s*(?:fee|visit)?|clinic|apollo|medplus|pharmeasy|health\s*care|healthcare|diagnostic|lab\s*test/i,
 };
@@ -716,7 +726,9 @@ const PROFILE_KEY_ALIASES: Record<keyof ExtractedProfileFields, string[]> = {
   schoolFees: ["schoolfees", "tuition", "tuitionfees", "educationfees", "education", "collegefees", "coaching"],
   food: ["food", "groceries", "grocery"],
   fuel: ["fuel", "petrol", "diesel"],
+  travel: ["travel", "uber", "ola", "cab", "flights", "irctc"],
   entertainment: ["entertainment", "subscriptions", "subscription", "streaming", "netflix", "gym"],
+  shopping: ["shopping", "amazon", "flipkart", "myntra", "apparel", "clothing"],
   medical: ["medical", "healthcare", "health", "pharmacy", "hospital", "medicalexpenses"],
 };
 
@@ -743,7 +755,9 @@ function profileFromRecord(rec: Record<string, unknown>): ExtractedProfileFields
     schoolFees: parseAmount(pick(PROFILE_KEY_ALIASES.schoolFees) as string | number | null),
     food: parseAmount(pick(PROFILE_KEY_ALIASES.food) as string | number | null),
     fuel: parseAmount(pick(PROFILE_KEY_ALIASES.fuel) as string | number | null),
+    travel: parseAmount(pick(PROFILE_KEY_ALIASES.travel) as string | number | null),
     entertainment: parseAmount(pick(PROFILE_KEY_ALIASES.entertainment) as string | number | null),
+    shopping: parseAmount(pick(PROFILE_KEY_ALIASES.shopping) as string | number | null),
     medical: parseAmount(pick(PROFILE_KEY_ALIASES.medical) as string | number | null),
   };
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
@@ -12,26 +12,68 @@ import { FramePreviewBanner } from "@/components/frame-preview-banner";
 import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/layout";
 import { LandingPage } from "@/pages/landing";
-import { Dashboard } from "@/pages/dashboard";
-import { LoansList } from "@/pages/loans";
-import { CreditCardsList } from "@/pages/credit-cards";
-import { LoanDetail } from "@/pages/loan-detail";
-import { LoanForm } from "@/pages/loan-form";
-import { AllAmortization } from "@/pages/all-amortization";
-import { Planner } from "@/pages/planner";
-import Strategy from "@/pages/strategy";
-import { ProfilePage } from "@/pages/profile";
 import { ProfileProvider } from "@/lib/profile";
 import { PreferencesProvider } from "@/lib/preferences";
-import { SettingsPage } from "@/pages/settings";
-import { AboutPage } from "@/pages/about";
-import { HelpPage } from "@/pages/help";
-import { PrivacyPolicyPage } from "@/pages/privacy-policy";
-import { TermsPage } from "@/pages/terms";
-import { DisclaimerPage } from "@/pages/disclaimer";
-import { CookiePolicyPage } from "@/pages/cookie-policy";
-import { DataUsagePage } from "@/pages/data-usage";
-import { LicensePage } from "@/pages/license";
+
+// Authenticated and secondary pages are code-split into their own chunks so the
+// public landing route (`/`) ships only the marketing UI, auth screens, and
+// minimal shared shell — not the entire signed-in app.
+const Dashboard = lazy(() =>
+  import("@/pages/dashboard").then((m) => ({ default: m.Dashboard })),
+);
+const LoansList = lazy(() =>
+  import("@/pages/loans").then((m) => ({ default: m.LoansList })),
+);
+const CreditCardsList = lazy(() =>
+  import("@/pages/credit-cards").then((m) => ({ default: m.CreditCardsList })),
+);
+const LoanDetail = lazy(() =>
+  import("@/pages/loan-detail").then((m) => ({ default: m.LoanDetail })),
+);
+const LoanForm = lazy(() =>
+  import("@/pages/loan-form").then((m) => ({ default: m.LoanForm })),
+);
+const AllAmortization = lazy(() =>
+  import("@/pages/all-amortization").then((m) => ({
+    default: m.AllAmortization,
+  })),
+);
+const Planner = lazy(() =>
+  import("@/pages/planner").then((m) => ({ default: m.Planner })),
+);
+const Strategy = lazy(() => import("@/pages/strategy"));
+const ProfilePage = lazy(() =>
+  import("@/pages/profile").then((m) => ({ default: m.ProfilePage })),
+);
+const SettingsPage = lazy(() =>
+  import("@/pages/settings").then((m) => ({ default: m.SettingsPage })),
+);
+const AboutPage = lazy(() =>
+  import("@/pages/about").then((m) => ({ default: m.AboutPage })),
+);
+const HelpPage = lazy(() =>
+  import("@/pages/help").then((m) => ({ default: m.HelpPage })),
+);
+const PrivacyPolicyPage = lazy(() =>
+  import("@/pages/privacy-policy").then((m) => ({
+    default: m.PrivacyPolicyPage,
+  })),
+);
+const TermsPage = lazy(() =>
+  import("@/pages/terms").then((m) => ({ default: m.TermsPage })),
+);
+const DisclaimerPage = lazy(() =>
+  import("@/pages/disclaimer").then((m) => ({ default: m.DisclaimerPage })),
+);
+const CookiePolicyPage = lazy(() =>
+  import("@/pages/cookie-policy").then((m) => ({ default: m.CookiePolicyPage })),
+);
+const DataUsagePage = lazy(() =>
+  import("@/pages/data-usage").then((m) => ({ default: m.DataUsagePage })),
+);
+const LicensePage = lazy(() =>
+  import("@/pages/license").then((m) => ({ default: m.LicensePage })),
+);
 
 const queryClient = new QueryClient();
 
@@ -140,6 +182,18 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[100dvh] items-center justify-center bg-background">
+      <div
+        className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary"
+        role="status"
+        aria-label="Loading"
+      />
+    </div>
+  );
+}
+
 function HomeRedirect() {
   return (
     <>
@@ -214,6 +268,7 @@ function ClerkProviderWithRoutes() {
         <ClerkQueryClientCacheInvalidator />
         <ProfileProvider>
         <PreferencesProvider>
+        <Suspense fallback={<RouteFallback />}>
         <Switch>
           <Route path="/" component={HomeRedirect} />
           <Route path="/sign-in/*?" component={SignInPage} />
@@ -241,6 +296,7 @@ function ClerkProviderWithRoutes() {
           
           <Route component={NotFound} />
         </Switch>
+        </Suspense>
         </PreferencesProvider>
         </ProfileProvider>
       </QueryClientProvider>

@@ -3,10 +3,24 @@
 // Tesseract OCR. Extracted fields are best-effort and always editable by the
 // user in the review card.
 
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+// pdfjs is heavy (~1 MB) and only needed when a user actually uploads a PDF, so
+// it is loaded lazily to keep it out of the public/landing entry bundle.
+type PdfjsModule = typeof import("pdfjs-dist");
+let pdfjsPromise: Promise<PdfjsModule> | null = null;
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+async function loadPdfjs(): Promise<PdfjsModule> {
+  if (!pdfjsPromise) {
+    pdfjsPromise = (async () => {
+      const lib = await import("pdfjs-dist");
+      const workerUrl = (
+        await import("pdfjs-dist/build/pdf.worker.min.mjs?url")
+      ).default;
+      lib.GlobalWorkerOptions.workerSrc = workerUrl;
+      return lib;
+    })();
+  }
+  return pdfjsPromise;
+}
 
 export interface ExtractedData {
   borrowerName: string | null;
@@ -471,6 +485,7 @@ function score(
 
 async function pdfToText(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
+  const pdfjsLib = await loadPdfjs();
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
   if (pdf.numPages > MAX_PDF_PAGES) {
     await pdf.cleanup();

@@ -3,13 +3,22 @@ name: SEO domain auto-injection
 description: How loan-tracker fills canonical/OG/robots/sitemap/JSON-LD with the real published domain at build time.
 ---
 
-loan-tracker's public SEO URLs are NOT hardcoded to a domain. The source files
+loan-tracker's public SEO URLs are NOT hardcoded inline. The source files
 (`index.html`, `public/robots.txt`, `public/sitemap.xml`) all use the literal
-placeholder `https://loankhatam.replit.app`. A post-build step `seo.mjs` (runs in the
-`build` script after `prerender.mjs`) string-replaces that placeholder in the
-built `dist/public/*` with the real domain from `process.env.REPLIT_DOMAINS`
-(first entry), falling back to `REPLIT_DEV_DOMAIN`, then the placeholder. It also
-injects a JSON-LD `WebApplication` block into the built index.html.
+placeholder, which MUST equal the real production domain
+`https://loan-khatam.replit.app` (the published autoscale URL). A post-build step
+`seo.mjs` (runs in the `build` script after `prerender.mjs`) string-replaces that
+placeholder in built `dist/public/*` with `process.env.REPLIT_DOMAINS` (first
+entry) when set; otherwise it KEEPS the placeholder. It also injects a JSON-LD
+`WebApplication` block into the built index.html.
+
+**Critical — never fall back to REPLIT_DEV_DOMAIN.** At the autoscale *build
+phase* `REPLIT_DOMAINS` is NOT set but `REPLIT_DEV_DOMAIN` IS. An earlier
+`resolveBaseUrl` fell back to the dev domain, so production canonical/sitemap/
+robots/OG all pointed at the ephemeral `*.sisko.replit.dev` build-container URL —
+Google would index the wrong domain. Fix: fall back to the production placeholder
+only. Because the placeholder now equals the real prod URL, an empty
+`REPLIT_DOMAINS` at build still yields correct prod SEO URLs.
 
 **Why:** the user is non-technical and repeatedly could not supply their published
 `.replit.app` URL (kept pasting the editor `replit.com/@...` link or the literal

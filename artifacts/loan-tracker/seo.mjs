@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(root, "dist/public");
-const PLACEHOLDER = "https://loankhatam.replit.app";
+const PLACEHOLDER = "https://loan-khatam.replit.app";
 
 function normalizeHost(value) {
   return String(value || "")
@@ -28,8 +28,10 @@ function resolveBaseUrl() {
     .map(normalizeHost)
     .filter(Boolean);
   if (domains.length > 0) return `https://${domains[0]}`;
-  const dev = normalizeHost(process.env.REPLIT_DEV_DOMAIN);
-  if (dev) return `https://${dev}`;
+  // No REPLIT_DOMAINS at build time (e.g. the autoscale build phase) — fall back
+  // to the production placeholder, NOT REPLIT_DEV_DOMAIN. The dev domain is an
+  // ephemeral build-container URL and must never leak into production SEO assets
+  // (canonical/sitemap/robots/OG), or Google indexes the wrong domain.
   return PLACEHOLDER;
 }
 

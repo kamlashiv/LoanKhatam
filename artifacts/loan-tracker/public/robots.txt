@@ -3,4 +3,4 @@ Allow: /
 
 # The domain below is replaced automatically at build time with the live
 # published deployment domain (see seo.mjs); no manual edit is needed.
-Sitemap: https://loankhatam.replit.app/sitemap.xml
+Sitemap: https://loan-khatam.replit.app/sitemap.xml

@@ -4,10 +4,12 @@
 - Public marketing landing page (`/`)
 - Public authentication entry points (`/sign-in`, `/sign-up`) only where they affect shared crawlability or metadata
 - Public trust/support pages if they are intended to be reachable without authentication (`/about`, `/help`, `/privacy-policy`, `/terms`, `/disclaimer`, `/cookie-policy`, `/data-usage`, `/license`)
+- Standalone public planner artifact in `artifacts/bento-planner`
 
 ## Out of scope
 - Authenticated product experience (`/dashboard`, `/loans/**`, `/credit-cards`, `/amortization`, `/planner`, `/strategy`, `/profile`, `/settings`)
 - User-specific or account-specific content behind Clerk auth
+- Mockup, sandbox, and internal development artifacts
 
 ## Target audience
 - Individuals tracking money lent to friends and family
@@ -24,5 +26,5 @@
 
 ## Notes
 - Current frontend stack is React + Vite + Wouter SPA.
-- No server-rendered marketing HTML was found in the source; crawlers receive the shared `index.html` shell and rely on JavaScript for page body content.
-- About/help/policy pages exist in the app, but the current source places them behind authentication and only links to them from the signed-in settings area.
+- `artifacts/loan-tracker` now prerenders the `/` landing page at build time, but its other public routes still rely on the shared SPA shell.
+- `artifacts/bento-planner` is a separate standalone Vite SPA with a public single-route surface and no prerender step.

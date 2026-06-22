@@ -18,6 +18,7 @@ import { toast } from "@/hooks/use-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme";
 import { FramePreviewBanner } from "@/components/frame-preview-banner";
+import { AuthShowcase } from "@/components/auth-showcase";
 import { writeOfflineSnapshot, clearOfflineSnapshots } from "@/lib/offline-cache";
 import { runBackInterceptor } from "@/lib/mobile-back-guard";
 
@@ -129,8 +130,8 @@ const clerkAppearance = {
   },
   elements: {
     rootBox: "w-full flex justify-center",
-    cardBox: "bg-card rounded-2xl w-[440px] max-w-full overflow-hidden shadow-lg border border-border rounded-tl-[25px] rounded-tr-[25px] rounded-br-[25px] rounded-bl-[25px]",
-    card: "!shadow-none !border-0 !bg-transparent !rounded-none !px-8 !py-8",
+    cardBox: "!bg-transparent !shadow-none !border-0 !rounded-none w-full max-w-full overflow-visible",
+    card: "!shadow-none !border-0 !bg-transparent !rounded-none !px-0 !py-0",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
     headerTitle: "text-2xl font-bold text-foreground tracking-tight",
     headerSubtitle: "text-muted-foreground mt-1",
@@ -142,7 +143,7 @@ const clerkAppearance = {
     identityPreviewEditButton: "text-primary",
     formFieldSuccessText: "text-success",
     alertText: "text-foreground",
-    logoBox: "mb-6 flex justify-center",
+    logoBox: "hidden",
     logoImage: "h-12 w-auto",
     socialButtonsBlockButton: "border-border hover:bg-secondary transition-colors",
     formButtonPrimary: "bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
@@ -158,17 +159,17 @@ const clerkAppearance = {
 
 function SignInPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
+    <AuthShowcase>
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
-    </div>
+    </AuthShowcase>
   );
 }
 
 function SignUpPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 py-12">
+    <AuthShowcase>
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-    </div>
+    </AuthShowcase>
   );
 }
 

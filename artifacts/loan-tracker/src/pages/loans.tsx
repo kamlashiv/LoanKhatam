@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Link, useSearch, useLocation } from "wouter";
 import { useListLoans } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils";
 import { ShareLoan } from "@/components/share-loan";
@@ -25,9 +25,13 @@ export function LoansList() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus);
   const [search, setSearch] = useState("");
 
-  const { data: loans, isLoading } = useListLoans(
+  const { data: loans, isLoading, isFetching, refetch } = useListLoans(
     statusFilter !== "all" ? { status: statusFilter } : undefined
   );
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   const filtered = loans?.filter((l) =>
     l.borrowerName.toLowerCase().includes(search.toLowerCase())
@@ -46,9 +50,21 @@ export function LoansList() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">All Loans</h1>
-          <p className="text-muted-foreground mt-1">
-            {loans ? `${loans.length} loan${loans.length !== 1 ? "s" : ""}` : "Loading..."}
-          </p>
+          <div className="mt-1 flex items-center gap-1.5 text-muted-foreground">
+            <span>
+              {loans ? `${loans.length} loan${loans.length !== 1 ? "s" : ""}` : "Loading..."}
+            </span>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isFetching}
+              aria-label="Refresh loans list"
+              title="Refresh now"
+              className="inline-flex items-center justify-center rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            </button>
+          </div>
         </div>
         <Button asChild className="gap-2 shadow-sm">
           <Link href="/loans/new">

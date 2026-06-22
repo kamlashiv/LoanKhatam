@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>You're offline — Ledger</title>
+    <style>
+      :root {
+        --indigo-600: #4f46e5;
+        --indigo-500: #6366f1;
+        --emerald: #34d399;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color: #f8fafc;
+        background:
+          radial-gradient(140% 120% at 50% -10%, rgba(99, 102, 241, 0.45), transparent 60%),
+          linear-gradient(160deg, #312e81 0%, #1e1b4b 45%, #0f0e24 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: env(safe-area-inset-top) 24px env(safe-area-inset-bottom);
+        text-align: center;
+      }
+      .card {
+        width: 100%;
+        max-width: 360px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 22px;
+      }
+      .logo {
+        width: 76px;
+        height: 76px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, var(--indigo-600), var(--indigo-500));
+        position: relative;
+        box-shadow: 0 18px 40px -12px rgba(79, 70, 229, 0.7);
+        flex-shrink: 0;
+      }
+      .logo svg {
+        position: absolute;
+        inset: 0;
+        margin: auto;
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: -0.4px;
+        margin: 0;
+      }
+      p {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.55;
+        color: rgba(226, 232, 240, 0.78);
+      }
+      .retry {
+        margin-top: 6px;
+        width: 100%;
+        border: 0;
+        cursor: pointer;
+        padding: 15px 24px;
+        border-radius: 14px;
+        font-size: 16px;
+        font-weight: 700;
+        font-family: inherit;
+        color: #fff;
+        background: linear-gradient(135deg, var(--indigo-600), var(--indigo-500));
+        box-shadow: 0 14px 30px -10px rgba(79, 70, 229, 0.8);
+        transition: transform 0.12s ease, opacity 0.12s ease;
+      }
+      .retry:active {
+        transform: scale(0.97);
+      }
+      .retry[disabled] {
+        opacity: 0.7;
+        cursor: default;
+      }
+      .hint {
+        font-size: 13px;
+        color: rgba(148, 163, 184, 0.85);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        color: rgba(226, 232, 240, 0.7);
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 6px 12px;
+        border-radius: 999px;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #f87171;
+        box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.6);
+        animation: pulse 1.8s infinite;
+      }
+      .dot.online {
+        background: var(--emerald);
+        animation: none;
+      }
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.6);
+        }
+        70% {
+          box-shadow: 0 0 0 9px rgba(248, 113, 113, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(248, 113, 113, 0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <span class="badge"><span class="dot" id="statusDot"></span><span id="statusText">No connection</span></span>
+      <div class="logo">
+        <svg width="44" height="44" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="9" y="11" width="20" height="4.4" rx="2.2" fill="#ffffff" />
+          <rect x="9" y="19.8" width="26" height="4.4" rx="2.2" fill="#ffffff" fill-opacity="0.85" />
+          <rect x="9" y="28.6" width="15" height="4.4" rx="2.2" fill="#ffffff" fill-opacity="0.7" />
+          <circle cx="33.5" cy="13.2" r="4.2" fill="#34d399" />
+        </svg>
+      </div>
+      <h1>You're offline</h1>
+      <p>Ledger needs an internet connection to load your loans and payments. Check your connection and try again.</p>
+      <button class="retry" id="retryBtn" type="button">Retry</button>
+      <span class="hint" id="hint">We'll reconnect as soon as you're back online.</span>
+    </main>
+    <script>
+      (function () {
+        var btn = document.getElementById("retryBtn");
+        var hint = document.getElementById("hint");
+        var dot = document.getElementById("statusDot");
+        var statusText = document.getElementById("statusText");
+
+        function goToApp() {
+          btn.disabled = true;
+          btn.textContent = "Reconnecting…";
+          // The offline page is served by Capacitor under the live site's
+          // origin, so navigating to "/" re-attempts loading the live app.
+          window.location.replace(window.location.origin + "/");
+        }
+
+        function reflectStatus() {
+          var online = navigator.onLine;
+          dot.classList.toggle("online", online);
+          statusText.textContent = online ? "Back online" : "No connection";
+          hint.textContent = online
+            ? "Connection restored — tap Retry to continue."
+            : "We'll reconnect as soon as you're back online.";
+        }
+
+        btn.addEventListener("click", goToApp);
+        window.addEventListener("online", function () {
+          reflectStatus();
+          // Auto-recover once the device reports connectivity again.
+          goToApp();
+        });
+        window.addEventListener("offline", reflectStatus);
+        reflectStatus();
+      })();
+    </script>
+  </body>
+</html>

@@ -25,6 +25,11 @@ const config: CapacitorConfig = {
     // The app loads your live published site over HTTPS.
     url: APP_URL,
     cleartext: false,
+    // Shown when the live site can't be reached (no internet, server down).
+    // This is a static page bundled into the app (dist/public/offline.html);
+    // Capacitor serves it locally under the live site's origin, so its Retry
+    // button can simply navigate to "/" to re-attempt loading the live app.
+    errorPath: "offline.html",
   },
 };
 

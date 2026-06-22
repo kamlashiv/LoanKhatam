@@ -14,6 +14,7 @@ import {
   type Loan,
 } from "@workspace/api-client-react";
 import { Toaster } from "@/components/ui/toaster";
+import { toast } from "@/hooks/use-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme";
 import { FramePreviewBanner } from "@/components/frame-preview-banner";
@@ -226,19 +227,35 @@ function OfflineSnapshotWriter() {
 // On Android (Capacitor WebView), the hardware/gesture back button defaults to
 // exiting the app. Instead, walk back through the app's own history (Wouter
 // listens to popstate, so `history.back()` drives in-app navigation) and only
-// exit when there is no in-app history left. No-op on web.
+// exit when there is no in-app history left. On the root screen, require a
+// second back press within a short window before exiting so an accidental tap
+// doesn't close the app. No-op on web.
+const BACK_TO_EXIT_WINDOW_MS = 2000;
+
 function MobileBackButtonHandler() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
     let removeListener: (() => void) | undefined;
+    let lastBackPressAt = 0;
 
     CapacitorApp.addListener("backButton", ({ canGoBack }) => {
       if (canGoBack) {
         window.history.back();
-      } else {
-        CapacitorApp.exitApp();
+        return;
       }
+
+      const now = Date.now();
+      if (now - lastBackPressAt < BACK_TO_EXIT_WINDOW_MS) {
+        CapacitorApp.exitApp();
+        return;
+      }
+
+      lastBackPressAt = now;
+      toast({
+        description: "Press back again to exit",
+        duration: BACK_TO_EXIT_WINDOW_MS,
+      });
     }).then((handle) => {
       removeListener = () => {
         void handle.remove();

@@ -270,8 +270,19 @@ const statusLabel: Record<string, string> = {
 };
 
 export function Dashboard() {
-  const { data: summary, isLoading: summaryLoading, dataUpdatedAt } = useGetDashboardSummary();
-  const { data: recentLoans, isLoading: loansLoading } = useGetRecentLoans();
+  const {
+    data: summary,
+    isLoading: summaryLoading,
+    dataUpdatedAt,
+    refetch: refetchSummary,
+    isFetching: summaryFetching,
+  } = useGetDashboardSummary();
+  const {
+    data: recentLoans,
+    isLoading: loansLoading,
+    refetch: refetchRecentLoans,
+    isFetching: recentLoansFetching,
+  } = useGetRecentLoans();
   const { profile } = useProfile();
   const derived = useDerivedLoans();
   const [showImport, setShowImport] = useState(false);
@@ -282,6 +293,12 @@ export function Dashboard() {
     return () => clearInterval(id);
   }, []);
   const lastSynced = dataUpdatedAt ? relativeTime(dataUpdatedAt) : "";
+
+  const isRefreshing = summaryFetching || recentLoansFetching;
+  const handleRefresh = useCallback(() => {
+    refetchSummary();
+    refetchRecentLoans();
+  }, [refetchSummary, refetchRecentLoans]);
 
   const profIncome = totalIncome(profile);
   const profSurplus = monthlySurplus(profile, derived.aggregateEmi);
@@ -356,10 +373,19 @@ export function Dashboard() {
           </h1>
           <p className="mt-1 font-medium text-slate-500 dark:text-slate-400">As of {today}</p>
           {lastSynced && (
-            <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
-              <RefreshCw className="h-3 w-3" />
-              Last synced {lastSynced}
-            </p>
+            <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
+              <span>Last synced {lastSynced}</span>
+              <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                aria-label="Refresh dashboard data"
+                title="Refresh now"
+                className="inline-flex items-center justify-center rounded-md p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+              >
+                <RefreshCw className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`} />
+              </button>
+            </div>
           )}
         </div>
         <div className="flex flex-wrap gap-3">

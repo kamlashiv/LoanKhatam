@@ -11,7 +11,7 @@
  * modes are covered.
  */
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 // wouter ships untranspiled ESM; the form only needs these to render.
@@ -24,6 +24,15 @@ jest.mock("wouter", () => ({
   useParams: () => mockUseParams(),
   useSearch: () => mockUseSearch(),
 }));
+
+// Pretend we're running inside the Android (Capacitor) WebView so the
+// back-button discard guard registers. `runBackInterceptor` simulates the
+// hardware back press dispatched from App.tsx.
+const mockIsNativePlatform = jest.fn(() => true);
+jest.mock("@capacitor/core", () => ({
+  Capacitor: { isNativePlatform: () => mockIsNativePlatform() },
+}));
+import { runBackInterceptor } from "../../lib/mobile-back-guard";
 
 // Capture the payloads handed to the create/update mutations.
 const mockCreateMutate = jest.fn();
@@ -204,5 +213,80 @@ describe("Loan form", () => {
     expect(call.id).toBe(5);
     expect(call.data.principalAmount).toBe(450000);
     expect(call.data.borrowerName).toBe("Asha Patel");
+  });
+
+  describe("Android back-button discard guard", () => {
+    beforeEach(() => {
+      mockIsNativePlatform.mockReturnValue(true);
+    });
+
+    it("does not intercept the back press when the form is pristine", () => {
+      render(<LoanForm />);
+      // No edits → no interceptor registered → back press not handled here.
+      expect(runBackInterceptor()).toBe(false);
+      expect(
+        screen.queryByRole("alertdialog", { name: "Discard changes?" }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows a confirm dialog when the back button is pressed with unsaved edits", async () => {
+      const user = userEvent.setup();
+      render(<LoanForm />);
+
+      await user.type(screen.getByLabelText("Borrower Name"), "Ramesh");
+
+      // Hardware back press is handled by the form's interceptor.
+      let handled = false;
+      await waitFor(() => {
+        handled = runBackInterceptor();
+        expect(handled).toBe(true);
+      });
+
+      expect(
+        await screen.findByRole("alertdialog", { name: "Discard changes?" }),
+      ).toBeInTheDocument();
+    });
+
+    it("stays on the form when the user chooses to keep editing", async () => {
+      const backSpy = jest
+        .spyOn(window.history, "back")
+        .mockImplementation(() => {});
+      const user = userEvent.setup();
+      render(<LoanForm />);
+
+      await user.type(screen.getByLabelText("Borrower Name"), "Ramesh");
+      await waitFor(() => expect(runBackInterceptor()).toBe(true));
+
+      await user.click(await screen.findByRole("button", { name: "Keep editing" }));
+
+      expect(backSpy).not.toHaveBeenCalled();
+      backSpy.mockRestore();
+    });
+
+    it("navigates back when the user confirms discarding changes", async () => {
+      const backSpy = jest
+        .spyOn(window.history, "back")
+        .mockImplementation(() => {});
+      const user = userEvent.setup();
+      render(<LoanForm />);
+
+      await user.type(screen.getByLabelText("Borrower Name"), "Ramesh");
+      await waitFor(() => expect(runBackInterceptor()).toBe(true));
+
+      await user.click(await screen.findByRole("button", { name: "Discard" }));
+
+      expect(backSpy).toHaveBeenCalledTimes(1);
+      backSpy.mockRestore();
+    });
+
+    it("does not register the interceptor on web (non-native)", async () => {
+      mockIsNativePlatform.mockReturnValue(false);
+      const user = userEvent.setup();
+      render(<LoanForm />);
+
+      await user.type(screen.getByLabelText("Borrower Name"), "Ramesh");
+
+      expect(runBackInterceptor()).toBe(false);
+    });
   });
 });

@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams, useSearch } from "wouter";
+import { Capacitor } from "@capacitor/core";
 import {
   useCreateLoan,
   useGetLoan,
@@ -21,9 +22,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ArrowLeft, Calculator, Plus, Receipt, Sparkles, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatRupees, formatDate } from "@/lib/loan-utils";
+import { registerBackInterceptor } from "@/lib/mobile-back-guard";
 
 interface RateChangeEntry {
   effectiveDate: string;
@@ -77,13 +89,21 @@ export function LoanForm() {
 
   const [rateChanges, setRateChanges] = useState<RateChangeEntry[]>([]);
 
+  // Snapshot of the form's pristine state used to detect unsaved edits. Starts
+  // from the initial (possibly URL-prefilled) values and is reset to the loaded
+  // values once an existing loan is fetched in edit mode.
+  const baselineRef = useRef<string>(
+    JSON.stringify({ form, rateChanges: [] as RateChangeEntry[] }),
+  );
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+
   const { data: existingLoan } = useGetLoan(id ?? 0, {
     query: { enabled: isEditing, queryKey: getGetLoanQueryKey(id ?? 0) },
   });
 
   useEffect(() => {
     if (existingLoan && isEditing) {
-      setForm({
+      const loadedForm = {
         borrowerName: existingLoan.borrowerName,
         principalAmount: existingLoan.principalAmount.toString(),
         interestRate: existingLoan.interestRate.toString(),
@@ -92,17 +112,35 @@ export function LoanForm() {
         dueDate: existingLoan.dueDate,
         bank: existingLoan.bank ?? "",
         description: existingLoan.description ?? "",
+      };
+      const loadedRateChanges =
+        existingLoan.rateChanges && existingLoan.rateChanges.length > 0
+          ? existingLoan.rateChanges.map((rc) => ({
+              effectiveDate: rc.effectiveDate,
+              newRate: rc.newRate.toString(),
+            }))
+          : [];
+      setForm(loadedForm);
+      setRateChanges(loadedRateChanges);
+      baselineRef.current = JSON.stringify({
+        form: loadedForm,
+        rateChanges: loadedRateChanges,
       });
-      if (existingLoan.rateChanges && existingLoan.rateChanges.length > 0) {
-        setRateChanges(
-          existingLoan.rateChanges.map((rc) => ({
-            effectiveDate: rc.effectiveDate,
-            newRate: rc.newRate.toString(),
-          }))
-        );
-      }
     }
   }, [existingLoan, isEditing]);
+
+  const isDirty =
+    JSON.stringify({ form, rateChanges }) !== baselineRef.current;
+
+  // On Android, warn before the hardware back button discards unsaved edits.
+  // No-op on web (the interceptor is never registered).
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform() || !isDirty) return;
+    return registerBackInterceptor(() => {
+      setShowDiscardDialog(true);
+      return true;
+    });
+  }, [isDirty]);
 
   const createLoan = useCreateLoan({
     mutation: {
@@ -581,6 +619,24 @@ export function LoanForm() {
           </aside>
         </div>
       </form>
+
+      <AlertDialog open={showDiscardDialog} onOpenChange={setShowDiscardDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes to this loan. If you go back now, your
+              changes will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction onClick={() => window.history.back()}>
+              Discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

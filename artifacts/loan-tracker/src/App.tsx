@@ -19,6 +19,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme";
 import { FramePreviewBanner } from "@/components/frame-preview-banner";
 import { writeOfflineSnapshot, clearOfflineSnapshots } from "@/lib/offline-cache";
+import { runBackInterceptor } from "@/lib/mobile-back-guard";
 
 import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/layout";
@@ -240,6 +241,12 @@ function MobileBackButtonHandler() {
     let lastBackPressAt = 0;
 
     CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+      // Let an active screen (e.g. a dirty loan form) intercept the back press
+      // first — it may show a "Discard changes?" confirm instead of navigating.
+      if (runBackInterceptor()) {
+        return;
+      }
+
       if (canGoBack) {
         window.history.back();
         return;

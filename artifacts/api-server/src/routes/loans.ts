@@ -82,7 +82,9 @@ router.get("/", requireAuth, async (req: any, res) => {
           await db
             .update(loansTable)
             .set({ status: computed.status as any })
-            .where(eq(loansTable.id, loan.id));
+            .where(
+              and(eq(loansTable.id, loan.id), eq(loansTable.userId, req.userId)),
+            );
         }
         return computed;
       }),
@@ -216,7 +218,7 @@ router.patch("/:id", requireAuth, async (req: any, res) => {
     const [updated] = await db
       .update(loansTable)
       .set(updates)
-      .where(eq(loansTable.id, id))
+      .where(and(eq(loansTable.id, id), eq(loansTable.userId, req.userId)))
       .returning();
 
     const payments = await db
@@ -243,7 +245,9 @@ router.delete("/:id", requireAuth, async (req: any, res) => {
       .where(and(eq(loansTable.id, id), eq(loansTable.userId, req.userId)));
     if (!existing) return res.status(404).json({ error: "Not found" });
 
-    await db.delete(loansTable).where(eq(loansTable.id, id));
+    await db
+      .delete(loansTable)
+      .where(and(eq(loansTable.id, id), eq(loansTable.userId, req.userId)));
     return res.status(204).send();
   } catch (err) {
     logger.error({ err }, "Error deleting loan");

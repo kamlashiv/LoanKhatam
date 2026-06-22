@@ -93,7 +93,7 @@ router.post("/", requireAuth, async (req: any, res) => {
       await db
         .update(loansTable)
         .set({ status: "paid" })
-        .where(eq(loansTable.id, loanId));
+        .where(and(eq(loansTable.id, loanId), eq(loansTable.userId, req.userId)));
     }
 
     return res.status(201).json({
@@ -134,7 +134,11 @@ router.delete("/:paymentId", requireAuth, async (req: any, res) => {
       );
     if (!payment) return res.status(404).json({ error: "Payment not found" });
 
-    await db.delete(paymentsTable).where(eq(paymentsTable.id, paymentId));
+    await db
+      .delete(paymentsTable)
+      .where(
+        and(eq(paymentsTable.id, paymentId), eq(paymentsTable.loanId, loanId)),
+      );
     return res.status(204).send();
   } catch (err) {
     logger.error({ err }, "Error deleting payment");

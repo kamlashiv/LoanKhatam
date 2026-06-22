@@ -41,3 +41,14 @@ extract-loan, gmail/scan). extract-financials also caps input text length (413).
 Any CSV the user can open in a spreadsheet must prefix a leading `= + - @` tab or
 CR with a single quote before quoting, or a malicious borrower-name/field becomes
 an executable formula.
+
+## Scope ownership in the mutation query itself, not just a pre-check
+Every `update(...)`/`delete(...)` on a user-owned table (loans, payments, etc.)
+must carry `and(eq(table.id, id), eq(table.userId, req.userId))` (payments also
+scope by `loanId`) in its OWN `WHERE` clause — even when a userId-scoped
+`select` already verified ownership a few lines above. A separate pre-check is a
+TOCTOU/refactor hazard; the destructive query must be self-sufficient.
+**Why:** an architect review flagged update/delete-by-PK-alone as residual IDOR.
+**How to apply:** grep `update(<table>)` / `delete(<table>)` and confirm every
+`.where(...)` includes the userId predicate, including incidental status
+auto-transition writes inside GET/POST handlers.

@@ -305,7 +305,7 @@ export function LoanForm() {
             {isEditing ? "Edit Loan" : "Add New Loan"}
           </h1>
           <p className="text-muted-foreground text-sm mt-0.5">
-            {isEditing ? "Update loan details" : "Record a new loan in your ledger"}
+            {isEditing ? "Update loan details" : "Record a new loan in Loan Khatam"}
           </p>
         </div>
       </div>

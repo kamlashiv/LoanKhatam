@@ -347,12 +347,12 @@ function ClerkProviderWithRoutes() {
         signIn: {
           start: {
             title: "Welcome back",
-            subtitle: "Sign in to access your ledger",
+            subtitle: "Sign in to access your Loan Khatam account",
           },
         },
         signUp: {
           start: {
-            title: "Create your ledger",
+            title: "Create your Loan Khatam account",
             subtitle: "Track your loans with clarity",
           },
         },

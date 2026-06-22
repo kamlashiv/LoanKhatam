@@ -50,7 +50,7 @@ export function LandingPage() {
     {
       icon: Users,
       title: "Private & Secure",
-      description: "Your private ledger for loans to friends and family — organized and secure.",
+      description: "Keep your loans to friends and family private and secure with Loan Khatam.",
     },
   ];
 
@@ -107,7 +107,7 @@ export function LandingPage() {
               </Link>
               <Link href="/sign-in" className="w-full sm:w-auto">
                 <Button size="lg" variant="outline" className="w-full sm:w-auto text-base px-8 py-6 font-semibold bg-background/50 backdrop-blur-sm">
-                  Sign in to your ledger
+                  Sign in to Loan Khatam
                 </Button>
               </Link>
             </div>
@@ -231,7 +231,7 @@ export function LandingPage() {
         <div className="max-w-3xl mx-auto text-center relative z-10">
           <h2 className="text-4xl lg:text-5xl font-bold mb-6 tracking-tight">Ready to start?</h2>
           <p className="text-primary-foreground/80 text-xl mb-10 max-w-xl mx-auto">
-            Create your personal ledger in seconds. No complexity, just clarity.
+            Create your Loan Khatam account in seconds. No complexity, just clarity.
           </p>
           <Link href="/sign-up">
             <Button size="lg" variant="secondary" className="text-base px-10 py-6 font-semibold shadow-xl hover:scale-105 transition-transform text-primary">

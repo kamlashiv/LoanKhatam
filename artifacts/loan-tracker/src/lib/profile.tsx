@@ -47,110 +47,48 @@ export const EMPTY_PROFILE: ProfileData = {
   riskProfile: "moderate",
 };
 
-// Legacy localStorage keys we migrate from on first load.
-const STRATEGY_KEY = "loan-tracker:strategy-inputs";
+// Fully obsolete browser-global localStorage key from a pre-server-profile
+// version. It is no longer read into any account (auto-migration was removed
+// because browser-global storage cannot be attributed to an authenticated user
+// — uploading it into whichever account signs in leaked one user's financial
+// profile into another's). We proactively purge it so leftover financial PII
+// does not linger on a shared device.
+const OBSOLETE_STRATEGY_KEY = "loan-tracker:strategy-inputs";
+
+// Still-in-use browser-global key for the EMI-vs-Investment analyzer. It now
+// only stores non-sensitive scenario knobs, but older versions also kept
+// monthly income/expenses (financial PII) here. We strip those legacy PII
+// fields proactively at boot so they don't linger on a shared device even if
+// the analyzer is never opened to rewrite the entry.
 const EMI_INVEST_KEY = "loan-tracker:emi-invest";
-const MIGRATION_FLAG = "loan-tracker:profile-migrated";
+const EMI_INVEST_PII_FIELDS = ["monthlyIncome", "monthlyExpenses"];
 
 const SAVE_DEBOUNCE_MS = 800;
 
-const RISK_PROFILES: ProfileData["riskProfile"][] = [
-  "conservative",
-  "moderate",
-  "aggressive",
-];
-
-function num(raw: Record<string, unknown>, key: string, fallback: number): number {
-  const v = raw[key];
-  return typeof v === "number" && Number.isFinite(v) ? v : fallback;
-}
-
-/**
- * Read the old per-page localStorage entries (if any) and fold them into a
- * single profile object. Used once to seed the server profile for users who
- * had data before the global profile existed.
- */
-function readLegacyProfile(): ProfileData | null {
-  let strategy: Record<string, unknown> | null = null;
-  let emiInvest: Record<string, unknown> | null = null;
+function purgeObsoleteLegacyStorage(): void {
   try {
-    const raw = localStorage.getItem(STRATEGY_KEY);
-    if (raw) strategy = JSON.parse(raw) as Record<string, unknown>;
+    localStorage.removeItem(OBSOLETE_STRATEGY_KEY);
   } catch {
-    /* ignore corrupt storage */
+    /* ignore storage access errors */
   }
   try {
     const raw = localStorage.getItem(EMI_INVEST_KEY);
-    if (raw) emiInvest = JSON.parse(raw) as Record<string, unknown>;
+    if (raw) {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      if (parsed && typeof parsed === "object") {
+        let changed = false;
+        for (const field of EMI_INVEST_PII_FIELDS) {
+          if (field in parsed) {
+            delete parsed[field];
+            changed = true;
+          }
+        }
+        if (changed) localStorage.setItem(EMI_INVEST_KEY, JSON.stringify(parsed));
+      }
+    }
   } catch {
-    /* ignore corrupt storage */
+    /* ignore corrupt storage / quota errors */
   }
-
-  if (!strategy && !emiInvest) return null;
-  strategy = strategy ?? {};
-
-  // Fold the EMI-analyzer's income/expenses into the profile when the Strategy
-  // page didn't already provide them, so nothing is lost on migration. The
-  // analyzer's single "monthly expenses" figure is absorbed into miscellaneous.
-  const emiIncome = emiInvest ? num(emiInvest, "monthlyIncome", 0) : 0;
-  const emiExpenses = emiInvest ? num(emiInvest, "monthlyExpenses", 0) : 0;
-
-  const debts = Array.isArray(strategy.loans)
-    ? (strategy.loans as unknown[]).flatMap((item) => {
-        if (typeof item !== "object" || item === null) return [];
-        const d = item as Record<string, unknown>;
-        return [
-          {
-            id: typeof d.id === "string" && d.id ? d.id : crypto.randomUUID(),
-            name: typeof d.name === "string" ? d.name : "",
-            balance: num(d, "balance", 0),
-            rate: num(d, "rate", 0),
-            minPayment: num(d, "minPayment", 0),
-          },
-        ];
-      })
-    : [];
-  const goals = Array.isArray(strategy.goals)
-    ? (strategy.goals as unknown[]).filter((g): g is string => typeof g === "string")
-    : [];
-  const riskProfile = RISK_PROFILES.includes(
-    strategy.riskProfile as ProfileData["riskProfile"],
-  )
-    ? (strategy.riskProfile as ProfileData["riskProfile"])
-    : "moderate";
-
-  return {
-    name: typeof strategy.name === "string" ? strategy.name : "",
-    age: num(strategy, "age", 30),
-    occupation: typeof strategy.occupation === "string" ? strategy.occupation : "",
-    monthlyIncome: num(strategy, "monthlyIncome", 0) || emiIncome,
-    additionalIncome: num(strategy, "additionalIncome", 0),
-    rent: num(strategy, "rent", 0),
-    emi: num(strategy, "emi", 0),
-    insurance: num(strategy, "insurance", 0),
-    utilities: num(strategy, "utilities", 0),
-    schoolFees: num(strategy, "schoolFees", 0),
-    internet: num(strategy, "internet", 0),
-    otherFixed: num(strategy, "otherFixed", 0),
-    food: num(strategy, "food", 0),
-    fuel: num(strategy, "fuel", 0),
-    travel: num(strategy, "travel", 0),
-    entertainment: num(strategy, "entertainment", 0),
-    shopping: num(strategy, "shopping", 0),
-    medical: num(strategy, "medical", 0),
-    miscellaneous: num(strategy, "miscellaneous", 0) || emiExpenses,
-    currentSavings: num(strategy, "currentSavings", 0),
-    existingInvestments: num(strategy, "existingInvestments", 0),
-    creditCardDebt: num(strategy, "creditCardDebt", 0),
-    debts,
-    goals,
-    riskProfile,
-  };
-}
-
-function isEmptyProfile(p: ProfileData): boolean {
-  return JSON.stringify({ ...p, name: "", occupation: "", age: 30 }) ===
-    JSON.stringify({ ...EMPTY_PROFILE });
 }
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -196,7 +134,6 @@ function ProfileProviderInner({ children }: { children: React.ReactNode }) {
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const migrationTriedRef = useRef(false);
   const mountedRef = useRef(true);
   // Whether the server profile has been folded into the local draft yet.
   const hydratedRef = useRef(false);
@@ -223,34 +160,14 @@ function ProfileProviderInner({ children }: { children: React.ReactNode }) {
     [mutateAsync, queryClient, profileKey],
   );
 
-  // One-time migration: if the server has no profile yet but legacy
-  // localStorage data exists, push it up so nothing is lost.
+  // Purge the obsolete browser-global legacy profile key on mount so leftover
+  // financial PII from an earlier user/version cannot linger on a shared device.
+  // We deliberately do NOT migrate it into the current account: browser-global
+  // storage cannot be attributed to an authenticated user, so auto-uploading it
+  // would leak one person's financial profile into another's account.
   useEffect(() => {
-    if (!data || migrationTriedRef.current) return;
-    migrationTriedRef.current = true;
-    if (data.updatedAt !== null) return; // already has a server profile
-    let alreadyMigrated = false;
-    try {
-      alreadyMigrated = localStorage.getItem(MIGRATION_FLAG) === "1";
-    } catch {
-      /* ignore */
-    }
-    if (alreadyMigrated) return;
-    const legacy = readLegacyProfile();
-    try {
-      localStorage.setItem(MIGRATION_FLAG, "1");
-    } catch {
-      /* ignore */
-    }
-    if (legacy && !isEmptyProfile(legacy)) {
-      // Legacy migration is authoritative for this fresh (server-empty) profile;
-      // mark hydrated so the seed effect doesn't overwrite it with defaults.
-      hydratedRef.current = true;
-      pendingPatchRef.current = null;
-      setDraft(legacy);
-      void persist(legacy);
-    }
-  }, [data, persist]);
+    purgeObsoleteLegacyStorage();
+  }, []);
 
   const scheduleSave = useCallback(
     (next: ProfileData) => {

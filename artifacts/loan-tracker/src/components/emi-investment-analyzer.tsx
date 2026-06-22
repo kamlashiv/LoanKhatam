@@ -59,19 +59,18 @@ function loadInputs(): EmiInvestInputs {
 }
 
 /**
- * Persist ONLY the keys this component still owns (the scenario knobs in
- * NUMERIC_KEYS), merged over whatever is already stored. Spreading the full
- * `inputs` would write `0` for keys owned elsewhere — monthlyIncome/Expenses
- * (the global profile) and the loan figures (live loans) — clobbering legacy
- * values the profile migration still needs to read. Pure + exported for tests.
+ * Build the localStorage payload containing ONLY the non-sensitive scenario
+ * knobs this component owns (NUMERIC_KEYS: interest rate, tenure, return %,
+ * invest %). We intentionally do NOT carry over any pre-existing stored keys:
+ * earlier versions kept monthlyIncome/monthlyExpenses (financial PII) in this
+ * same browser-global bucket so the old profile migration could read them. That
+ * migration has been removed, so persisting only the owned knobs purges any
+ * lingering PII from the entry on the next write. Pure + exported for tests.
  */
-export function mergeOwnedInputs(
-  existing: Record<string, unknown>,
-  inputs: EmiInvestInputs,
-): Record<string, unknown> {
+export function ownedInputs(inputs: EmiInvestInputs): Record<string, number> {
   const owned: Record<string, number> = {};
   for (const k of NUMERIC_KEYS) owned[k] = inputs[k];
-  return { ...existing, ...owned };
+  return owned;
 }
 
 function NumField({
@@ -137,16 +136,12 @@ export function EmiInvestmentAnalyzer() {
 
   useEffect(() => {
     try {
-      // Merge over any existing entry so legacy keys we no longer own
-      // (e.g. monthlyIncome/monthlyExpenses) survive until the global-profile
-      // migration has a chance to read and fold them in.
-      let existing: Record<string, unknown> = {};
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === "object") existing = parsed as Record<string, unknown>;
-      }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mergeOwnedInputs(existing, inputs)));
+      // Persist ONLY the non-sensitive scenario knobs this component owns.
+      // We no longer merge over the existing entry: doing so used to preserve
+      // legacy monthlyIncome/monthlyExpenses (financial PII) for the old profile
+      // migration, which has been removed. Writing owned-only purges any such
+      // lingering PII from this browser-global bucket.
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(ownedInputs(inputs)));
     } catch {
       /* ignore quota / parse errors */
     }

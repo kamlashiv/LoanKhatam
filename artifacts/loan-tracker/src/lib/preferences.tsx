@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -80,14 +81,42 @@ function applyFormat(s: UserSettingsData) {
 }
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
-  const { isSignedIn } = useAuth();
+  // Re-mount the inner provider whenever the signed-in user changes so all
+  // local state (cached settings + updatedAt) is reset. Without this, the
+  // previous user's saved preferences — notification choices, WhatsApp number,
+  // social account handles — could remain on screen for the next account on a
+  // shared device until a fresh /api/settings response arrives.
+  const { userId } = useAuth();
+  return (
+    <PreferencesProviderInner key={userId ?? "anon"}>
+      {children}
+    </PreferencesProviderInner>
+  );
+}
+
+function PreferencesProviderInner({ children }: { children: ReactNode }) {
+  const { isSignedIn, userId } = useAuth();
+  // Scope the cache by the signed-in user so a late save from a previous
+  // account can never repopulate the key the next account reads from.
+  const settingsKey = useMemo(
+    () => [...getGetSettingsQueryKey(), userId ?? "anon"],
+    [userId],
+  );
   const { data, isLoading } = useGetSettings({
-    query: { enabled: !!isSignedIn, queryKey: getGetSettingsQueryKey() },
+    query: { enabled: !!isSignedIn, queryKey: settingsKey },
   });
   const { mutateAsync, isPending } = useUpdateSettings();
 
   const [local, setLocal] = useState<UserSettingsData | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
+
+  const mountedRef = useRef(true);
+  useEffect(
+    () => () => {
+      mountedRef.current = false;
+    },
+    [],
+  );
 
   useEffect(() => {
     if (data?.data) {
@@ -104,6 +133,9 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     setLocal(next);
     applyFormat(next);
     const saved = await mutateAsync({ data: next });
+    // Ignore the result if this provider was unmounted (e.g. the user switched
+    // accounts) so an in-flight save from user A can't update user B's state.
+    if (!mountedRef.current) return;
     setUpdatedAt(saved.updatedAt ?? new Date().toISOString());
   };
 

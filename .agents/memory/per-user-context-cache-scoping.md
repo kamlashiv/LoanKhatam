@@ -27,6 +27,10 @@ via a late `setQueryData` race.
 **How to apply:** any future app-wide context resource that is per-user and
 sensitive should follow all three. Clerk `useAuth()` exposes `userId`.
 
-Note: a browser-global localStorage migration flag is the *correct* choice for
-one-time legacy migration — it prevents the first user's legacy localStorage from
-being replayed into a second account on the same browser.
+**Do NOT auto-migrate browser-global localStorage into a signed-in account.**
+Browser-global storage (and a browser-global "migrated" flag) cannot be attributed
+to a Clerk user, so on a shared device it replays the first user's legacy data into
+whichever account signs in next — a cross-account PII leak. The secure fix is to
+*remove* the migration and proactively *purge* leftover legacy keys (and strip
+known PII fields from still-in-use keys) on provider mount. This supersedes an
+earlier note here that called the global migration flag "correct".

@@ -24,13 +24,14 @@ testEnvironment is `node` by default; tests opt into jsdom via
 (`{ ok, status, statusText, headers: new Headers(...), body: {}, text: async () => json }`) —
 `body` must be non-null or `customFetch` treats it as an empty body.
 
-## Pre-existing red suites (NOT caused by privacy work)
-`src/pages/__tests__/dashboard.test.tsx` and `planner.test.tsx` fail (~12 tests)
-because those pages now consume `useProfile`/`useTheme`/`useDerivedLoans` without
-providers in the tests AND assert against the older pre-bento-redesign UI
-(e.g. card labels "Overdue Loans"/"Total Loans", `div.relative.overflow-hidden`
-selector). Fixing needs provider mocks (jest.requireActual + override
-`useProfile`/`useDerivedLoans`, wrap in ThemeProvider) AND rewritten assertions
-for the redesigned bento layout. Tracked as a follow-up.
+## Preferences privacy regression test
+`src/lib/__tests__/preferences.test.tsx` mirrors the profile test for user
+settings (notification choices, WhatsApp number, social handles): same real-
+provider + faked-`useAuth`/`global.fetch` shape, same two cases (account switch
+non-bleed + late-save non-contamination). Wait for the `isLoading` testid to be
+`false` before mutating — the GET seeds defaults and a pre-load click races the
+seed effect (which has no pending-patch buffer, unlike ProfileProvider).
 
 A `test` validation command runs `pnpm --filter @workspace/loan-tracker run test`.
+As of Task #117 the full suite is GREEN (19 suites / 285 tests); the previously
+noted dashboard/planner red suites now pass.

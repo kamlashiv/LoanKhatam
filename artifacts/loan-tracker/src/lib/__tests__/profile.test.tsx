@@ -211,4 +211,48 @@ describe("Profile privacy across account switches", () => {
     expect(bCache?.data?.name ?? "").not.toBe("Alice");
     expect(serverStore.get("user_B")).toBeUndefined();
   });
+
+  it("never uploads browser-global legacy localStorage into the signed-in account", async () => {
+    // Simulate a shared device where an earlier user/version left a legacy
+    // financial profile in browser-global localStorage. The previous behavior
+    // auto-migrated this into whichever account signed in next — leaking one
+    // person's financial data into another's account. It must NOT be uploaded.
+    localStorage.setItem(
+      "loan-tracker:strategy-inputs",
+      JSON.stringify({ name: "Victim", monthlyIncome: 250000, occupation: "Doctor" }),
+    );
+    localStorage.setItem(
+      "loan-tracker:emi-invest",
+      JSON.stringify({ monthlyIncome: 250000, monthlyExpenses: 90000 }),
+    );
+
+    authState = { userId: "user_B", isSignedIn: true };
+    const client = freshClient();
+    render(makeUi(client));
+
+    await waitFor(() =>
+      expect(screen.getByTestId("loading").textContent).toBe("false"),
+    );
+
+    // B sees an empty profile, and nothing was persisted to B's account.
+    expect(screen.getByTestId("name").textContent).toBe("");
+    expect(screen.getByTestId("income").textContent).toBe("0");
+
+    // Give any (erroneous) debounced save a chance to fire — there must be none.
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 1000));
+    });
+    expect(serverStore.get("user_B")).toBeUndefined();
+
+    // The fully-obsolete legacy key is purged from the browser.
+    expect(localStorage.getItem("loan-tracker:strategy-inputs")).toBeNull();
+
+    // Legacy financial PII is stripped from the still-in-use analyzer key,
+    // while its non-sensitive scenario knobs are preserved.
+    const emi = JSON.parse(
+      localStorage.getItem("loan-tracker:emi-invest") ?? "{}",
+    ) as Record<string, unknown>;
+    expect("monthlyIncome" in emi).toBe(false);
+    expect("monthlyExpenses" in emi).toBe(false);
+  });
 });

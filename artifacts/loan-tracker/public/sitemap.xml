@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  NOTE: Replace "https://ledger.replit.app" below with Ledger's canonical
-  published domain (your .replit.app deployment URL or custom domain) before
-  submitting this sitemap to search engines.
+  The domain below is replaced automatically at build time with the live
+  published deployment domain (see seo.mjs); no manual edit is needed.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>

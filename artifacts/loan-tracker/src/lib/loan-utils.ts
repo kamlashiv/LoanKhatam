@@ -60,6 +60,20 @@ export function formatDate(dateStr: string): string {
   return formatDateValue(dateStr);
 }
 
+export function relativeTime(timestamp: number | string | null | undefined): string {
+  if (timestamp == null) return "";
+  const then = typeof timestamp === "number" ? timestamp : new Date(timestamp).getTime();
+  if (isNaN(then)) return "";
+  const secs = Math.max(0, Math.round((Date.now() - then) / 1000));
+  if (secs < 60) return "just now";
+  const mins = Math.round(secs / 60);
+  if (mins < 60) return `${mins} ${mins === 1 ? "minute" : "minutes"} ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} ${hrs === 1 ? "hour" : "hours"} ago`;
+  const days = Math.round(hrs / 24);
+  return `${days} ${days === 1 ? "day" : "days"} ago`;
+}
+
 export function getLoanStatusConfig(status: string) {
   switch (status) {
     case "active":

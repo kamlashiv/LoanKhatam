@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useGetDashboardSummary, useGetRecentLoans } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,10 @@ import {
   Plus, AlertCircle, CheckCircle2, Clock,
   Upload, FileText, X, Loader2, CheckCircle, AlertTriangle,
   HandCoins, Wallet, Activity, ArrowUpRight, ArrowDownRight,
-  PieChart, List, BellRing,
+  PieChart, List, BellRing, RefreshCw,
 } from "lucide-react";
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import { formatRupees, formatDate } from "@/lib/loan-utils";
+import { formatRupees, formatDate, relativeTime } from "@/lib/loan-utils";
 import { STATUS_COLORS, CHART_COLORS } from "@/lib/chart-theme";
 import { extractFromFile } from "@/lib/file-extract";
 import {
@@ -270,11 +270,18 @@ const statusLabel: Record<string, string> = {
 };
 
 export function Dashboard() {
-  const { data: summary, isLoading: summaryLoading } = useGetDashboardSummary();
+  const { data: summary, isLoading: summaryLoading, dataUpdatedAt } = useGetDashboardSummary();
   const { data: recentLoans, isLoading: loansLoading } = useGetRecentLoans();
   const { profile } = useProfile();
   const derived = useDerivedLoans();
   const [showImport, setShowImport] = useState(false);
+
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => forceTick((n) => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  const lastSynced = dataUpdatedAt ? relativeTime(dataUpdatedAt) : "";
 
   const profIncome = totalIncome(profile);
   const profSurplus = monthlySurplus(profile, derived.aggregateEmi);
@@ -348,6 +355,12 @@ export function Dashboard() {
             Portfolio Overview
           </h1>
           <p className="mt-1 font-medium text-slate-500 dark:text-slate-400">As of {today}</p>
+          {lastSynced && (
+            <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
+              <RefreshCw className="h-3 w-3" />
+              Last synced {lastSynced}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-3">
           <Button

@@ -7,10 +7,10 @@
   </defs>
   <g transform="translate(4 4)">
     <rect width="48" height="48" rx="12" fill="url(#bg)"/>
-    <rect x="11" y="13" width="20" height="4.4" rx="2.2" fill="#ffffff"/>
-    <rect x="11" y="21.8" width="26" height="4.4" rx="2.2" fill="#ffffff" fill-opacity="0.85"/>
-    <rect x="11" y="30.6" width="15" height="4.4" rx="2.2" fill="#ffffff" fill-opacity="0.7"/>
-    <circle cx="35.5" cy="15.2" r="4.2" fill="#34d399"/>
+    <path d="M11 33 L19 25 L25 30 L35 17" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M28 17 L35 17 L35 24" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="33" cy="34" r="5.5" stroke="#ffffff" stroke-width="2.4" fill="none"/>
+    <circle cx="33" cy="34" r="1.8" fill="#34d399"/>
   </g>
   <text x="66" y="37" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="30" font-weight="800" letter-spacing="-0.5" fill="#4f46e5">Loan Khatam</text>
 </svg>

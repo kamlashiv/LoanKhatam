@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useSearch, useLocation } from "wouter";
 import { useListLoans } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Search, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils";
+import { formatRupees, formatDate, getLoanStatusConfig, relativeTime } from "@/lib/loan-utils";
 import { ShareLoan } from "@/components/share-loan";
 
 type StatusFilter = "all" | "active" | "overdue" | "paid";
@@ -25,9 +25,16 @@ export function LoansList() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus);
   const [search, setSearch] = useState("");
 
-  const { data: loans, isLoading, isFetching, refetch } = useListLoans(
+  const { data: loans, isLoading, isFetching, dataUpdatedAt, refetch } = useListLoans(
     statusFilter !== "all" ? { status: statusFilter } : undefined
   );
+
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => forceTick((n) => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  const lastSynced = dataUpdatedAt ? relativeTime(dataUpdatedAt) : "";
 
   const handleRefresh = useCallback(() => {
     refetch();
@@ -54,6 +61,7 @@ export function LoansList() {
             <span>
               {loans ? `${loans.length} loan${loans.length !== 1 ? "s" : ""}` : "Loading..."}
             </span>
+            {lastSynced && <span className="text-xs">· Last synced {lastSynced}</span>}
             <button
               type="button"
               onClick={handleRefresh}

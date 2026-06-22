@@ -26,12 +26,16 @@ function resolveBaseUrl() {
   const domains = (process.env.REPLIT_DOMAINS || "")
     .split(",")
     .map(normalizeHost)
-    .filter(Boolean);
+    .filter(Boolean)
+    // Ignore ephemeral dev/preview domains. During the autoscale BUILD phase,
+    // REPLIT_DOMAINS is set to the build container's *.replit.dev (and *.repl.co)
+    // host, NOT the published *.replit.app domain. Baking that into canonical/
+    // sitemap/robots/OG would make Google index the wrong, throwaway domain.
+    .filter((d) => !/\.replit\.dev$|\.repl\.co$/i.test(d));
   if (domains.length > 0) return `https://${domains[0]}`;
-  // No REPLIT_DOMAINS at build time (e.g. the autoscale build phase) — fall back
-  // to the production placeholder, NOT REPLIT_DEV_DOMAIN. The dev domain is an
-  // ephemeral build-container URL and must never leak into production SEO assets
-  // (canonical/sitemap/robots/OG), or Google indexes the wrong domain.
+  // Nothing usable from REPLIT_DOMAINS (build phase, or only a dev host present)
+  // — fall back to the production placeholder, which already equals the real
+  // published domain.
   return PLACEHOLDER;
 }
 

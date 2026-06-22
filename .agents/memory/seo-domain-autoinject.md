@@ -12,13 +12,19 @@ placeholder in built `dist/public/*` with `process.env.REPLIT_DOMAINS` (first
 entry) when set; otherwise it KEEPS the placeholder. It also injects a JSON-LD
 `WebApplication` block into the built index.html.
 
-**Critical — never fall back to REPLIT_DEV_DOMAIN.** At the autoscale *build
-phase* `REPLIT_DOMAINS` is NOT set but `REPLIT_DEV_DOMAIN` IS. An earlier
-`resolveBaseUrl` fell back to the dev domain, so production canonical/sitemap/
-robots/OG all pointed at the ephemeral `*.sisko.replit.dev` build-container URL —
-Google would index the wrong domain. Fix: fall back to the production placeholder
-only. Because the placeholder now equals the real prod URL, an empty
-`REPLIT_DOMAINS` at build still yields correct prod SEO URLs.
+**Critical — at the autoscale BUILD phase, `REPLIT_DOMAINS` itself holds the
+ephemeral dev domain, NOT the published `*.replit.app`.** Verified on the live
+deploy: canonical/og/robots/sitemap all came out as
+`https://<id>.sisko.replit.dev` even though `resolveBaseUrl` uses
+`REPLIT_DOMAINS` first — because that var is populated with the build
+container's `*.replit.dev` host during the deploy build. (Removing only the
+`REPLIT_DEV_DOMAIN` fallback was NOT enough.) Fix: `resolveBaseUrl` must FILTER
+OUT any host matching `/\.replit\.dev$|\.repl\.co$/i` from `REPLIT_DOMAINS`, then
+fall back to the production placeholder. At runtime the real `*.replit.app`
+domain survives the filter; at build the dev host is dropped and the placeholder
+(which equals the real prod URL) wins. Verify by building with
+`REPLIT_DOMAINS="<anything>.sisko.replit.dev"` set and grepping dist for the
+prod URL.
 
 **Why:** the user is non-technical and repeatedly could not supply their published
 `.replit.app` URL (kept pasting the editor `replit.com/@...` link or the literal

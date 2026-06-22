@@ -7,7 +7,8 @@
  * site's origin* — which means it shares `localStorage` with the running app.
  *
  * To give the user something useful offline, the running app persists a small,
- * read-only snapshot of the last-seen dashboard summary and loans here, and
+ * read-only snapshot of the last-seen dashboard summary, loans list, and the
+ * detail (including payment history) of recently-viewed loans here, and
  * `public/offline.html` reads it back to render a cached view.
  *
  * Privacy: the snapshot is scoped per Clerk user id and a pointer to the
@@ -41,11 +42,43 @@ export interface OfflineSnapshotSummary {
   totalOutstanding: number;
 }
 
+export interface OfflineSnapshotRateChange {
+  effectiveDate: string;
+  newRate: number;
+}
+
+export interface OfflineSnapshotPayment {
+  id: number;
+  amount: number;
+  paymentDate: string;
+  notes: string | null;
+}
+
+export interface OfflineSnapshotLoanDetail {
+  id: number;
+  borrowerName: string;
+  bank: string | null;
+  description: string | null;
+  principalAmount: number;
+  interestRate: number;
+  tenureMonths: number | null;
+  startDate: string;
+  dueDate: string;
+  status: string;
+  totalPaid: number;
+  remainingAmount: number;
+  createdAt: string;
+  rateChanges: OfflineSnapshotRateChange[];
+  payments: OfflineSnapshotPayment[];
+  cachedAt: string;
+}
+
 export interface OfflineSnapshot {
   userId: string;
   savedAt: string;
   summary: OfflineSnapshotSummary | null;
   loans: OfflineSnapshotLoan[];
+  details: OfflineSnapshotLoanDetail[];
 }
 
 interface LoanLike {
@@ -59,6 +92,38 @@ interface LoanLike {
   status: string;
   dueDate: string;
 }
+
+interface RateChangeLike {
+  effectiveDate: string;
+  newRate: number;
+}
+
+interface PaymentLike {
+  id: number;
+  amount: number;
+  paymentDate: string;
+  notes?: string | null;
+}
+
+interface LoanDetailLike {
+  id: number;
+  borrowerName: string;
+  bank?: string | null;
+  description?: string | null;
+  principalAmount: number;
+  interestRate: number;
+  tenureMonths?: number | null;
+  startDate: string;
+  dueDate: string;
+  status: string;
+  totalPaid: number;
+  remainingAmount: number;
+  createdAt: string;
+  rateChanges?: RateChangeLike[] | null;
+}
+
+/** Cap on how many recently-viewed loan details are retained per user. */
+const MAX_CACHED_DETAILS = 20;
 
 function snapshotKey(userId: string): string {
   return `${SNAPSHOT_PREFIX}${userId}`;
@@ -102,12 +167,51 @@ function trimLoan(loan: LoanLike): OfflineSnapshotLoan {
   };
 }
 
+function trimPayment(payment: PaymentLike): OfflineSnapshotPayment {
+  return {
+    id: payment.id,
+    amount: payment.amount,
+    paymentDate: payment.paymentDate,
+    notes: payment.notes ?? null,
+  };
+}
+
+function trimLoanDetail(
+  loan: LoanDetailLike,
+  payments: PaymentLike[] | null | undefined,
+): OfflineSnapshotLoanDetail {
+  return {
+    id: loan.id,
+    borrowerName: loan.borrowerName,
+    bank: loan.bank ?? null,
+    description: loan.description ?? null,
+    principalAmount: loan.principalAmount,
+    interestRate: loan.interestRate,
+    tenureMonths: loan.tenureMonths ?? null,
+    startDate: loan.startDate,
+    dueDate: loan.dueDate,
+    status: loan.status,
+    totalPaid: loan.totalPaid,
+    remainingAmount: loan.remainingAmount,
+    createdAt: loan.createdAt,
+    rateChanges: (loan.rateChanges ?? []).map((rc) => ({
+      effectiveDate: rc.effectiveDate,
+      newRate: rc.newRate,
+    })),
+    payments: (payments ?? []).map(trimPayment),
+    cachedAt: new Date().toISOString(),
+  };
+}
+
 function readSnapshot(userId: string): OfflineSnapshot | null {
   const raw = safeGet(snapshotKey(userId));
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as OfflineSnapshot;
-    if (parsed && parsed.userId === userId) return parsed;
+    if (parsed && parsed.userId === userId) {
+      if (!Array.isArray(parsed.details)) parsed.details = [];
+      return parsed;
+    }
     return null;
   } catch {
     return null;
@@ -140,6 +244,38 @@ export function writeOfflineSnapshot(
       parts.loans != null && parts.loans.length > 0
         ? parts.loans.map(trimLoan)
         : existing?.loans ?? [],
+    details: existing?.details ?? [],
+  };
+
+  safeSet(snapshotKey(userId), JSON.stringify(next));
+  safeSet(CURRENT_KEY, userId);
+}
+
+/**
+ * Cache the detail (including payment history) of a single recently-viewed loan
+ * into the current user's snapshot. The most-recently-viewed loans are kept at
+ * the front and the list is bounded to `MAX_CACHED_DETAILS`, so opening many
+ * loans never grows storage without limit. Leaves the summary and loans list
+ * untouched.
+ */
+export function writeOfflineLoanDetail(
+  userId: string | null | undefined,
+  loan: LoanDetailLike | null | undefined,
+  payments: PaymentLike[] | null | undefined,
+): void {
+  if (!userId || !loan) return;
+
+  const existing = readSnapshot(userId);
+  const detail = trimLoanDetail(loan, payments);
+  const prior = (existing?.details ?? []).filter((d) => d.id !== detail.id);
+  const nextDetails = [detail, ...prior].slice(0, MAX_CACHED_DETAILS);
+
+  const next: OfflineSnapshot = {
+    userId,
+    savedAt: existing?.savedAt ?? new Date().toISOString(),
+    summary: existing?.summary ?? null,
+    loans: existing?.loans ?? [],
+    details: nextDetails,
   };
 
   safeSet(snapshotKey(userId), JSON.stringify(next));

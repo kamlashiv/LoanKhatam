@@ -30,6 +30,18 @@ jest.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast: jest.fn() }),
 }));
 
+// The page reads the Clerk user id to scope the offline snapshot cache; a stub
+// is enough since offline caching is exercised in offline-cache.test.ts.
+jest.mock("@clerk/react", () => ({
+  useUser: () => ({ user: { id: "user_1" } }),
+}));
+
+// Offline caching is a best-effort side effect; stub it out so these
+// read-focused tests don't touch localStorage.
+jest.mock("@/lib/offline-cache", () => ({
+  writeOfflineLoanDetail: jest.fn(),
+}));
+
 // Mock the generated API hooks so the page renders against fixture data. Query
 // hooks return our fixtures; mutation hooks return inert stubs; query-key
 // helpers are unused values referenced only inside mutation callbacks.

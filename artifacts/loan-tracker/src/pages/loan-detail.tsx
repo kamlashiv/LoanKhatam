@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useUser } from "@clerk/react";
 import { Link, useLocation, useParams } from "wouter";
 import {
   useGetLoan,
@@ -38,6 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AmortizationSection } from "@/components/amortization-section";
 import { ShareLoan } from "@/components/share-loan";
 import { currentEffectiveRate } from "@/lib/amortization";
+import { writeOfflineLoanDetail } from "@/lib/offline-cache";
 
 function computeEmi(principal: number, annualRate: number, months: number): number {
   if (!(principal > 0) || !(months > 0)) return 0;
@@ -62,8 +64,19 @@ export function LoanDetail() {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
   const [paymentNotes, setPaymentNotes] = useState("");
 
+  const { user } = useUser();
+  const userId = user?.id ?? null;
+
   const { data: loan, isLoading } = useGetLoan(id, { query: { enabled: !!id, queryKey: getGetLoanQueryKey(id) } });
   const { data: payments } = useListPayments(id, { query: { enabled: !!id, queryKey: getListPaymentsQueryKey(id) } });
+
+  // Cache this loan's detail (and its payment history) into the per-user offline
+  // snapshot so the bundled offline.html can show it read-only when the device
+  // is offline. Scoped to the signed-in Clerk user; cleared on sign-out.
+  useEffect(() => {
+    if (!userId || !loan) return;
+    writeOfflineLoanDetail(userId, loan, payments ?? null);
+  }, [userId, loan, payments]);
 
   const addPayment = useAddPayment({
     mutation: {

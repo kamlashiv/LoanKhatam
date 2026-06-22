@@ -290,6 +290,99 @@
         margin: 22px auto 0;
         display: block;
       }
+
+      /* ---- Clickable loan rows + detail view ---- */
+      .loan.tappable {
+        cursor: pointer;
+        transition: transform 0.12s ease, background 0.12s ease;
+      }
+      .loan.tappable:active {
+        transform: scale(0.99);
+      }
+      .loan-cta {
+        font-size: 11px;
+        color: rgba(165, 180, 252, 0.85);
+        font-weight: 600;
+        margin-top: 10px;
+      }
+      .loan-cta.muted {
+        color: rgba(148, 163, 184, 0.6);
+        font-weight: 500;
+      }
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: none;
+        border: 0;
+        cursor: pointer;
+        color: rgba(199, 210, 254, 0.9);
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 4px 0;
+        margin-bottom: 14px;
+      }
+      .back-link:active {
+        opacity: 0.7;
+      }
+      .detail-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 18px;
+        padding: 18px 16px;
+        margin-bottom: 18px;
+      }
+      .detail-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .detail-head .d-name { font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }
+      .detail-head .d-desc { font-size: 12.5px; color: rgba(203, 213, 225, 0.6); margin-top: 2px; }
+      .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .detail-grid .k { font-size: 10.5px; color: rgba(203, 213, 225, 0.55); }
+      .detail-grid .v { font-size: 15px; font-weight: 800; margin-top: 2px; }
+      .detail-grid .v.rem { color: #c7d2fe; }
+      .detail-grid .v.rem.over { color: #fda4af; }
+      .detail-grid .v.collected { color: var(--emerald); }
+      .detail-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 14px;
+        border-top: 1px solid rgba(255, 255, 255, 0.09);
+        padding-top: 14px;
+        margin-top: 4px;
+      }
+      .detail-meta .row { font-size: 12.5px; color: rgba(203, 213, 225, 0.6); }
+      .detail-meta .row b { color: #f1f5f9; font-weight: 700; }
+      .pay {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+      }
+      .pay .amt { font-size: 14.5px; font-weight: 700; color: var(--emerald); }
+      .pay .date { font-size: 12px; color: rgba(203, 213, 225, 0.6); margin-top: 1px; }
+      .pay .note { font-size: 11.5px; color: rgba(203, 213, 225, 0.5); font-style: italic; margin-top: 2px; }
+      .empty-pay {
+        font-size: 13px;
+        color: rgba(203, 213, 225, 0.55);
+        text-align: center;
+        padding: 18px 0;
+      }
     </style>
   </head>
   <body>
@@ -312,7 +405,7 @@
       </main>
     </div>
 
-    <!-- Cached snapshot view -->
+    <!-- Cached snapshot view (list / overview) -->
     <div class="shell" id="cachedView" hidden>
       <div class="offline-bar">
         <span class="ob-dot"></span>
@@ -345,6 +438,26 @@
       </div>
 
       <button class="retry inline" id="retryBtn2" type="button">Reconnect</button>
+    </div>
+
+    <!-- Cached single-loan detail view -->
+    <div class="shell" id="detailView" hidden>
+      <div class="offline-bar">
+        <span class="ob-dot"></span>
+        <div class="ob-text">
+          <strong>Offline — viewing cached loan</strong>
+          <span id="detailWhen">Read-only. Edits are unavailable until you reconnect.</span>
+        </div>
+      </div>
+
+      <button class="back-link" id="detailBack" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Back to loans
+      </button>
+
+      <div id="detailBody"></div>
+
+      <button class="retry inline" id="retryBtn3" type="button">Reconnect</button>
     </div>
 
     <script>
@@ -443,7 +556,7 @@
           }).join("");
         }
 
-        function renderLoans(loans) {
+        function renderLoans(loans, detailIds) {
           var section = document.getElementById("loansSection");
           var list = document.getElementById("loansList");
           if (!loans || !loans.length) {
@@ -455,8 +568,10 @@
             var paid = l.totalPaid || 0;
             var pct = principal > 0 ? Math.min(100, Math.round((paid / principal) * 100)) : 0;
             var over = l.status === "overdue";
+            var hasDetail = detailIds && detailIds[l.id];
             return (
-              '<div class="loan">' +
+              '<div class="loan' + (hasDetail ? " tappable" : "") + '"' +
+                (hasDetail ? ' role="button" tabindex="0" data-loan-id="' + esc(l.id) + '"' : "") + ">" +
                 '<div class="loan-top">' +
                   "<div>" +
                     '<div class="loan-name">' + esc(l.borrowerName) + "</div>" +
@@ -473,9 +588,117 @@
                 '<div class="meta"><span>' + pct + "% paid</span>" +
                   (l.dueDate ? "<span>Due " + esc(formatDate(l.dueDate)) + "</span>" : "<span></span>") +
                 "</div>" +
+                (hasDetail
+                  ? '<div class="loan-cta">Tap to view payment history →</div>'
+                  : '<div class="loan-cta muted">Open this loan online to cache its details</div>') +
               "</div>"
             );
           }).join("");
+
+          if (detailIds) {
+            var rows = list.querySelectorAll(".loan.tappable");
+            for (var i = 0; i < rows.length; i++) {
+              (function (row) {
+                var lid = row.getAttribute("data-loan-id");
+                row.addEventListener("click", function () {
+                  showDetail(lid);
+                });
+                row.addEventListener("keydown", function (e) {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    showDetail(lid);
+                  }
+                });
+              })(rows[i]);
+            }
+          }
+        }
+
+        function computeEmi(principal, annualRate, months) {
+          if (!(principal > 0) || !(months > 0)) return 0;
+          var r = annualRate / 12 / 100;
+          if (r === 0) return principal / months;
+          return (principal * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
+        }
+
+        function currentEffectiveRate(baseRate, rateChanges) {
+          if (!rateChanges || !rateChanges.length) return baseRate;
+          var sorted = rateChanges.slice().sort(function (a, b) {
+            return String(a.effectiveDate).localeCompare(String(b.effectiveDate));
+          });
+          var today = new Date();
+          var rate = baseRate;
+          for (var i = 0; i < sorted.length; i++) {
+            var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(sorted[i].effectiveDate);
+            var d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(sorted[i].effectiveDate);
+            if (!isNaN(d.getTime()) && d <= today) rate = sorted[i].newRate;
+          }
+          return rate;
+        }
+
+        function renderDetail(d) {
+          var principal = d.principalAmount || 0;
+          var paid = d.totalPaid || 0;
+          var pct = principal > 0 ? Math.min(100, Math.round((paid / principal) * 100)) : 0;
+          var over = d.status === "overdue";
+          var rate = currentEffectiveRate(d.interestRate || 0, d.rateChanges);
+          var emi =
+            d.tenureMonths && d.tenureMonths > 0
+              ? computeEmi(principal, rate, d.tenureMonths)
+              : 0;
+
+          var meta = "";
+          meta += '<div class="row">Start: <b>' + (d.startDate ? esc(formatDate(d.startDate)) : "—") + "</b></div>";
+          meta += '<div class="row">Due: <b>' + (d.dueDate ? esc(formatDate(d.dueDate)) : "—") + "</b></div>";
+          if (d.tenureMonths != null) {
+            meta += '<div class="row">Tenure: <b>' + esc(d.tenureMonths) + " months</b></div>";
+          }
+          if (emi > 0) {
+            meta += '<div class="row">EMI: <b>' + esc(formatRupees(emi)) + "/mo</b></div>";
+          }
+          if (d.bank) {
+            meta += '<div class="row">Bank: <b>' + esc(d.bank) + "</b></div>";
+          }
+
+          var payments = d.payments || [];
+          var paymentsHtml;
+          if (payments.length) {
+            paymentsHtml = payments.map(function (p) {
+              return (
+                '<div class="pay">' +
+                  "<div>" +
+                    '<div class="amt">' + esc(formatRupees(p.amount || 0)) + "</div>" +
+                    '<div class="date">' + esc(formatDate(p.paymentDate)) + "</div>" +
+                    (p.notes ? '<div class="note">' + esc(p.notes) + "</div>" : "") +
+                  "</div>" +
+                "</div>"
+              );
+            }).join("");
+          } else {
+            paymentsHtml = '<div class="empty-pay">No payments recorded yet.</div>';
+          }
+
+          return (
+            '<div class="detail-card">' +
+              '<div class="detail-head">' +
+                "<div>" +
+                  '<div class="d-name">' + esc(d.borrowerName) + "</div>" +
+                  (d.description ? '<div class="d-desc">' + esc(d.description) + "</div>" : "") +
+                "</div>" +
+                '<span class="pill ' + statClass(d.status) + '">' + esc(statLabel(d.status)) + "</span>" +
+              "</div>" +
+              '<div class="detail-grid">' +
+                '<div><div class="k">Principal</div><div class="v">' + esc(formatRupees(principal)) + "</div></div>" +
+                '<div><div class="k">Collected</div><div class="v collected">' + esc(formatRupees(paid)) + "</div></div>" +
+                '<div><div class="k">Remaining</div><div class="v rem' + (over ? " over" : "") + '">' + esc(formatRupees(d.remainingAmount || 0)) + "</div></div>" +
+              "</div>" +
+              '<div class="bar"><span style="width:' + pct + '%"></span></div>' +
+              '<div class="meta"><span>' + pct + "% paid</span><span>" + esc(rate) + "% p.a.</span></div>" +
+              '<div class="detail-meta">' + meta + "</div>" +
+            "</div>" +
+            '<p class="section-title">Payment History</p>' +
+            paymentsHtml
+          );
         }
 
         function goToApp() {
@@ -509,6 +732,31 @@
         // ---- Decide which view to show ----
         var snap = readSnapshot();
         var hasData = snap && (snap.summary || (snap.loans && snap.loans.length));
+        var details = (snap && snap.details) || [];
+        var detailsById = {};
+        for (var di = 0; di < details.length; di++) {
+          detailsById[details[di].id] = details[di];
+        }
+
+        function showList() {
+          document.getElementById("detailView").hidden = true;
+          document.getElementById("cachedView").hidden = false;
+          if (window.scrollTo) window.scrollTo(0, 0);
+        }
+
+        function showDetail(loanId) {
+          var d = detailsById[loanId];
+          if (!d) return;
+          document.getElementById("detailBody").innerHTML = renderDetail(d);
+          var when = relativeTime(d.cachedAt);
+          if (when) {
+            document.getElementById("detailWhen").textContent =
+              "Cached " + when + ". Edits are unavailable until you reconnect.";
+          }
+          document.getElementById("cachedView").hidden = true;
+          document.getElementById("detailView").hidden = false;
+          if (window.scrollTo) window.scrollTo(0, 0);
+        }
 
         if (hasData) {
           document.getElementById("cachedView").hidden = false;
@@ -518,8 +766,11 @@
               "Last updated " + when + ". Edits are unavailable until you reconnect.";
           }
           renderStats(snap.summary);
-          renderLoans(snap.loans);
+          renderLoans(snap.loans, detailsById);
           wireRetry(document.getElementById("retryBtn2"));
+          wireRetry(document.getElementById("retryBtn3"));
+          var backBtn = document.getElementById("detailBack");
+          if (backBtn) backBtn.addEventListener("click", showList);
         } else {
           document.getElementById("emptyView").hidden = false;
           wireRetry(document.getElementById("retryBtn"));

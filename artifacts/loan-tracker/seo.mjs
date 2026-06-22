@@ -61,7 +61,7 @@ function main() {
         name: "Loan Khatam",
         url: `${baseUrl}/`,
         description:
-          "Loan Khatam — track money you lend to friends and family, record repayments, and watch outstanding balances settle.",
+          "Loan Khatam is a free personal loan and udhaar tracker — record money you lend to friends and family, track repayments and EMIs, and watch outstanding balances settle. Amounts shown in ₹.",
         applicationCategory: "FinanceApplication",
         operatingSystem: "Web, Android",
         offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },

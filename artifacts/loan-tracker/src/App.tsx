@@ -3,6 +3,8 @@ import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
+import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -182,6 +184,36 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+// On Android (Capacitor WebView), the hardware/gesture back button defaults to
+// exiting the app. Instead, walk back through the app's own history (Wouter
+// listens to popstate, so `history.back()` drives in-app navigation) and only
+// exit when there is no in-app history left. No-op on web.
+function MobileBackButtonHandler() {
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let removeListener: (() => void) | undefined;
+
+    CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+      if (canGoBack) {
+        window.history.back();
+      } else {
+        CapacitorApp.exitApp();
+      }
+    }).then((handle) => {
+      removeListener = () => {
+        void handle.remove();
+      };
+    });
+
+    return () => {
+      removeListener?.();
+    };
+  }, []);
+
+  return null;
+}
+
 function RouteFallback() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background">
@@ -266,6 +298,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <MobileBackButtonHandler />
         <ProfileProvider>
         <PreferencesProvider>
         <Suspense fallback={<RouteFallback />}>

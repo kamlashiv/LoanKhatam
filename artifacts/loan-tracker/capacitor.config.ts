@@ -1,21 +1,28 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-// ⚠️ IMPORTANT: Replace `APP_URL` below with your PUBLISHED app URL.
-// After you click "Publish" in Replit, you get a stable URL like
-// https://your-app.replit.app — paste it here so the mobile app loads
-// your live site (with working data + Clerk login).
-//
-// The value below is your current DEVELOPMENT URL. It only works while
-// this Replit workspace is running, so it's fine for a quick test but
-// you MUST swap it to your .replit.app URL before sharing the APK.
-const APP_URL =
-  "https://replit.com/@shivachand67p/Loan-Tracker-Home";
+// ┌──────────────────────────────────────────────────────────────────────┐
+// │  STEP 1 — PASTE YOUR PUBLISHED URL HERE                                 │
+// │                                                                        │
+// │  After you click "Publish" in Replit you get a stable HTTPS URL that   │
+// │  looks like:  https://your-app-name.replit.app                         │
+// │                                                                        │
+// │  Paste that exact URL below (no trailing slash). The Android app is a  │
+// │  thin wrapper that loads this live site, so backend data + Clerk login │
+// │  work exactly like they do on the web.                                 │
+// │                                                                        │
+// │  You can also set it without editing this file by exporting            │
+// │  PUBLISHED_APP_URL before running `npx cap sync android`.               │
+// └──────────────────────────────────────────────────────────────────────┘
+const PUBLISHED_APP_URL = "https://REPLACE-ME.replit.app";
+
+const APP_URL = process.env.PUBLISHED_APP_URL ?? PUBLISHED_APP_URL;
 
 const config: CapacitorConfig = {
   appId: "app.replit.ledger",
   appName: "Ledger",
   webDir: "dist/public",
   server: {
+    // The app loads your live published site over HTTPS.
     url: APP_URL,
     cleartext: false,
   },

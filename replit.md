@@ -54,11 +54,30 @@ A personal loan management app for tracking money lent to friends and family. Us
 
 ## Mobile (Android APK via Capacitor)
 
-- `artifacts/loan-tracker` is wrapped with Capacitor to produce an Android app.
-- `capacitor.config.ts` uses `server.url` to load the **live published site** (so backend API + Clerk auth work as on web). Update `APP_URL` to the `.replit.app` published URL before shipping the APK.
-- Native project lives in `artifacts/loan-tracker/android/` — open in Android Studio → Build → Build APK(s).
-- The APK cannot be compiled inside Replit (no Android SDK/Gradle/JDK here); build on a local Android Studio install or via PWABuilder using the published URL.
-- Re-sync native assets after a web change: `pnpm --filter @workspace/loan-tracker run build && npx cap sync android` (run from the artifact dir).
+`artifacts/loan-tracker` is wrapped with Capacitor to produce a sideloadable Android app. The app is a thin WebView wrapper that loads the **live published HTTPS site** via `server.url`, so backend API + Clerk login work exactly as on web. A bundled offline build would break login/data, so the published-URL approach is required.
+
+> ⚠️ **The APK cannot be compiled inside Replit** — there is no Android SDK / Gradle / JDK here. Do the final build on a machine with Android Studio, or use PWABuilder (no install needed).
+
+### Build & install steps (do these in order)
+
+1. **Publish the app.** Click **Publish** in Replit. You'll get a stable URL like `https://your-app-name.replit.app`. Copy it.
+2. **Point the wrapper at that URL.** In `artifacts/loan-tracker/capacitor.config.ts`, replace the `PUBLISHED_APP_URL` value (currently `https://REPLACE-ME.replit.app`) with your real `.replit.app` URL (no trailing slash). _Alternatively_, skip editing the file and `export PUBLISHED_APP_URL="https://your-app-name.replit.app"` before step 3.
+3. **Rebuild web + re-sync native** (run from `artifacts/loan-tracker/`):
+   ```bash
+   BASE_PATH="/" PORT="5000" pnpm --filter @workspace/loan-tracker run build
+   npx cap sync android
+   ```
+   This copies the latest web build, app config (icon/splash/name), and the published URL into `android/`.
+4. **Build the APK** (outside Replit, pick one):
+   - **Android Studio:** open `artifacts/loan-tracker/android/` → **Build → Build Bundle(s)/APK(s) → Build APK(s)**. The signed/debug APK lands under `android/app/build/outputs/apk/`.
+   - **PWABuilder:** go to [pwabuilder.com](https://www.pwabuilder.com), enter your published `.replit.app` URL, choose **Android → Generate Package**, and download the APK. (This route doesn't even need the local Android project.)
+5. **Install on phone.** Transfer the `.apk` to an Android device and open it. Enable "Install unknown apps" for your file manager/browser when prompted. The app opens as **Ledger** with the branded icon/splash and full login + data.
+
+### App identity
+
+- App name: **Ledger** (`appName` in `capacitor.config.ts`, `app_name` in `android/.../res/values/strings.xml`).
+- App ID: `app.replit.ledger`.
+- Icon + splash sources live in `artifacts/loan-tracker/assets/` (`icon-only.png`, `icon-foreground.png`, `icon-background.png`, `splash.png`, `splash-dark.png`). To regenerate all density buckets after changing branding, run from the artifact dir: `npx @capacitor/assets generate --android`.
 
 ## User preferences
 

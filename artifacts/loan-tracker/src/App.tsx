@@ -1,15 +1,23 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import {
+  getGetDashboardSummaryQueryKey,
+  getGetRecentLoansQueryKey,
+  getListLoansQueryKey,
+  type DashboardSummary,
+  type Loan,
+} from "@workspace/api-client-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/lib/theme";
 import { FramePreviewBanner } from "@/components/frame-preview-banner";
+import { writeOfflineSnapshot, clearOfflineSnapshots } from "@/lib/offline-cache";
 
 import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/layout";
@@ -175,11 +183,42 @@ function ClerkQueryClientCacheInvalidator() {
         prevUserIdRef.current !== userId
       ) {
         queryClient.clear();
+        // Drop any cached offline snapshot so a prior user's financial data
+        // can't render for the next account on a shared device.
+        clearOfflineSnapshots();
       }
       prevUserIdRef.current = userId;
     });
     return unsubscribe;
   }, [addListener, queryClient]);
+
+  return null;
+}
+
+// Persists a small, read-only snapshot of the last-seen dashboard summary and
+// loans to localStorage so the bundled `offline.html` page can show useful
+// cached data when the device is offline. Scoped to the signed-in Clerk user.
+function OfflineSnapshotWriter() {
+  const queryClient = useQueryClient();
+  const { user } = useUser();
+  const userId = user?.id ?? null;
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const persist = () => {
+      const summary =
+        queryClient.getQueryData<DashboardSummary>(getGetDashboardSummaryQueryKey()) ?? null;
+      const allLoans = queryClient.getQueryData<Loan[]>(getListLoansQueryKey());
+      const recentLoans = queryClient.getQueryData<Loan[]>(getGetRecentLoansQueryKey());
+      const loans = allLoans && allLoans.length > 0 ? allLoans : recentLoans ?? null;
+      writeOfflineSnapshot(userId, { summary, loans });
+    };
+
+    persist();
+    const unsubscribe = queryClient.getQueryCache().subscribe(persist);
+    return unsubscribe;
+  }, [queryClient, userId]);
 
   return null;
 }
@@ -298,6 +337,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <OfflineSnapshotWriter />
         <MobileBackButtonHandler />
         <ProfileProvider>
         <PreferencesProvider>

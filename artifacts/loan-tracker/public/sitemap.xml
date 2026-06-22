@@ -5,17 +5,17 @@
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://ledger.replit.app/</loc>
+    <loc>https://loankhatam.replit.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://ledger.replit.app/sign-in</loc>
+    <loc>https://loankhatam.replit.app/sign-in</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ledger.replit.app/sign-up</loc>
+    <loc>https://loankhatam.replit.app/sign-up</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

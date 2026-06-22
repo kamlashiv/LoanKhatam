@@ -1,4 +1,4 @@
-# Loan Tracker — Ledger
+# Loan Tracker — Loan Khatam
 
 A personal loan management app for tracking money lent to friends and family. Users can log loans, record payments, and monitor outstanding balances.
 
@@ -71,11 +71,11 @@ A personal loan management app for tracking money lent to friends and family. Us
 4. **Build the APK** (outside Replit, pick one):
    - **Android Studio:** open `artifacts/loan-tracker/android/` → **Build → Build Bundle(s)/APK(s) → Build APK(s)**. The signed/debug APK lands under `android/app/build/outputs/apk/`.
    - **PWABuilder:** go to [pwabuilder.com](https://www.pwabuilder.com), enter your published `.replit.app` URL, choose **Android → Generate Package**, and download the APK. (This route doesn't even need the local Android project.)
-5. **Install on phone.** Transfer the `.apk` to an Android device and open it. Enable "Install unknown apps" for your file manager/browser when prompted. The app opens as **Ledger** with the branded icon/splash and full login + data.
+5. **Install on phone.** Transfer the `.apk` to an Android device and open it. Enable "Install unknown apps" for your file manager/browser when prompted. The app opens as **Loan Khatam** with the branded icon/splash and full login + data.
 
 ### App identity
 
-- App name: **Ledger** (`appName` in `capacitor.config.ts`, `app_name` in `android/.../res/values/strings.xml`).
+- App name: **Loan Khatam** (`appName` in `capacitor.config.ts`, `app_name` in `android/.../res/values/strings.xml`).
 - App ID: `app.replit.ledger`.
 - Icon + splash sources live in `artifacts/loan-tracker/assets/` (`icon-only.png`, `icon-foreground.png`, `icon-background.png`, `splash.png`, `splash-dark.png`). To regenerate all density buckets after changing branding, run from the artifact dir: `npx @capacitor/assets generate --android`.
 

@@ -20,7 +20,7 @@ export function LicensePage() {
           License
         </h1>
         <p className="mt-2 max-w-2xl font-medium text-slate-500 dark:text-slate-400">
-          The terms under which Loan Tracker — Ledger is made available to you.
+          The terms under which Loan Tracker — Loan Khatam is made available to you.
         </p>
       </header>
 
@@ -55,7 +55,7 @@ export function LicensePage() {
         <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
           Subject to your acceptance of these terms, you are granted a personal,
           non-exclusive, non-transferable and revocable license to access and use Loan
-          Tracker — Ledger for your own lawful, personal financial planning and
+          Tracker — Loan Khatam for your own lawful, personal financial planning and
           educational purposes. This license does not transfer any ownership of the
           software or its underlying intellectual property to you.
         </p>

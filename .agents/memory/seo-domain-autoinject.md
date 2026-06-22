@@ -5,7 +5,7 @@ description: How loan-tracker fills canonical/OG/robots/sitemap/JSON-LD with the
 
 loan-tracker's public SEO URLs are NOT hardcoded to a domain. The source files
 (`index.html`, `public/robots.txt`, `public/sitemap.xml`) all use the literal
-placeholder `https://ledger.replit.app`. A post-build step `seo.mjs` (runs in the
+placeholder `https://loankhatam.replit.app`. A post-build step `seo.mjs` (runs in the
 `build` script after `prerender.mjs`) string-replaces that placeholder in the
 built `dist/public/*` with the real domain from `process.env.REPLIT_DOMAINS`
 (first entry), falling back to `REPLIT_DEV_DOMAIN`, then the placeholder. It also

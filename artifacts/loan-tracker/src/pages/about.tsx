@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 
 const META = [
-  { icon: Wallet, label: "App Name", value: "Loan Tracker — Ledger" },
+  { icon: Wallet, label: "App Name", value: "Loan Khatam" },
   { icon: Tag, label: "Version", value: "1.0.0" },
   { icon: CalendarDays, label: "Release Date", value: "June 2026" },
   { icon: Users, label: "Developer", value: "Loan Tracker Team" },
@@ -15,7 +15,7 @@ const HOW_IT_WORKS = [
   {
     icon: Wallet,
     title: "EMI Calculation",
-    text: "Enter a loan's principal, interest rate and tenure and Ledger computes the equated monthly instalment along with a full amortization schedule of principal and interest for every month.",
+    text: "Enter a loan's principal, interest rate and tenure and Loan Khatam computes the equated monthly instalment along with a full amortization schedule of principal and interest for every month.",
   },
   {
     icon: Target,
@@ -40,7 +40,7 @@ const HOW_IT_WORKS = [
   {
     icon: CalendarClock,
     title: "Loan Closure Planning",
-    text: "Set a target closure date or budget and Ledger maps out a clear, month-by-month plan so you always know where you stand on the road to being debt-free.",
+    text: "Set a target closure date or budget and Loan Khatam maps out a clear, month-by-month plan so you always know where you stand on the road to being debt-free.",
   },
 ];
 
@@ -132,14 +132,14 @@ export function AboutPage() {
         </h2>
         <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
           <p>
-            Loan Tracker — Ledger exists to give individuals a clear, jargon-free
+            Loan Khatam exists to give individuals a clear, jargon-free
             picture of their borrowing. Loan statements are often dense and hard to
             reason about, which makes it difficult to know whether you are on track,
             how much interest you are really paying, or what a small change to your
             payments would actually achieve.
           </p>
           <p>
-            Ledger turns those numbers into something you can explore and understand.
+            Loan Khatam turns those numbers into something you can explore and understand.
             It is built purely as an{" "}
             <span className="font-semibold text-slate-700 dark:text-slate-200">
               educational and personal financial planning

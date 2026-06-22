@@ -8,36 +8,36 @@ import {
 
 const FAQS = [
   {
-    q: "What is an EMI and how does Ledger calculate it?",
-    a: "An EMI (Equated Monthly Instalment) is the fixed amount you pay each month towards a loan. Ledger calculates it from the principal, annual interest rate and tenure using the standard reducing-balance formula, then breaks every instalment down into its principal and interest components.",
+    q: "What is an EMI and how does Loan Khatam calculate it?",
+    a: "An EMI (Equated Monthly Instalment) is the fixed amount you pay each month towards a loan. Loan Khatam calculates it from the principal, annual interest rate and tenure using the standard reducing-balance formula, then breaks every instalment down into its principal and interest components.",
   },
   {
     q: "How do prepayments affect my loan?",
-    a: "A prepayment is any amount you pay above your scheduled EMI. Because it goes straight towards your principal, it reduces the balance on which future interest is charged. In Ledger you can model one-time or recurring prepayments and immediately see how much tenure and interest you would save.",
+    a: "A prepayment is any amount you pay above your scheduled EMI. Because it goes straight towards your principal, it reduces the balance on which future interest is charged. In Loan Khatam you can model one-time or recurring prepayments and immediately see how much tenure and interest you would save.",
   },
   {
     q: "How do I add a new loan?",
-    a: "Use the \"Add Loan\" button in the sidebar, or import a statement from the dashboard. Enter the borrower, principal, interest rate and dates — Ledger handles the rest and builds the full amortization schedule for you.",
+    a: "Use the \"Add Loan\" button in the sidebar, or import a statement from the dashboard. Enter the borrower, principal, interest rate and dates — Loan Khatam handles the rest and builds the full amortization schedule for you.",
   },
   {
     q: "Can I import a loan from a document?",
-    a: "Yes. From the dashboard choose \"Import Data\" and upload an amortization PDF, screenshot, CSV or JSON file. Ledger reads the details and pre-fills the Add Loan form so you can review and confirm before saving.",
+    a: "Yes. From the dashboard choose \"Import Data\" and upload an amortization PDF, screenshot, CSV or JSON file. Loan Khatam reads the details and pre-fills the Add Loan form so you can review and confirm before saving.",
   },
   {
     q: "Is my financial data private?",
     a: "Your loan data is stored securely against your own authenticated account and is never sold or shared for marketing. You remain in control and can export or delete your data at any time. See our Privacy Policy and Data Usage Policy for full details.",
   },
   {
-    q: "Which currency does Ledger use?",
-    a: "Amounts are displayed in Indian Rupees (₹) using standard Indian number formatting. Ledger is a planning tool, so all figures are estimates intended for personal financial planning rather than official statements.",
+    q: "Which currency does Loan Khatam use?",
+    a: "Amounts are displayed in Indian Rupees (₹) using standard Indian number formatting. Loan Khatam is a planning tool, so all figures are estimates intended for personal financial planning rather than official statements.",
   },
   {
     q: "What is the difference between the avalanche and snowball strategies?",
-    a: "The avalanche method targets the loan with the highest interest rate first to minimise total interest paid, while the snowball method clears the smallest balance first for quicker psychological wins. Ledger lets you compare both side by side.",
+    a: "The avalanche method targets the loan with the highest interest rate first to minimise total interest paid, while the snowball method clears the smallest balance first for quicker psychological wins. Loan Khatam lets you compare both side by side.",
   },
   {
     q: "Should I prepay my loan or invest the surplus?",
-    a: "It depends on your loan's interest rate versus your expected investment return. Ledger's investment comparison shows transparent, side-by-side estimates, but the figures are illustrative only — please verify any financial decision independently.",
+    a: "It depends on your loan's interest rate versus your expected investment return. Loan Khatam's investment comparison shows transparent, side-by-side estimates, but the figures are illustrative only — please verify any financial decision independently.",
   },
 ];
 
@@ -133,7 +133,7 @@ export function HelpPage() {
           </div>
           <h3 className="font-bold text-slate-800 dark:text-slate-100">Request a Feature</h3>
           <p className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-            Share an idea — your feedback shapes where Ledger goes next.
+            Share an idea — your feedback shapes where Loan Khatam goes next.
           </p>
         </Link>
       </section>

@@ -56,7 +56,7 @@ export function DisclaimerPage() {
         </h2>
         <div className="mt-3 space-y-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
           <p>
-            Loan Tracker — Ledger is a self-service educational and planning tool. The
+            Loan Tracker — Loan Khatam is a self-service educational and planning tool. The
             content, calculators and projections it provides are general in nature and
             do not take into account your specific circumstances, objectives or needs.
             Nothing in this application constitutes financial, investment, legal, tax

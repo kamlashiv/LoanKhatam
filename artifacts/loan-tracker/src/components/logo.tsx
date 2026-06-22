@@ -1,7 +1,7 @@
 type LogoProps = { className?: string };
 
 /**
- * Inner "Ledger" glyph — stacked ledger entry rows with a single settled-coin
+ * Inner "Loan Khatam" glyph — stacked ledger entry rows with a single settled-coin
  * accent. Designed to sit inside a colored container (inherits color via
  * `currentColor`); the coin keeps its emerald accent regardless of context.
  */

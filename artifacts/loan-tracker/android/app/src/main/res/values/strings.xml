@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Ledger</string>
-    <string name="title_activity_main">Ledger</string>
+    <string name="app_name">Loan Khatam</string>
+    <string name="title_activity_main">Loan Khatam</string>
     <string name="package_name">app.replit.ledger</string>
     <string name="custom_url_scheme">app.replit.ledger</string>
 </resources>

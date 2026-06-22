@@ -20,7 +20,7 @@ export function DataUsagePage() {
           Data Usage Policy
         </h1>
         <p className="mt-2 max-w-2xl font-medium text-slate-500 dark:text-slate-400">
-          A clear explanation of what data Loan Tracker — Ledger stores and how it is
+          A clear explanation of what data Loan Tracker — Loan Khatam stores and how it is
           used. Last updated June 2026.
         </p>
       </header>
@@ -30,7 +30,7 @@ export function DataUsagePage() {
           What Data We Store
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-          Ledger stores the loan and financial planning information you choose to add —
+          Loan Khatam stores the loan and financial planning information you choose to add —
           such as loan principals, interest rates, tenures, payment records and your
           financial profile — together with the basic account details needed to sign
           you in. All of this data is stored securely and is tied to your individual

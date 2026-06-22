@@ -87,7 +87,7 @@ export async function exportPlannerPDF(
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text("Ledger — Loan Payoff Plan", 14, 14);
+  doc.text("Loan Khatam — Loan Payoff Plan", 14, 14);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.text(
@@ -317,7 +317,7 @@ export async function exportToPDF(
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text("Ledger — Loan Amortization Schedule", 14, 14);
+  doc.text("Loan Khatam — Loan Amortization Schedule", 14, 14);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.text(`Generated: ${formatDate(new Date().toISOString().split("T")[0])}`, 250, 14);
@@ -416,7 +416,7 @@ export async function exportBankPDF(
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(15);
   doc.setFont("helvetica", "bold");
-  doc.text("Ledger — Bank-Style Amortization Schedule", 14, 14);
+  doc.text("Loan Khatam — Bank-Style Amortization Schedule", 14, 14);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.text(`Generated: ${formatDate(new Date().toISOString().split("T")[0])}`, 245, 14);
@@ -632,7 +632,7 @@ function addPageNumbers(doc: any) {
     doc.setFontSize(7.5);
     doc.setTextColor(150, 150, 150);
     doc.text(
-      `Page ${i} of ${totalPages} — Ledger Loan Tracker`,
+      `Page ${i} of ${totalPages} — Loan Khatam Loan Tracker`,
       14,
       doc.internal.pageSize.height - 6
     );

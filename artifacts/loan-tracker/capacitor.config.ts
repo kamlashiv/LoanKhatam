@@ -19,7 +19,7 @@ const APP_URL = process.env.PUBLISHED_APP_URL ?? PUBLISHED_APP_URL;
 
 const config: CapacitorConfig = {
   appId: "app.replit.ledger",
-  appName: "Ledger",
+  appName: "Loan Khatam",
   webDir: "dist/public",
   server: {
     // The app loads your live published site over HTTPS.

@@ -729,7 +729,7 @@ export function Planner() {
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left"
                 onClick={() => { exportPlannerCSV(exportMeta, baseline, plan); setExportOpen(false); }}
               >
-                <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> CSV Ledger
+                <FileSpreadsheet className="h-4 w-4 text-emerald-600 dark:text-emerald-400" /> CSV Loan Khatam
               </button>
               <button
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/60 text-left disabled:opacity-60"
@@ -1317,7 +1317,7 @@ export function Planner() {
         <CardHeader className="flex-row items-center justify-between space-y-0 gap-4 flex-wrap">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <TableIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> Repayment Ledger
+              <TableIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" /> Repayment Loan Khatam
             </CardTitle>
             <CardDescription>
               {viewMode === "yearly" ? "Yearly summary — edit a year's extra prepayment inline" : "Month-by-month schedule"}

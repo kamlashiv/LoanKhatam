@@ -340,7 +340,7 @@ export function Dashboard() {
       : (summary?.totalLoans ?? 0) === 0
         ? {
             icon: Wallet,
-            title: "Welcome to Ledger",
+            title: "Welcome to Loan Khatam",
             text: "Add your first loan to start tracking repayments, balances, and due dates.",
             bg: "bg-indigo-50 dark:bg-indigo-950/30",
             border: "border-indigo-100 dark:border-indigo-900/50",

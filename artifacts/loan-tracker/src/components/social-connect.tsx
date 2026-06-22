@@ -38,7 +38,7 @@ const channels: Channel[] = [
   },
   {
     name: "LinkedIn",
-    handle: "Ledger Finance",
+    handle: "Loan Khatam Finance",
     followers: "22.9K",
     href: "https://linkedin.com/company/ledger",
     icon: Linkedin,
@@ -74,7 +74,7 @@ export function SocialConnect() {
             Connect with us
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-muted-foreground">
-            Follow Ledger for money tips, product updates, and stories from
+            Follow Loan Khatam for money tips, product updates, and stories from
             people getting their loans paid off — faster.
           </p>
         </div>
@@ -88,7 +88,7 @@ export function SocialConnect() {
                 href={c.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`Follow Ledger on ${c.name}`}
+                aria-label={`Follow Loan Khatam on ${c.name}`}
                 className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
               >
                 <span

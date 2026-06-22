@@ -564,7 +564,7 @@ export function ProfilePage() {
               Financial Profile
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
-              Enter your finances once. Every planner and strategy across Ledger reads from this
+              Enter your finances once. Every planner and strategy across Loan Khatam reads from this
               profile and stays in sync automatically.
             </p>
           </div>
@@ -793,7 +793,7 @@ export function ProfilePage() {
               </div>
               <p className="text-xs text-indigo-700/80 dark:text-indigo-300/80">
                 These numbers power your Smart Strategy and Financial Strategy tabs. Update them here
-                once and the rest of Ledger follows.
+                once and the rest of Loan Khatam follows.
               </p>
             </div>
 

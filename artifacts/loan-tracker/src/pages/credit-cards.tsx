@@ -482,7 +482,7 @@ export function CreditCardsList() {
             Your cards &amp; accounts
           </h1>
           <p className="mt-1 text-sm font-medium text-muted-foreground">
-            Add credit cards manually, or let Ledger auto-import them from your
+            Add credit cards manually, or let Loan Khatam auto-import them from your
             email and SMS.
           </p>
         </div>
@@ -539,7 +539,7 @@ export function CreditCardsList() {
           Auto-import every card &amp; loan
         </h2>
         <p className="mt-2 max-w-xl text-sm font-medium text-indigo-100">
-          Ledger&apos;s AI reads your bank statements and transaction alerts to
+          Loan Khatam&apos;s AI reads your bank statements and transaction alerts to
           detect your cards, loans and EMIs — then asks you to confirm before
           adding anything.
         </p>
@@ -638,7 +638,7 @@ export function CreditCardsList() {
                 Detected — confirm to add
               </h3>
               <p className="text-xs font-medium text-muted-foreground">
-                Review what Ledger found. Nothing is saved until you confirm.
+                Review what Loan Khatam found. Nothing is saved until you confirm.
               </p>
             </div>
             {detectedCount > 0 && (
@@ -795,7 +795,7 @@ export function CreditCardsList() {
       {/* Trust footer */}
       <div className="flex items-center justify-center gap-2 pb-4 text-center text-xs font-medium text-muted-foreground">
         <ShieldCheck className="h-4 w-4 text-indigo-500" />
-        Ledger will use read-only, RBI-aligned access. We never store your bank
+        Loan Khatam will use read-only, RBI-aligned access. We never store your bank
         passwords and you can disconnect any source anytime.
       </div>
 
@@ -815,7 +815,7 @@ export function CreditCardsList() {
             <DialogTitle>Paste a statement or alert</DialogTitle>
             <DialogDescription>
               Paste the text of a bank statement, e-bill, or transaction SMS.
-              Ledger&apos;s AI will detect cards and loans — nothing is added
+              Loan Khatam&apos;s AI will detect cards and loans — nothing is added
               until you confirm.
             </DialogDescription>
           </DialogHeader>

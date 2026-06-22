@@ -20,7 +20,7 @@ export function TermsPage() {
           Terms &amp; Conditions
         </h1>
         <p className="mt-2 max-w-2xl font-medium text-slate-500 dark:text-slate-400">
-          The terms that govern your use of Loan Tracker — Ledger. Last updated June
+          The terms that govern your use of Loan Tracker — Loan Khatam. Last updated June
           2026.
         </p>
       </header>
@@ -30,7 +30,7 @@ export function TermsPage() {
           Acceptance of Terms
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-          By accessing or using Loan Tracker — Ledger, you agree to be bound by these
+          By accessing or using Loan Tracker — Loan Khatam, you agree to be bound by these
           Terms &amp; Conditions. If you do not agree with any part of these terms,
           please do not use the application. We may update these terms from time to
           time, and your continued use after changes constitutes acceptance of the

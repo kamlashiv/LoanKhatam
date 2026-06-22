@@ -159,7 +159,7 @@ describe("Planner page", () => {
       within(firstRow).getByText(formatRupees(firstYear.closing))
     ).toBeInTheDocument();
 
-    // Ledger footer total interest matches the engine.
+    // Loan Khatam footer total interest matches the engine.
     expect(
       screen.getAllByText(formatRupees(expected.totalInterest)).length
     ).toBeGreaterThan(0);

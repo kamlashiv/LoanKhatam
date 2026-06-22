@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const distDir = path.resolve(root, "dist/public");
-const PLACEHOLDER = "https://ledger.replit.app";
+const PLACEHOLDER = "https://loankhatam.replit.app";
 
 function normalizeHost(value) {
   return String(value || "")
@@ -58,10 +58,10 @@ function main() {
       const jsonLd = {
         "@context": "https://schema.org",
         "@type": "WebApplication",
-        name: "Ledger",
+        name: "Loan Khatam",
         url: `${baseUrl}/`,
         description:
-          "Ledger — track money you lend to friends and family, record repayments, and watch outstanding balances settle.",
+          "Loan Khatam — track money you lend to friends and family, record repayments, and watch outstanding balances settle.",
         applicationCategory: "FinanceApplication",
         operatingSystem: "Web, Android",
         offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },

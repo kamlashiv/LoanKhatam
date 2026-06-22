@@ -20,7 +20,7 @@ export function PrivacyPolicyPage() {
           Privacy Policy
         </h1>
         <p className="mt-2 max-w-2xl font-medium text-slate-500 dark:text-slate-400">
-          How Loan Tracker — Ledger collects, uses and protects your information.
+          How Loan Tracker — Loan Khatam collects, uses and protects your information.
           Last updated June 2026.
         </p>
       </header>
@@ -29,7 +29,7 @@ export function PrivacyPolicyPage() {
         <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Overview</h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
           Your privacy matters to us. This policy explains what information Loan Tracker
-          — Ledger collects when you use the application, why we collect it, and the
+          — Loan Khatam collects when you use the application, why we collect it, and the
           choices you have. We collect only what is needed to provide the planning
           features you use, and we never sell your personal data.
         </p>

@@ -20,7 +20,7 @@ export function CookiePolicyPage() {
           Cookie Policy
         </h1>
         <p className="mt-2 max-w-2xl font-medium text-slate-500 dark:text-slate-400">
-          How and why Loan Tracker — Ledger uses cookies and similar technologies.
+          How and why Loan Tracker — Loan Khatam uses cookies and similar technologies.
           Last updated June 2026.
         </p>
       </header>
@@ -42,7 +42,7 @@ export function CookiePolicyPage() {
           How We Use Cookies
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-          Loan Tracker — Ledger uses cookies only for essential session and
+          Loan Tracker — Loan Khatam uses cookies only for essential session and
           authentication purposes. They allow us to keep you securely signed in as you
           move between pages and to protect your account. We do not use cookies for
           advertising, cross-site tracking, or selling your data.

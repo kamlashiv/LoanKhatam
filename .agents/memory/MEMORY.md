@@ -4,7 +4,7 @@
 - [OpenAI key is Replit proxy](openai-key-is-replit-proxy.md) — OPENAI_API_KEY is an AQ.* AI Integrations key; raw SDK 401s, must use AI_INTEGRATIONS_OPENAI_BASE_URL proxy.
 - [Loan Payoff Planner engine](planner-engine.md) — /planner runs its own amortization sim; record actual installment in payoff month so emi+extra==interest+principal; baseline excludes extra/top-up.
 - [Local file extraction (web)](file-extract-local.md) — loan-tracker parses uploads locally (pdfjs/tesseract/JSON/CSV/regex), no AI; mobile still uses AI /api/extract-loan route.
-- [SEO domain auto-injection](seo-domain-autoinject.md) — seo.mjs replaces placeholder https://ledger.replit.app in built robots/sitemap/canonical/OG with REPLIT_DOMAINS at build; no manual URL step, +JSON-LD.
+- [SEO domain auto-injection](seo-domain-autoinject.md) — seo.mjs replaces placeholder https://loankhatam.replit.app in built robots/sitemap/canonical/OG with REPLIT_DOMAINS at build; no manual URL step, +JSON-LD.
 - [Mockup DESIGN subagent pitfalls](mockup-subagent-pitfalls.md) — variants ship escaped template literals (curl 200 still broken) + seed-data count mismatches; grep+screenshot+architect before presenting.
 - [Canvas reserved frames](canvas-reserved-frames.md) — pending_canvas_frames shape_ids aren't guaranteed to all exist; check update results, backfill missing ones with a new id at the intended rect.
 - [Smart Financial Strategy engine](strategy-engine.md) — /strategy debt baseline must use rollover=false ("minimum only"); unbounded payoffs show "Not reachable"; persisted inputs sanitized not blind-merged.

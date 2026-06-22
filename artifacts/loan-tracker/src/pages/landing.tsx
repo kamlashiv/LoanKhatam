@@ -49,7 +49,7 @@ export function LandingPage() {
     },
     {
       icon: Users,
-      title: "Personal Ledger",
+      title: "Private & Secure",
       description: "Your private ledger for loans to friends and family — organized and secure.",
     },
   ];
@@ -63,7 +63,7 @@ export function LandingPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/20">
               <LogoGlyph className="h-5 w-5 text-white" />
             </div>
-            <span className="text-2xl font-extrabold tracking-tight text-foreground">Ledger</span>
+            <span className="text-2xl font-extrabold tracking-tight text-foreground">Loan Khatam</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <ThemeToggle />
@@ -251,7 +251,7 @@ export function LandingPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-600/20">
               <LogoGlyph className="h-5 w-5 text-white" />
             </div>
-            <span className="text-2xl font-extrabold tracking-tight">Ledger</span>
+            <span className="text-2xl font-extrabold tracking-tight">Loan Khatam</span>
           </div>
           <p className="text-sm text-muted-foreground">
             Your trusted personal loan register.

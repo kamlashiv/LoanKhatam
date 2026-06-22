@@ -17,6 +17,13 @@ injects a JSON-LD `WebApplication` block into the built index.html.
 deployment domain at deploy/build time, so this removes any manual URL step —
 publishing alone makes every SEO asset point at the live address.
 
+**WebApplication injection guard:** `seo.mjs` injects the WebApplication JSON-LD
+only if the built HTML lacks one. Guard on the `"WebApplication"` type string
+specifically, NOT a generic `application/ld+json` check — the prerendered landing
+page already emits its own FAQPage JSON-LD, so a generic check would silently
+suppress the WebApplication block. Both schemas must coexist (WebApplication in
+`<head>`, FAQPage inside the prerendered `#root`).
+
 **How to apply:** keep the placeholder token identical across all three source
 files and in `seo.mjs`. If you add public routes, add them to `sitemap.xml` with
 the same placeholder. `seo.mjs` is intentionally non-fatal (try/catch, never

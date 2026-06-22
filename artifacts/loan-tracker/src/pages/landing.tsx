@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   CheckCircle2,
+  ChevronDown,
   Sun,
   Moon,
 } from "lucide-react";
@@ -51,6 +52,33 @@ export function LandingPage() {
       icon: Users,
       title: "Private & Secure",
       description: "Keep your loans to friends and family private and secure with Loan Khatam.",
+    },
+  ];
+
+  const faqs = [
+    {
+      q: "What is Loan Khatam?",
+      a: "Loan Khatam is a free personal loan and udhaar tracker. It helps you record money you lend to friends, family, or colleagues, track repayments and EMIs, and see outstanding balances at a glance — all in Indian Rupees (₹).",
+    },
+    {
+      q: "How do I keep track of money I lend to friends and family?",
+      a: "Add each loan with the borrower's name, amount, interest rate, and due date. Every time you receive a repayment, record it and Loan Khatam updates the outstanding balance automatically, so you always know who owes you how much.",
+    },
+    {
+      q: "Is Loan Khatam free to use?",
+      a: "Yes. Loan Khatam is completely free to sign up and use for tracking your personal loans and udhaar.",
+    },
+    {
+      q: "Can I track informal udhaar and EMI-based loans?",
+      a: "Absolutely. You can track both casual udhaar between friends and structured loans with interest and monthly EMIs. The app calculates balances, due dates, and overdue status for you.",
+    },
+    {
+      q: "Is my financial data private and secure?",
+      a: "Yes. Your account is protected with secure sign-in, and your loan records stay private to you — only you can see the money you have lent and the repayments you record.",
+    },
+    {
+      q: "Can I use Loan Khatam on my phone?",
+      a: "Yes. Loan Khatam works in any mobile browser and is also available as an Android app, so you can update your loan khata anytime, anywhere.",
     },
   ];
 
@@ -223,6 +251,51 @@ export function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* FAQ */}
+      <section className="py-20 px-6 bg-background" aria-labelledby="faq-heading">
+        <div className="max-w-3xl mx-auto">
+          <h2
+            id="faq-heading"
+            className="text-3xl lg:text-4xl font-bold tracking-tight mb-4 text-center"
+          >
+            Frequently asked questions
+          </h2>
+          <p className="text-muted-foreground text-center mb-10">
+            Everything about tracking personal loans and udhaar with Loan Khatam.
+          </p>
+          <div className="flex flex-col gap-3">
+            {faqs.map((item) => (
+              <details
+                key={item.q}
+                className="group rounded-2xl border border-border bg-card p-5"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-foreground">
+                  {item.q}
+                  <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                </summary>
+                <p className="mt-3 leading-relaxed text-muted-foreground">{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ structured data for Google rich results */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faqs.map((item) => ({
+              "@type": "Question",
+              name: item.q,
+              acceptedAnswer: { "@type": "Answer", text: item.a },
+            })),
+          }),
+        }}
+      />
 
       {/* CTA */}
       <section className="py-24 px-6 relative overflow-hidden bg-primary text-primary-foreground">

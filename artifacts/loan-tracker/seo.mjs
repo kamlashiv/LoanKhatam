@@ -51,10 +51,13 @@ function main() {
   replaceInFile(robotsFile, PLACEHOLDER, baseUrl);
   replaceInFile(sitemapFile, PLACEHOLDER, baseUrl);
 
-  // 2) Inject JSON-LD structured data into the built index.html (once).
+  // 2) Inject WebApplication JSON-LD into the built index.html <head> (once).
+  // Guard on the WebApplication type specifically — the prerendered landing page
+  // already emits its own FAQPage JSON-LD, so a generic "application/ld+json"
+  // check would wrongly suppress this block. Both schemas must coexist.
   if (fs.existsSync(indexFile)) {
     let html = fs.readFileSync(indexFile, "utf8");
-    if (!html.includes("application/ld+json") && html.includes("</head>")) {
+    if (!html.includes('"WebApplication"') && html.includes("</head>")) {
       const jsonLd = {
         "@context": "https://schema.org",
         "@type": "WebApplication",

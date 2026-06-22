@@ -55,8 +55,8 @@ export const modules: ModuleMap = {
   "./components/mockups/planner-vibes/TechnicalDense.tsx": () => import("../components/mockups/planner-vibes/TechnicalDense.tsx"),
   "./components/mockups/planner-vibes/WarmSunrise.tsx": () => import("../components/mockups/planner-vibes/WarmSunrise.tsx"),
   "./components/mockups/share-loan/AllOptions.tsx": () => import("../components/mockups/share-loan/AllOptions.tsx"),
-  "./components/mockups/social-media/Connect.tsx": () => import("../components/mockups/social-media/Connect.tsx"),
   "./components/mockups/share-loan-layouts/ChannelList.tsx": () => import("../components/mockups/share-loan-layouts/ChannelList.tsx"),
   "./components/mockups/share-loan-layouts/CompactSheet.tsx": () => import("../components/mockups/share-loan-layouts/CompactSheet.tsx"),
-  "./components/mockups/share-loan-layouts/SpotlightTiers.tsx": () => import("../components/mockups/share-loan-layouts/SpotlightTiers.tsx")
+  "./components/mockups/share-loan-layouts/SpotlightTiers.tsx": () => import("../components/mockups/share-loan-layouts/SpotlightTiers.tsx"),
+  "./components/mockups/social-media/Connect.tsx": () => import("../components/mockups/social-media/Connect.tsx")
 };

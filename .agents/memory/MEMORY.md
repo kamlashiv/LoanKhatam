@@ -29,3 +29,4 @@
 - [Cards & Auto-Sync mockup](cards-autosync-mockup.md) — canvas-only design for credit-card wallet + Gmail/mobile-OTP/AI-bank-detect auto-import; real all-bank sync infeasible (needs Account Aggregator/Plaid).
 - [Capacitor errorPath offline screen](capacitor-errorpath-offline.md) — server.errorPath serves a bundled page under the remote origin on load failure; Retry just navigates to "/", no URL templating.
 - [offline.html / localStorage verification](offline-html-verification.md) — preview iframe partitions localStorage from the screenshot harness; verify localStorage pages via jsdom test running the page script, not screenshots.
+- [Auth UI is Clerk-owned](auth-ui-is-clerk-owned.md) — sign-in/up are Clerk's <SignIn>/<SignUp> styled via appearance; redesigns are mockups unless done through Clerk appearance, not page edits.

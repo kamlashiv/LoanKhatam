@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Loan Tracker"
+title = "LoanKhatam"
 version = "1.0.0"
 id = "artifacts/loan-tracker"
 router = "path"

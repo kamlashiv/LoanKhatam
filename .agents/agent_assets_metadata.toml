@@ -1,3 +1,20 @@
 uploads = []
 generated = []
-outputs = []
+
+[[outputs]]
+id = "JjONpfrtofy0YiGBUJ_GL"
+uri = "file://artifacts/loan-tracker/public/logo.svg"
+type = "image"
+title = "Loan Khatam Logo (SVG — full logo)"
+
+[[outputs]]
+id = "Q6Ksv_AXpSx1wHxMFoqkI"
+uri = "file://artifacts/loan-tracker/assets/icon-only.png"
+type = "image"
+title = "App Icon (PNG — high resolution)"
+
+[[outputs]]
+id = "Eyh9TnVKGWtkcyKGs9a8e"
+uri = "file://artifacts/loan-tracker/public/favicon.svg"
+type = "image"
+title = "Favicon (SVG — browser tab icon)"

@@ -1,0 +1,31 @@
+# Smart Loan Saver
+
+## What this tool does
+
+Smart Loan Saver is a free, browser-based loan prepayment planner. It helps borrowers in India calculate how much interest they save and how many years they cut from their loan tenure by making extra payments on a home loan or personal loan.
+
+## Who it is for
+
+Anyone repaying a home loan, personal loan, or any instalment loan who wants to understand the impact of prepayments without visiting a bank or downloading an app.
+
+## Main public URL
+
+https://loan-khatam.replit.app/bento-planner/
+
+## Key capabilities
+
+- Enter loan principal, interest rate, tenure, and start date
+- Set a monthly extra-payment amount using a slider
+- Instantly see interest saved, tenure reduction, and total repayment cost
+- Compare "standard path" vs "accelerated savings plan" side by side
+- View four pre-built payoff strategies (1 extra EMI per year, 5 % monthly boost, 10 % monthly boost, super-saver combo) with savings estimates
+- Year-by-year amortisation schedule
+- All amounts shown in Indian Rupees (₹)
+
+## No login required
+
+The tool runs entirely in the browser. No account, no sign-up, no data sent to a server.
+
+## Related product
+
+Loan Khatam — a personal loan tracker for money lent to friends and family: https://loan-khatam.replit.app/

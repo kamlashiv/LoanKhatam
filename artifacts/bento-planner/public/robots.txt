@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://loan-khatam.replit.app/bento-planner/sitemap.xml

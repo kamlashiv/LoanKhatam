@@ -1,0 +1,103 @@
+Design a clean, modern, mobile-first UI for a service booking app named “Fixiya”.
+Important:
+- Right now, only focus on designing the app pages and UI screens.
+- Do NOT build backend logic yet.
+- Do NOT build admin panel yet.
+- Only create frontend mobile app page designs with proper navigation flow.
+- Keep the design simple, professional, minimal, and realistic.
+- Use a clean color palette that suits a home services brand.
+- The UI should look production-ready, modern, and easy to use.
+- Use proper spacing, rounded cards, clean icons, and mobile-friendly layout.
+- Keep the app beginner-friendly and not overloaded.
+App purpose:
+Fixiya is a home services booking app where users can request services like plumber, electrician,
+AC repair, etc.
+Create these mobile app pages:
+1. Splash Screen
+- App logo
+- Clean branded background
+- Minimal loading feel
+2. Welcome / Intro Screen
+- Short heading explaining the app
+- Simple subtitle
+- Button: Get Started
+3. Login / Signup Screen
+- Email input
+- Button to send OTP
+- OTP verification screen
+- Keep it simple and modern
+4. Home Screen
+- Top greeting section
+- Search bar
+- Service categories as cards/grid
+- Example categories: Plumber, Electrician, AC Repair, Carpenter, Painter
+- Popular services section
+- Clean bottom navigation
+5. Service List Screen
+- Show all available services in a neat list/grid
+- Service card with icon, title, short description
+6. Service Detail Screen
+- Service image/icon
+- Service title
+- Short description
+- Starting price or visit charge section
+- Book Now button
+7. Book Service Screen
+
+- Selected service name
+- Problem description text area
+- Address input
+- Preferred date picker
+- Preferred time picker
+- Submit Request button
+8. My Requests Screen
+- List of all service requests
+- Each request should show:
+- service name
+- booking date
+- status badge
+- Status examples: Pending, Assigned, In Progress, Completed, Cancelled
+9. Request Detail Screen
+- Full request information
+- Service name
+- Issue description
+- Address
+- Date and time
+- Current status
+- Assigned technician field placeholder
+- Support/contact button placeholder
+10. Profile Screen
+- User name placeholder
+- Email
+- Saved address
+- Edit profile button
+- Logout button
+11. Notifications Screen
+- Simple list of notification cards
+- Examples: request submitted, status updated, technician assigned
+12. Empty States
+- No requests yet
+- No notifications yet
+- No search results
+13. Bottom Navigation
+Include a clean bottom tab bar with:
+- Home
+- Requests
+- Notifications
+- Profile
+Design rules:
+- Keep all screens visually consistent
+- Do not overuse colors
+- Avoid heavy gradients and clutter
+- Make it look like a real service booking app
+- Use modern card-based UI
+- Use readable typography
+- Focus strongly on good UX
+- All pages should be connected logically for demo purposes
+Output expectation:
+- Build all screens in frontend
+
+- Add proper navigation between pages
+- Use realistic placeholder content
+- Make the app design polished enough for a demo video
+- Keep the code organized and reusable

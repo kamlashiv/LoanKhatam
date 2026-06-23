@@ -1,5 +1,52 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "ZXjf5kTfmoucfb5cz3sFs"
+uri = "file://artifacts/fixiya/src/assets/images/ac-repair.png"
+type = "image"
+title = "AC Repair icon"
+
+[[generated]]
+id = "U_QndW0EuS6CONsS7chtj"
+uri = "file://artifacts/fixiya/src/assets/images/electrician.png"
+type = "image"
+title = "Electrician icon"
+
+[[generated]]
+id = "x6b6jGFueV1n6uOGhY96O"
+uri = "file://artifacts/fixiya/src/assets/images/plumber.png"
+type = "image"
+title = "Plumber icon"
+
+[[generated]]
+id = "pl8L7WOo7U23ThhzSEHRK"
+uri = "file://artifacts/fixiya/src/assets/images/cleaning.png"
+type = "image"
+title = "Cleaning icon"
+
+[[generated]]
+id = "4m9c_QsW3Q6BFTx8L8TXd"
+uri = "file://artifacts/fixiya/src/assets/images/splash-graphic.png"
+type = "image"
+title = "Splash graphic"
+
+[[generated]]
+id = "FbJLphNGi9lsMnKN83XD-"
+uri = "file://artifacts/fixiya/src/assets/images/carpentry.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "u6FwI3L4J_3Q0jRufxRNw"
+uri = "file://artifacts/fixiya/src/assets/images/painting.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "7zSN1Xj_5drRdCaEtO-xM"
+uri = "file://artifacts/fixiya/src/assets/images/logo.png"
+type = "image"
+title = "generated_image"
 
 [[outputs]]
 id = "JjONpfrtofy0YiGBUJ_GL"

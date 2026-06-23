@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/fixiya/"
+title = "Fixiya"
+version = "1.0.0"
+id = "artifacts/fixiya"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/fixiya/" ]
+localPort = 21878
+
+[services.development]
+run = "pnpm --filter @workspace/fixiya run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/fixiya", "run", "build" ]
+publicDir = "artifacts/fixiya/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21878"
+BASE_PATH = "/fixiya/"

@@ -26,3 +26,4 @@
 ## Notes
 - Current frontend stack is React + Vite + Wouter SPA.
 - `artifacts/loan-tracker` now prerenders the `/` landing page at build time, but its other public routes still rely on the shared SPA shell.
+- The production frontend artifact serves `artifacts/loan-tracker/dist/public` as a static site and rewrites `/*` to `/index.html`, so route-specific SEO requires explicit prerendering or SSR for each public path.

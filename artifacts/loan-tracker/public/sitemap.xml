@@ -1,12 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  The domain below is replaced automatically at build time with the live
-  published deployment domain (see seo.mjs); no manual edit is needed.
-
-  Only indexable, public content pages belong here. Auth utility pages
-  (/sign-in, /sign-up) are intentionally excluded — they carry a noindex tag.
-  Keep this list in sync with src/entry-prerender.tsx (ROUTES) and public/llms.txt.
--->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://loan-khatam.replit.app/</loc>

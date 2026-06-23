@@ -17,14 +17,14 @@ export function AuthShowcase({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-[100dvh] w-full flex-col bg-white selection:bg-indigo-500 selection:text-white lg:flex-row">
       {/* Left pane — immersive showcase */}
-      <div className="relative z-0 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900 p-10 text-white lg:w-[58%] lg:p-20">
+      <div className="relative z-0 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900 p-8 text-white lg:w-[58%] lg:p-20">
         {/* Abstract background glows */}
         <div className="pointer-events-none absolute left-[-10%] top-[-10%] h-[500px] w-[500px] rounded-full bg-indigo-500 opacity-30 blur-[100px]" />
         <div className="pointer-events-none absolute bottom-[-10%] right-[-10%] h-[600px] w-[600px] rounded-full bg-emerald-500 opacity-20 blur-[120px]" />
 
         <div className="relative z-10">
           {/* Logo */}
-          <div className="mb-16 flex items-center gap-3">
+          <div className="mb-8 flex items-center gap-3 lg:mb-16">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-indigo-300/30 bg-gradient-to-tr from-indigo-500 to-indigo-400 text-white shadow-lg">
               <LogoGlyph className="h-7 w-7" />
             </div>
@@ -32,34 +32,34 @@ export function AuthShowcase({ children }: { children: ReactNode }) {
           </div>
 
           <div className="max-w-2xl">
-            <h1 className="mb-6 text-5xl font-extrabold leading-[1.1] tracking-tight lg:text-7xl">
+            <h1 className="mb-4 text-4xl font-extrabold leading-[1.1] tracking-tight lg:mb-6 lg:text-7xl">
               Track what you lend.
               <br />
               <span className="bg-gradient-to-r from-emerald-300 to-emerald-100 bg-clip-text text-transparent">
                 Get your money back.
               </span>
             </h1>
-            <p className="mb-12 max-w-xl text-xl leading-relaxed text-indigo-100">
+            <p className="mb-8 max-w-xl text-base leading-relaxed text-indigo-100 lg:mb-12 lg:text-xl">
               The smartest way to manage personal loans with friends and family. Clear records,
               gentle reminders, zero awkwardness.
             </p>
 
             {/* Value props */}
-            <div className="mb-16 flex flex-col gap-5">
+            <div className="flex flex-col gap-4 lg:mb-16 lg:gap-5">
               {VALUE_PROPS.map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-4">
                   <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-emerald-400/20">
                     <Icon className="h-5 w-5 text-emerald-300" />
                   </div>
-                  <p className="text-lg font-medium text-indigo-50">{text}</p>
+                  <p className="text-base font-medium text-indigo-50 lg:text-lg">{text}</p>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Product preview card */}
-        <div className="relative z-10 mt-auto max-w-lg rotate-[-2deg] rounded-2xl border border-white/20 bg-white/10 p-6 shadow-2xl backdrop-blur-md transition-transform duration-500 hover:rotate-0">
+        {/* Product preview card (desktop only — decorative) */}
+        <div className="relative z-10 mt-auto hidden max-w-lg rotate-[-2deg] rounded-2xl border border-white/20 bg-white/10 p-6 shadow-2xl backdrop-blur-md transition-transform duration-500 hover:rotate-0 lg:block">
           <div className="mb-6 flex items-start justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-200 text-lg font-bold text-indigo-800">

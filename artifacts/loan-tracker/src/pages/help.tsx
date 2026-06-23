@@ -54,11 +54,11 @@ export function HelpPage() {
   return (
     <div className="space-y-6">
       <Link
-        href="/settings"
+        href="/"
         className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to Settings
+        Back to Home
       </Link>
 
       <header>
@@ -124,8 +124,8 @@ export function HelpPage() {
           </p>
         </a>
 
-        <Link
-          href="/settings#feedback"
+        <a
+          href="mailto:support@loantracker.app?subject=Feature%20Request"
           className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-colors hover:border-indigo-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-700"
         >
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-300">
@@ -135,7 +135,7 @@ export function HelpPage() {
           <p className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
             Share an idea — your feedback shapes where Loan Khatam goes next.
           </p>
-        </Link>
+        </a>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">

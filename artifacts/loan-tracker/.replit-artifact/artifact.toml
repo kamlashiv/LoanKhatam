@@ -22,6 +22,59 @@ build = [ "pnpm", "--filter", "@workspace/loan-tracker", "run", "build" ]
 publicDir = "artifacts/loan-tracker/dist/public"
 serve = "static"
 
+# Clean-URL rewrites for prerendered public pages. Each route is served from its
+# own prerendered HTML file (with route-specific metadata) instead of the SPA
+# shell. These specific rules MUST precede the catch-all so the catch-all only
+# handles client-side app routes. The static server serves real files first, so
+# assets and the .html files themselves remain directly reachable.
+[[services.production.rewrites]]
+from = "/about"
+to = "/about.html"
+
+[[services.production.rewrites]]
+from = "/help"
+to = "/help.html"
+
+[[services.production.rewrites]]
+from = "/privacy-policy"
+to = "/privacy-policy.html"
+
+[[services.production.rewrites]]
+from = "/terms"
+to = "/terms.html"
+
+[[services.production.rewrites]]
+from = "/disclaimer"
+to = "/disclaimer.html"
+
+[[services.production.rewrites]]
+from = "/cookie-policy"
+to = "/cookie-policy.html"
+
+[[services.production.rewrites]]
+from = "/data-usage"
+to = "/data-usage.html"
+
+[[services.production.rewrites]]
+from = "/license"
+to = "/license.html"
+
+[[services.production.rewrites]]
+from = "/sign-in"
+to = "/sign-in.html"
+
+[[services.production.rewrites]]
+from = "/sign-in/*"
+to = "/sign-in.html"
+
+[[services.production.rewrites]]
+from = "/sign-up"
+to = "/sign-up.html"
+
+[[services.production.rewrites]]
+from = "/sign-up/*"
+to = "/sign-up.html"
+
 [[services.production.rewrites]]
 from = "/*"
 to = "/index.html"

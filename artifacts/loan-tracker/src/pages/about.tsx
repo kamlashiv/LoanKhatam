@@ -48,11 +48,11 @@ export function AboutPage() {
   return (
     <div className="space-y-6">
       <Link
-        href="/settings"
+        href="/"
         className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to Settings
+        Back to Home
       </Link>
 
       <header>

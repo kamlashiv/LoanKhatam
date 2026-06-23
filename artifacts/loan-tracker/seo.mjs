@@ -52,8 +52,17 @@ function main() {
   const robotsFile = path.join(distDir, "robots.txt");
   const sitemapFile = path.join(distDir, "sitemap.xml");
 
-  // 1) Point all absolute SEO URLs at the real published domain.
-  replaceInFile(indexFile, PLACEHOLDER, baseUrl);
+  // 1) Point all absolute SEO URLs at the real published domain. Every
+  // prerendered per-route HTML file (index.html, about.html, sign-in.html, …)
+  // carries its own canonical/OG/Twitter URLs with the placeholder domain, so
+  // rewrite all of them — not just index.html.
+  const htmlFiles = fs.existsSync(distDir)
+    ? fs
+        .readdirSync(distDir)
+        .filter((f) => f.endsWith(".html"))
+        .map((f) => path.join(distDir, f))
+    : [];
+  for (const file of htmlFiles) replaceInFile(file, PLACEHOLDER, baseUrl);
   replaceInFile(robotsFile, PLACEHOLDER, baseUrl);
   replaceInFile(sitemapFile, PLACEHOLDER, baseUrl);
 

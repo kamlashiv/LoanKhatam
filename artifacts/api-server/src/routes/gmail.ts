@@ -17,14 +17,20 @@ function requireAuth(req: any, res: any, next: any) {
   next();
 }
 
-// The Gmail connector is bound to the whole Repl (a single connected mailbox),
-// so its derived data belongs to whoever connected it. In a multi-user
-// deployment, set GMAIL_OWNER_USER_ID to that owner's Clerk user id to prevent
-// other signed-in users from reading the owner's financial data. When unset,
-// the feature runs in personal/single-user mode for the authenticated user.
+// The Gmail connector is bound to the whole Repl (a single connected mailbox).
+// GMAIL_OWNER_USER_ID must be set to the Clerk user id of the account owner to
+// prevent other signed-in users from accessing the owner's mailbox-derived
+// financial data. The routes are disabled entirely when the variable is absent
+// to ensure this Repl-scoped credential is never exposed to arbitrary users.
 function requireGmailOwner(req: any, res: any, next: any) {
   const owner = process.env.GMAIL_OWNER_USER_ID;
-  if (owner && req.userId !== owner) {
+  if (!owner) {
+    return res.status(503).json({
+      error:
+        "Gmail sync is not available: GMAIL_OWNER_USER_ID is not configured",
+    });
+  }
+  if (req.userId !== owner) {
     return res
       .status(403)
       .json({ error: "Gmail sync is restricted to the account owner" });

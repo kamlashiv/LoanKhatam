@@ -12,6 +12,7 @@ A personal loan management app for tracking money lent to friends and family. Us
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - Required env: `DATABASE_URL` — Postgres connection string
 - Required env: `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_PUBLISHABLE_KEY` — Clerk auth
+- Required env: `GMAIL_OWNER_USER_ID` — Clerk user id of the Gmail connector owner; Gmail routes return 503 when absent (prevents any signed-in user from accessing the Repl-scoped mailbox)
 
 ## Stack
 

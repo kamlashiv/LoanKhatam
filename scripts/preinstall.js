@@ -19,9 +19,11 @@ const rootDir = path.resolve(__dirname, '..');
   }
 });
 
-// 2. Enforce the use of pnpm
+// 2. Enforce the use of pnpm (bypass in production/CI environments to avoid blocking deployment platforms)
 const userAgent = process.env.npm_config_user_agent || '';
-if (!userAgent.startsWith('pnpm/')) {
+const isProdOrCI = process.env.NODE_ENV === 'production' || process.env.CI === 'true';
+
+if (!userAgent.startsWith('pnpm/') && !isProdOrCI) {
   console.error('\x1b[31mError: Use pnpm instead of npm or yarn.\x1b[0m');
   process.exit(1);
 }

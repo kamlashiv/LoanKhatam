@@ -630,7 +630,7 @@ export function Dashboard() {
                   <Skeleton className="h-6 w-16" />
                 </div>
               ))
-            ) : recentLoans && recentLoans.length > 0 ? (
+            ) : Array.isArray(recentLoans) && recentLoans.length > 0 ? (
               recentLoans.map((loan) => (
                 <Link key={loan.id} href={`/loans/${loan.id}`} className="block">
                   <div className="flex items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-4 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800">

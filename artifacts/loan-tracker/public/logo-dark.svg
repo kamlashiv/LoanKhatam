@@ -12,5 +12,5 @@
     <circle cx="33" cy="34" r="5.5" stroke="#ffffff" stroke-width="2.4" fill="none"/>
     <circle cx="33" cy="34" r="1.8" fill="#34d399"/>
   </g>
-  <text x="66" y="37" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="30" font-weight="800" letter-spacing="-0.5" fill="#4f46e5">Loan Khatam</text>
+  <text x="66" y="37" font-family="Inter, system-ui, -apple-system, Segoe UI, sans-serif" font-size="30" font-weight="800" letter-spacing="-0.5" fill="#ffffff">Loan Khatam</text>
 </svg>

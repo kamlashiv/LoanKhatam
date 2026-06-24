@@ -324,12 +324,12 @@ export async function exportToPDF(
 
   let y = 30;
   doc.setTextColor(...DARK);
-  doc.setFontSize(13);
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.text(`Borrower: ${borrowerName}`, 14, y);
 
-  y += 8;
-  doc.setFontSize(9);
+  y += 9;
+  doc.setFontSize(14);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
 
@@ -345,17 +345,17 @@ export async function exportToPDF(
   ];
   infoLeft.forEach(([label, val], i) => {
     doc.setFont("helvetica", "bold");
-    doc.text(label + ":", 14, y + i * 6);
+    doc.text(label + ":", 14, y + i * 8);
     doc.setFont("helvetica", "normal");
-    doc.text(val, 55, y + i * 6);
+    doc.text(val, 60, y + i * 8);
   });
   infoRight.forEach(([label, val], i) => {
     doc.setFont("helvetica", "bold");
-    doc.text(label + ":", 110, y + i * 6);
+    doc.text(label + ":", 120, y + i * 8);
     doc.setFont("helvetica", "normal");
-    doc.text(val, 145, y + i * 6);
+    doc.text(val, 160, y + i * 8);
   });
-  y += 22;
+  y += 28;
 
   autoTable(doc, {
     startY: y,
@@ -366,8 +366,8 @@ export async function exportToPDF(
       savings.interestSaved > 0 ? `Rs ${savings.interestSaved.toFixed(2)}` : "—",
     ]],
     theme: "grid",
-    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: "bold", fontSize: 9 },
-    bodyStyles: { fontSize: 9, textColor: DARK },
+    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: "bold", fontSize: 12 },
+    bodyStyles: { fontSize: 12, textColor: DARK },
     margin: { left: 14, right: 14 },
   });
 
@@ -382,8 +382,8 @@ export async function exportToPDF(
       `Rs ${row.closingBalance.toFixed(2)}`,
     ]),
     theme: "striped",
-    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: "bold", fontSize: 8 },
-    bodyStyles: { fontSize: 8, textColor: DARK },
+    headStyles: { fillColor: PRIMARY, textColor: 255, fontStyle: "bold", fontSize: 12 },
+    bodyStyles: { fontSize: 12, textColor: DARK },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: { 4: { textColor: AMBER }, 5: { textColor: PRIMARY } },
     margin: { left: 14, right: 14 },
@@ -421,14 +421,14 @@ export async function exportBankPDF(
   doc.setFont("helvetica", "normal");
   doc.text(`Generated: ${formatDate(new Date().toISOString().split("T")[0])}`, 245, 14);
 
-  let y = 28;
+  let y = 30;
   doc.setTextColor(...DARK);
-  doc.setFontSize(11);
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.text(`Borrower: ${borrowerName}`, 14, y);
 
-  y += 7;
-  doc.setFontSize(8.5);
+  y += 9;
+  doc.setFontSize(14);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(80, 80, 80);
 
@@ -444,9 +444,9 @@ export async function exportBankPDF(
     doc.setFont("helvetica", "bold");
     doc.text(h + ":", x, y);
     doc.setFont("helvetica", "normal");
-    doc.text(vals[i], x, y + 5);
+    doc.text(vals[i], x, y + 6);
   });
-  y += 14;
+  y += 18;
 
   autoTable(doc, {
     startY: y,
@@ -470,8 +470,8 @@ export async function exportBankPDF(
       row.closingPrincipal.toFixed(2),
     ]),
     theme: "grid",
-    headStyles: { fillColor: ORANGE, textColor: 255, fontStyle: "bold", fontSize: 7 },
-    bodyStyles: { fontSize: 7, textColor: DARK },
+    headStyles: { fillColor: ORANGE, textColor: 255, fontStyle: "bold", fontSize: 12 },
+    bodyStyles: { fontSize: 12, textColor: DARK },
     columnStyles: { 9: { textColor: AMBER_TEXT }, 10: { textColor: PRIMARY } },
     didParseCell: (data: any) => {
       if (data.section === "body") {

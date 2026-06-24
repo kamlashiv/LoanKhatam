@@ -2,7 +2,7 @@
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
       <stop stop-color="#4f46e5"/>
-      <stop offset="1" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#7c3aed"/>
     </linearGradient>
   </defs>
   <rect width="180" height="180" rx="40" fill="url(#bg)"/>

@@ -40,9 +40,9 @@ export function LoansList() {
     refetch();
   }, [refetch]);
 
-  const filtered = loans?.filter((l) =>
-    l.borrowerName.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = Array.isArray(loans)
+    ? loans.filter((l) => l.borrowerName.toLowerCase().includes(search.toLowerCase()))
+    : [];
 
   const tabs: { label: string; value: StatusFilter }[] = [
     { label: "All", value: "all" },

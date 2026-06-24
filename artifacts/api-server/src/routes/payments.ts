@@ -110,6 +110,87 @@ router.post("/", requireAuth, async (req: any, res) => {
   }
 });
 
+// PUT /api/loans/:id/payments/:paymentId
+router.put("/:paymentId", requireAuth, async (req: any, res) => {
+  try {
+    const loanId = parseInt(req.params.id);
+    const paymentId = parseInt(req.params.paymentId);
+
+    if (isNaN(loanId) || isNaN(paymentId)) {
+      return res.status(400).json({ error: "Invalid id" });
+    }
+
+    const [loan] = await db
+      .select()
+      .from(loansTable)
+      .where(and(eq(loansTable.id, loanId), eq(loansTable.userId, req.userId)));
+    if (!loan) return res.status(404).json({ error: "Loan not found" });
+
+    const [existingPayment] = await db
+      .select()
+      .from(paymentsTable)
+      .where(
+        and(eq(paymentsTable.id, paymentId), eq(paymentsTable.loanId, loanId)),
+      );
+    if (!existingPayment) return res.status(404).json({ error: "Payment not found" });
+
+    const parsed = AddPaymentBody.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid input" });
+    }
+
+    const { amount, paymentDate, notes } = parsed.data;
+
+    const [updatedPayment] = await db
+      .update(paymentsTable)
+      .set({
+        amount: amount.toString(),
+        paymentDate,
+        notes: notes ?? null,
+      })
+      .where(
+        and(eq(paymentsTable.id, paymentId), eq(paymentsTable.loanId, loanId)),
+      )
+      .returning();
+
+    // Re-calculate all payments to update loan status if it became paid
+    const allPayments = await db
+      .select()
+      .from(paymentsTable)
+      .where(eq(paymentsTable.loanId, loanId));
+
+    const totalPaid = allPayments.reduce(
+      (sum, p) => sum + parseFloat(p.amount),
+      0,
+    );
+
+    if (totalPaid >= parseFloat(loan.principalAmount)) {
+      await db
+        .update(loansTable)
+        .set({ status: "paid" })
+        .where(and(eq(loansTable.id, loanId), eq(loansTable.userId, req.userId)));
+    } else if (loan.status === "paid") {
+      // If it was paid, but amount was reduced
+      await db
+        .update(loansTable)
+        .set({ status: "active" }) // or evaluate overdue status
+        .where(and(eq(loansTable.id, loanId), eq(loansTable.userId, req.userId)));
+    }
+
+    return res.json({
+      id: updatedPayment.id,
+      loanId: updatedPayment.loanId,
+      amount: parseFloat(updatedPayment.amount),
+      paymentDate: updatedPayment.paymentDate,
+      notes: updatedPayment.notes ?? null,
+      createdAt: updatedPayment.createdAt.toISOString(),
+    });
+  } catch (err) {
+    logger.error({ err }, "Error updating payment");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // DELETE /api/loans/:id/payments/:paymentId
 router.delete("/:paymentId", requireAuth, async (req: any, res) => {
   try {

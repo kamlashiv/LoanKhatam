@@ -22,8 +22,10 @@ import { formatRupees, formatDate } from "@/lib/loan-utils";
 import { BankAmortizationTable } from "@/components/bank-amortization-table";
 
 interface Payment {
+  id?: number;
   paymentDate: string;
   amount: number;
+  notes?: string | null;
 }
 
 interface Props {
@@ -38,6 +40,9 @@ interface Props {
   remainingAmount: number;
   payments?: Payment[];
   rateChanges?: RateChange[];
+  onAddPayment?: (amount: number, paymentDate: string, notes?: string) => Promise<any> | void;
+  onEditPayment?: (paymentId: number, amount: number, paymentDate: string, notes?: string) => Promise<any> | void;
+  onDeletePayment?: (paymentId: number) => void;
 }
 
 const COLORS: Record<string, string> = {
@@ -60,6 +65,9 @@ export function AmortizationSection({
   remainingAmount,
   payments = [],
   rateChanges = [],
+  onAddPayment,
+  onEditPayment,
+  onDeletePayment,
 }: Props) {
   const { startDate: effStart, dueDate: effDue } = useMemo(
     () => resolveScheduleDates(startDate, dueDate, tenureMonths, createdAt),
@@ -290,6 +298,9 @@ export function AmortizationSection({
           dueDate={effDue}
           result={bankResult}
           rateChanges={rateChanges}
+          onAddPayment={onAddPayment}
+          onEditPayment={onEditPayment}
+          onDeletePayment={onDeletePayment}
         />
       </div>
     </div>

@@ -54,7 +54,7 @@ export function deriveFromLoans(loans: Loan[]): Omit<DerivedLoans, "isLoading"> 
 export function useDerivedLoans(): DerivedLoans {
   const { data, isLoading } = useListLoans();
   return useMemo(() => {
-    const loans = (data ?? []) as Loan[];
+    const loans = (Array.isArray(data) ? data : []) as Loan[];
     return { ...deriveFromLoans(loans), isLoading };
   }, [data, isLoading]);
 }

@@ -13,7 +13,7 @@ import {
   getGetRecentLoansQueryKey,
   getListLoansQueryKey,
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,6 +103,39 @@ export function LoanDetail() {
       },
     },
   });
+
+  const updatePayment = useMutation({
+    mutationFn: async ({ paymentId, amount, paymentDate, notes }: { paymentId: number; amount: number; paymentDate: string; notes?: string }) => {
+      const res = await fetch(`/api/loans/${id}/payments/${paymentId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount, paymentDate, notes }),
+      });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || "Failed to update payment");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getGetLoanQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: getListPaymentsQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetRecentLoansQueryKey() });
+      toast({ title: "Payment updated successfully" });
+    },
+    onError: (err: any) => {
+      toast({ title: "Failed to update payment", description: err.message, variant: "destructive" });
+    }
+  });
+
+  const handleUpdatePayment = async (paymentId: number, amount: number, paymentDate: string, notes?: string) => {
+    await updatePayment.mutateAsync({ paymentId, amount, paymentDate, notes });
+  };
+
+  const handleAddPaymentDirect = async (amount: number, paymentDate: string, notes?: string) => {
+    await addPayment.mutateAsync({ id, data: { amount, paymentDate, notes } });
+  };
 
   const deleteLoan = useDeleteLoan({
     mutation: {
@@ -420,7 +453,7 @@ export function LoanDetail() {
           )}
 
           <CardContent className="p-0">
-            {payments && payments.length > 0 ? (
+            {Array.isArray(payments) && payments.length > 0 ? (
               <div className="divide-y divide-border">
                 {payments.map((payment) => (
                   <div key={payment.id} className="px-6 py-4 flex items-center justify-between group">
@@ -484,8 +517,11 @@ export function LoanDetail() {
           createdAt={loan.createdAt}
           totalPaid={loan.totalPaid}
           remainingAmount={loan.remainingAmount}
-          payments={payments?.map((p) => ({ paymentDate: p.paymentDate, amount: p.amount }))}
+          payments={Array.isArray(payments) ? payments.map((p) => ({ id: p.id, paymentDate: p.paymentDate, amount: p.amount, notes: p.notes })) : []}
           rateChanges={loan.rateChanges ?? []}
+          onAddPayment={handleAddPaymentDirect}
+          onEditPayment={handleUpdatePayment}
+          onDeletePayment={(paymentId) => deletePayment.mutate({ id, paymentId })}
         />
       )}
     </div>

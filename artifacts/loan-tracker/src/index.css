@@ -191,3 +191,9 @@ html.reduce-motion *::after {
   transition-duration: 0.001ms !important;
   scroll-behavior: auto !important;
 }
+
+/* Invert dark social icons (Apple & GitHub) inside Clerk components in dark mode */
+.dark img[src*="apple"],
+.dark img[src*="github"] {
+  filter: invert(1) brightness(1.5) !important;
+}

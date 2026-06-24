@@ -32,6 +32,8 @@ export interface RateChange {
 
 export interface BankStyleRow {
   rowType: "amrt" | "prepayment" | "rate_change";
+  paymentId?: number;
+  notes?: string | null;
   tranType: string;
   fromDate: string;
   toDate: string;
@@ -275,7 +277,7 @@ export function calculateBankStyleSchedule(
   annualRate: number,
   startDate: string,
   dueDate: string,
-  payments: Array<{ paymentDate: string; amount: number }>,
+  payments: Array<{ id?: number; paymentDate: string; amount: number; notes?: string | null }>,
   rateChanges: RateChange[] = []
 ): BankStyleResult {
   const tenureMonths = monthsBetween(startDate, dueDate);
@@ -359,6 +361,8 @@ export function calculateBankStyleSchedule(
       const pmtClosing = r2(balance - pmt.amount);
       rows.push({
         rowType: "prepayment",
+        paymentId: pmt.id,
+        notes: pmt.notes ?? null,
         tranType: "",
         fromDate: pmt.paymentDate,
         toDate: pmt.paymentDate,

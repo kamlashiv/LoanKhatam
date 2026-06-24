@@ -12,11 +12,12 @@ import {
   getListLoansQueryKey,
   type DashboardSummary,
   type Loan,
+  setBaseUrl,
 } from "@workspace/api-client-react";
 import { Toaster } from "@/components/ui/toaster";
 import { toast } from "@/hooks/use-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/lib/theme";
+import { ThemeProvider, useTheme } from "@/lib/theme";
 import { FramePreviewBanner } from "@/components/frame-preview-banner";
 import { AuthShowcase } from "@/components/auth-showcase";
 import { writeOfflineSnapshot, clearOfflineSnapshots } from "@/lib/offline-cache";
@@ -90,10 +91,30 @@ const LicensePage = lazy(() =>
 
 const queryClient = new QueryClient();
 
-const clerkPubKey = publishableKeyFromHost(
-  window.location.hostname,
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
-);
+if (import.meta.env.VITE_API_URL) {
+  setBaseUrl(import.meta.env.VITE_API_URL);
+}
+
+let clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const hostname = window.location.hostname;
+const isLocal =
+  hostname === "localhost" ||
+  hostname === "127.0.0.1" ||
+  /^192\.168\./.test(hostname) ||
+  /^10\./.test(hostname) ||
+  /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
+  hostname.endsWith(".local");
+
+if (!isLocal) {
+  try {
+    clerkPubKey = publishableKeyFromHost(
+      hostname,
+      import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+    ) || clerkPubKey;
+  } catch (e) {
+    console.warn("Failed to parse Clerk key from host, using fallback:", e);
+  }
+}
 
 const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -118,13 +139,13 @@ const clerkAppearance = {
   },
   variables: {
     colorPrimary: "hsl(243 75% 59%)",
-    colorForeground: "hsl(215 30% 15%)",
-    colorMutedForeground: "hsl(215 15% 45%)",
-    colorDanger: "hsl(0 70% 45%)",
-    colorBackground: "hsl(0 0% 100%)",
-    colorInput: "hsl(0 0% 100%)",
-    colorInputForeground: "hsl(215 30% 15%)",
-    colorNeutral: "hsl(40 10% 85%)",
+    colorForeground: "hsl(var(--foreground))",
+    colorMutedForeground: "hsl(var(--muted-foreground))",
+    colorDanger: "hsl(var(--destructive))",
+    colorBackground: "hsl(var(--card))",
+    colorInput: "hsl(var(--card))",
+    colorInputForeground: "hsl(var(--foreground))",
+    colorNeutral: "hsl(var(--muted))",
     fontFamily: "Plus Jakarta Sans, sans-serif",
     borderRadius: "0.5rem",
   },
@@ -133,26 +154,27 @@ const clerkAppearance = {
     cardBox: "!bg-transparent !shadow-none !border-0 !rounded-none w-full max-w-full overflow-visible",
     card: "!shadow-none !border-0 !bg-transparent !rounded-none !px-0 !py-0",
     footer: "!shadow-none !border-0 !bg-transparent !rounded-none",
-    headerTitle: "!text-4xl sm:!text-5xl !font-bold !text-foreground tracking-tight",
-    headerSubtitle: "!text-lg sm:!text-xl !text-muted-foreground mt-3",
-    socialButtonsBlockButtonText: "!text-lg !text-foreground !font-bold",
-    formFieldLabel: "!text-lg !text-foreground !font-bold",
-    footerActionLink: "!text-lg !text-primary !font-medium hover:underline",
-    footerActionText: "!text-lg !text-muted-foreground",
-    dividerText: "!text-lg !text-muted-foreground",
-    identityPreviewEditButton: "!text-lg text-primary",
-    formFieldSuccessText: "!text-base text-success",
-    alertText: "!text-lg text-foreground",
-    logoBox: "hidden",
-    logoImage: "h-12 w-auto",
-    socialButtonsBlockButton: "!py-4 border-border hover:bg-secondary transition-colors",
-    formButtonPrimary: "!text-lg !font-bold !py-4 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
-    formFieldInput: "!text-lg !py-4 border-border bg-input text-foreground focus:ring-ring rounded-md",
-    footerAction: "mt-6",
-    dividerLine: "bg-border",
+    headerTitle: "!text-3xl sm:!text-4xl !font-bold !text-foreground tracking-tight",
+    headerSubtitle: "!text-base sm:!text-lg !text-muted-foreground mt-2",
+    socialButtonsBlockButtonText: "!text-sm !text-foreground !font-bold",
+    formFieldLabel: "!text-sm !text-foreground !font-bold",
+    footerActionLink: "!text-sm !text-primary !font-medium hover:underline",
+    footerActionText: "!text-sm !text-muted-foreground",
+    dividerText: "!text-xs !text-muted-foreground",
+    identityPreviewEditButton: "!text-sm text-primary",
+    formFieldSuccessText: "!text-xs text-success",
+    alertText: "!text-sm text-foreground",
+    logoBox: "flex justify-center mb-8",
+    logoImage: "h-14 w-auto !max-w-none",
+    socialButtonsBlockButton: "!py-2 border border-border bg-card hover:bg-muted text-foreground transition-colors",
+    socialButtonsIconButton: "!py-2 border border-border bg-card hover:bg-muted transition-colors",
+    formButtonPrimary: "!text-sm !font-semibold !py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
+    formFieldInput: "!text-sm !py-2 border border-border bg-card text-foreground focus:ring-ring rounded-md",
+    footerAction: "mt-4",
+    dividerLine: "!bg-border",
     alert: "bg-destructive/10 border-destructive text-destructive",
-    otpCodeFieldInput: "!text-xl border-border text-foreground",
-    formFieldRow: "mb-4",
+    otpCodeFieldInput: "!text-lg border-border text-foreground",
+    formFieldRow: "mb-3",
     main: "w-full",
   },
 };
@@ -335,12 +357,25 @@ function PublicRoute({ component: Component }: { component: React.ComponentType 
 
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
+  const { isDark } = useTheme();
+
+  const logoUrl = isDark
+    ? `${window.location.origin}${basePath}/logo-dark.svg`
+    : `${window.location.origin}${basePath}/logo.svg`;
+
+  const dynamicAppearance = {
+    ...clerkAppearance,
+    options: {
+      ...clerkAppearance.options,
+      logoImageUrl: logoUrl,
+    },
+  };
 
   return (
     <ClerkProvider
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
-      appearance={clerkAppearance}
+      appearance={dynamicAppearance}
       signInUrl={`${basePath}/sign-in`}
       signUpUrl={`${basePath}/sign-up`}
       localization={{

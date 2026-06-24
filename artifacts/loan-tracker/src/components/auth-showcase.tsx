@@ -15,7 +15,7 @@ const VALUE_PROPS = [
  */
 export function AuthShowcase({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-[100dvh] w-full flex-col bg-white selection:bg-indigo-500 selection:text-white lg:flex-row">
+    <div className="flex min-h-[100dvh] w-full flex-col bg-card selection:bg-indigo-500 selection:text-white lg:flex-row">
       {/* Left pane — immersive showcase */}
       <div className="relative z-0 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900 p-8 text-white lg:w-[58%] lg:p-20">
         {/* Abstract background glows */}
@@ -101,7 +101,7 @@ export function AuthShowcase({ children }: { children: ReactNode }) {
       </div>
 
       {/* Right pane — auth form slot */}
-      <div className="relative flex items-center justify-center bg-white p-8 lg:w-[42%] lg:p-24">
+      <div className="relative flex items-center justify-center bg-card p-8 lg:w-[42%] lg:p-24">
         <div className="w-full max-w-[440px]">{children}</div>
       </div>
     </div>

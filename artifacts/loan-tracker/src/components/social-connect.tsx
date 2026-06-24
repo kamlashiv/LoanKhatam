@@ -24,8 +24,8 @@ const channels: Channel[] = [
     followers: "48.2K",
     href: "https://instagram.com/loankhatam.app",
     icon: Instagram,
-    tint: "bg-pink-50 group-hover:bg-pink-100",
-    iconColor: "text-pink-600",
+    tint: "bg-gradient-to-tr from-amber-500 via-pink-500 to-purple-600",
+    iconColor: "text-white",
   },
   {
     name: "X (Twitter)",
@@ -33,8 +33,8 @@ const channels: Channel[] = [
     followers: "31.6K",
     href: "https://x.com/loankhatam",
     icon: Twitter,
-    tint: "bg-slate-100 group-hover:bg-slate-200",
-    iconColor: "text-slate-900",
+    tint: "bg-black dark:bg-slate-800",
+    iconColor: "text-white",
   },
   {
     name: "LinkedIn",
@@ -42,8 +42,8 @@ const channels: Channel[] = [
     followers: "22.9K",
     href: "https://linkedin.com/company/loankhatam",
     icon: Linkedin,
-    tint: "bg-sky-50 group-hover:bg-sky-100",
-    iconColor: "text-sky-700",
+    tint: "bg-[#0a66c2]",
+    iconColor: "text-white",
   },
   {
     name: "YouTube",
@@ -51,8 +51,8 @@ const channels: Channel[] = [
     followers: "15.3K",
     href: "https://youtube.com/@loankhatamapp",
     icon: Youtube,
-    tint: "bg-red-50 group-hover:bg-red-100",
-    iconColor: "text-red-600",
+    tint: "bg-[#ff0000]",
+    iconColor: "text-white",
   },
   {
     name: "Facebook",
@@ -60,8 +60,8 @@ const channels: Channel[] = [
     followers: "27.1K",
     href: "https://facebook.com/loankhatamapp",
     icon: Facebook,
-    tint: "bg-blue-50 group-hover:bg-blue-100",
-    iconColor: "text-blue-600",
+    tint: "bg-[#1877f2]",
+    iconColor: "text-white",
   },
 ];
 

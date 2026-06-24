@@ -103,12 +103,19 @@ app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 app.use(
-  clerkMiddleware((req) => ({
-    publishableKey: publishableKeyFromHost(
-      getClerkProxyHost(req) ?? "",
-      process.env.CLERK_PUBLISHABLE_KEY,
-    ),
-  })),
+  clerkMiddleware((req) => {
+    const host = getClerkProxyHost(req) ?? "";
+    const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
+    let publishableKey = process.env.CLERK_PUBLISHABLE_KEY;
+    if (!isLocal) {
+      try {
+        publishableKey = publishableKeyFromHost(host, process.env.CLERK_PUBLISHABLE_KEY) || publishableKey;
+      } catch (e) {
+        logger.warn({ err: e }, "Failed to parse Clerk key from host in backend");
+      }
+    }
+    return { publishableKey };
+  }),
 );
 
 app.use("/api", router);

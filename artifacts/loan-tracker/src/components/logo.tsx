@@ -56,7 +56,7 @@ export function LogoMark({ className }: LogoProps) {
           gradientUnits="userSpaceOnUse"
         >
           <stop stopColor="#4f46e5" />
-          <stop offset="1" stopColor="#6366f1" />
+          <stop offset="1" stopColor="#7c3aed" />
         </linearGradient>
       </defs>
       <rect width="48" height="48" rx="12" fill="url(#lk-mark-bg)" />

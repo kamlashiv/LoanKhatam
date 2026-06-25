@@ -105,7 +105,8 @@ const isLocal =
   /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
   hostname.endsWith(".local");
 
-if (!isLocal) {
+const isReplit = hostname.endsWith(".replit.app") || hostname.endsWith(".repl.co") || hostname.includes("replit.dev");
+if (!isLocal && isReplit) {
   try {
     clerkPubKey = publishableKeyFromHost(
       hostname,

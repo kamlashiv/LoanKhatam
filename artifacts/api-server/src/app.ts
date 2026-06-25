@@ -108,8 +108,9 @@ app.use(
   clerkMiddleware((req) => {
     const host = getClerkProxyHost(req) ?? "";
     const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
+    const isReplit = host.endsWith(".replit.app") || host.endsWith(".repl.co") || host.includes("replit.dev");
     let publishableKey = process.env.CLERK_PUBLISHABLE_KEY;
-    if (!isLocal) {
+    if (!isLocal && isReplit) {
       try {
         publishableKey = publishableKeyFromHost(host, process.env.CLERK_PUBLISHABLE_KEY) || publishableKey;
       } catch (e) {

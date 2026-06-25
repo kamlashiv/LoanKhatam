@@ -75,6 +75,7 @@ onlyBuiltDependencies:
   - '@clerk/shared'
   - core-js
   - tesseract.js
+  - esbuild
 
 overrides:
   # replit uses linux-x64 only, we can exclude all other platforms
@@ -175,5 +176,5 @@ overrides:
 allowBuilds:
   '@clerk/shared': true
   core-js: true
-  esbuild: false
+  esbuild: true
   tesseract.js: true

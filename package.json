@@ -4,7 +4,7 @@
   "license": "MIT",
   "scripts": {
     "preinstall": "node scripts/preinstall.js",
-    "build": "rm -rf node_modules && rm -rf artifacts/loan-tracker/node_modules && pnpm install --no-frozen-lockfile && pnpm --filter @workspace/loan-tracker run build && echo 'vite build'",
+    "build": "rm -rf node_modules && rm -rf artifacts/loan-tracker/node_modules && npx pnpm install --no-frozen-lockfile && npx pnpm --filter @workspace/loan-tracker run build && echo 'vite build'",
     "build:hostinger": "pnpm --filter @workspace/loan-tracker run build && powershell -Command \"Compress-Archive -Path artifacts/loan-tracker/dist/public/* -DestinationPath loankhatam-deploy.zip -Force\"",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"

@@ -1,0 +1,789 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>You're offline — Loan Khatam</title>
+    <style>
+      :root {
+        --indigo-600: #4f46e5;
+        --indigo-500: #6366f1;
+        --emerald: #34d399;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+      body {
+        font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color: #f8fafc;
+        background:
+          radial-gradient(140% 120% at 50% -10%, rgba(99, 102, 241, 0.45), transparent 60%),
+          linear-gradient(160deg, #312e81 0%, #1e1b4b 45%, #0f0e24 100%);
+        background-attachment: fixed;
+        min-height: 100dvh;
+        padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+      }
+
+      /* ---- Empty (no cached data) state ---- */
+      .empty-wrap {
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .card {
+        width: 100%;
+        max-width: 360px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 22px;
+      }
+      .logo {
+        width: 76px;
+        height: 76px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, var(--indigo-600), var(--indigo-500));
+        position: relative;
+        box-shadow: 0 18px 40px -12px rgba(79, 70, 229, 0.7);
+        flex-shrink: 0;
+      }
+      .logo svg {
+        position: absolute;
+        inset: 0;
+        margin: auto;
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: -0.4px;
+        margin: 0;
+      }
+      p {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.55;
+        color: rgba(226, 232, 240, 0.78);
+      }
+      .retry {
+        margin-top: 6px;
+        width: 100%;
+        border: 0;
+        cursor: pointer;
+        padding: 15px 24px;
+        border-radius: 14px;
+        font-size: 16px;
+        font-weight: 700;
+        font-family: inherit;
+        color: #fff;
+        background: linear-gradient(135deg, var(--indigo-600), var(--indigo-500));
+        box-shadow: 0 14px 30px -10px rgba(79, 70, 229, 0.8);
+        transition: transform 0.12s ease, opacity 0.12s ease;
+      }
+      .retry:active {
+        transform: scale(0.97);
+      }
+      .retry[disabled] {
+        opacity: 0.7;
+        cursor: default;
+      }
+      .hint {
+        font-size: 13px;
+        color: rgba(148, 163, 184, 0.85);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        color: rgba(226, 232, 240, 0.7);
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 6px 12px;
+        border-radius: 999px;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #f87171;
+        box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.6);
+        animation: pulse 1.8s infinite;
+      }
+      .dot.online {
+        background: var(--emerald);
+        animation: none;
+      }
+      @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.6); }
+        70% { box-shadow: 0 0 0 9px rgba(248, 113, 113, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+      }
+
+      /* ---- Cached data view ---- */
+      .shell {
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 18px 0 40px;
+      }
+      .offline-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(251, 191, 36, 0.12);
+        border: 1px solid rgba(251, 191, 36, 0.32);
+        border-radius: 16px;
+        padding: 12px 14px;
+        margin-bottom: 18px;
+      }
+      .offline-bar .ob-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #fbbf24;
+        flex-shrink: 0;
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.6);
+        animation: pulse-amber 1.8s infinite;
+      }
+      @keyframes pulse-amber {
+        0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.55); }
+        70% { box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+      }
+      .offline-bar .ob-text strong {
+        display: block;
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #fde68a;
+        letter-spacing: 0.2px;
+      }
+      .offline-bar .ob-text span {
+        font-size: 12px;
+        color: rgba(253, 230, 138, 0.78);
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+      .header .h-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--indigo-600), var(--indigo-500));
+        position: relative;
+        flex-shrink: 0;
+      }
+      .header .h-logo svg { position: absolute; inset: 0; margin: auto; }
+      .header h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+      }
+      .header p { font-size: 12.5px; color: rgba(203, 213, 225, 0.7); }
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 22px;
+      }
+      .stat {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 18px;
+        padding: 16px;
+      }
+      .stat .label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: rgba(165, 180, 252, 0.85);
+        font-weight: 600;
+      }
+      .stat .value {
+        margin-top: 6px;
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.4px;
+      }
+      .stat .sub { font-size: 11.5px; color: rgba(203, 213, 225, 0.65); margin-top: 2px; }
+      .stat.span2 { grid-column: span 2; }
+      .section-title {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: rgba(203, 213, 225, 0.7);
+        margin: 0 2px 10px;
+      }
+      .loan {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 18px;
+        padding: 14px 16px;
+        margin-bottom: 10px;
+      }
+      .loan-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      .loan-name { font-size: 15px; font-weight: 700; }
+      .loan-desc { font-size: 12px; color: rgba(203, 213, 225, 0.6); margin-top: 1px; }
+      .pill {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        flex-shrink: 0;
+      }
+      .pill.active { background: rgba(99, 102, 241, 0.2); color: #c7d2fe; }
+      .pill.paid { background: rgba(52, 211, 153, 0.18); color: #a7f3d0; }
+      .pill.overdue { background: rgba(244, 63, 94, 0.2); color: #fecdd3; }
+      .loan-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .loan-grid .k { font-size: 10.5px; color: rgba(203, 213, 225, 0.55); }
+      .loan-grid .v { font-size: 13px; font-weight: 700; margin-top: 1px; }
+      .loan-grid .v.rem { color: #c7d2fe; }
+      .loan-grid .v.rem.over { color: #fda4af; }
+      .bar {
+        margin-top: 12px;
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+      }
+      .bar > span {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--indigo-500), var(--emerald));
+      }
+      .meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: rgba(203, 213, 225, 0.55);
+        margin-top: 6px;
+      }
+      .retry.inline {
+        max-width: 560px;
+        margin: 22px auto 0;
+        display: block;
+      }
+
+      /* ---- Clickable loan rows + detail view ---- */
+      .loan.tappable {
+        cursor: pointer;
+        transition: transform 0.12s ease, background 0.12s ease;
+      }
+      .loan.tappable:active {
+        transform: scale(0.99);
+      }
+      .loan-cta {
+        font-size: 11px;
+        color: rgba(165, 180, 252, 0.85);
+        font-weight: 600;
+        margin-top: 10px;
+      }
+      .loan-cta.muted {
+        color: rgba(148, 163, 184, 0.6);
+        font-weight: 500;
+      }
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: none;
+        border: 0;
+        cursor: pointer;
+        color: rgba(199, 210, 254, 0.9);
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 4px 0;
+        margin-bottom: 14px;
+      }
+      .back-link:active {
+        opacity: 0.7;
+      }
+      .detail-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 18px;
+        padding: 18px 16px;
+        margin-bottom: 18px;
+      }
+      .detail-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .detail-head .d-name { font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }
+      .detail-head .d-desc { font-size: 12.5px; color: rgba(203, 213, 225, 0.6); margin-top: 2px; }
+      .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .detail-grid .k { font-size: 10.5px; color: rgba(203, 213, 225, 0.55); }
+      .detail-grid .v { font-size: 15px; font-weight: 800; margin-top: 2px; }
+      .detail-grid .v.rem { color: #c7d2fe; }
+      .detail-grid .v.rem.over { color: #fda4af; }
+      .detail-grid .v.collected { color: var(--emerald); }
+      .detail-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 14px;
+        border-top: 1px solid rgba(255, 255, 255, 0.09);
+        padding-top: 14px;
+        margin-top: 4px;
+      }
+      .detail-meta .row { font-size: 12.5px; color: rgba(203, 213, 225, 0.6); }
+      .detail-meta .row b { color: #f1f5f9; font-weight: 700; }
+      .pay {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+      }
+      .pay .amt { font-size: 14.5px; font-weight: 700; color: var(--emerald); }
+      .pay .date { font-size: 12px; color: rgba(203, 213, 225, 0.6); margin-top: 1px; }
+      .pay .note { font-size: 11.5px; color: rgba(203, 213, 225, 0.5); font-style: italic; margin-top: 2px; }
+      .empty-pay {
+        font-size: 13px;
+        color: rgba(203, 213, 225, 0.55);
+        text-align: center;
+        padding: 18px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Fallback (no cached data) -->
+    <div class="empty-wrap" id="emptyView" hidden>
+      <main class="card">
+        <span class="badge"><span class="dot" id="statusDot"></span><span id="statusText">No connection</span></span>
+        <div class="logo">
+          <svg width="44" height="44" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="9" y="11" width="20" height="4.4" rx="2.2" fill="#ffffff" />
+            <rect x="9" y="19.8" width="26" height="4.4" rx="2.2" fill="#ffffff" fill-opacity="0.85" />
+            <rect x="9" y="28.6" width="15" height="4.4" rx="2.2" fill="#ffffff" fill-opacity="0.7" />
+            <circle cx="33.5" cy="13.2" r="4.2" fill="#34d399" />
+          </svg>
+        </div>
+        <h1>You're offline</h1>
+        <p>Loan Khatam needs an internet connection to load your loans and payments. Check your connection and try again.</p>
+        <button class="retry" id="retryBtn" type="button">Retry</button>
+        <span class="hint" id="hint">We'll reconnect as soon as you're back online.</span>
+      </main>
+    </div>
+
+    <!-- Cached snapshot view (list / overview) -->
+    <div class="shell" id="cachedView" hidden>
+      <div class="offline-bar">
+        <span class="ob-dot"></span>
+        <div class="ob-text">
+          <strong>Offline — viewing cached data</strong>
+          <span id="cachedWhen">Showing your last loaded snapshot. Edits are unavailable until you reconnect.</span>
+        </div>
+      </div>
+
+      <div class="header">
+        <div class="h-logo">
+          <svg width="22" height="22" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="9" y="11" width="20" height="4.4" rx="2.2" fill="#ffffff" />
+            <rect x="9" y="19.8" width="26" height="4.4" rx="2.2" fill="#ffffff" fill-opacity="0.85" />
+            <rect x="9" y="28.6" width="15" height="4.4" rx="2.2" fill="#ffffff" fill-opacity="0.7" />
+            <circle cx="33.5" cy="13.2" r="4.2" fill="#34d399" />
+          </svg>
+        </div>
+        <div>
+          <h2>Portfolio Overview</h2>
+          <p>Read-only · saved on your device</p>
+        </div>
+      </div>
+
+      <div class="stats" id="statsGrid"></div>
+
+      <div id="loansSection">
+        <p class="section-title">Your Loans</p>
+        <div id="loansList"></div>
+      </div>
+
+      <button class="retry inline" id="retryBtn2" type="button">Reconnect</button>
+    </div>
+
+    <!-- Cached single-loan detail view -->
+    <div class="shell" id="detailView" hidden>
+      <div class="offline-bar">
+        <span class="ob-dot"></span>
+        <div class="ob-text">
+          <strong>Offline — viewing cached loan</strong>
+          <span id="detailWhen">Read-only. Edits are unavailable until you reconnect.</span>
+        </div>
+      </div>
+
+      <button class="back-link" id="detailBack" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        Back to loans
+      </button>
+
+      <div id="detailBody"></div>
+
+      <button class="retry inline" id="retryBtn3" type="button">Reconnect</button>
+    </div>
+
+    <script>
+      (function () {
+        var SNAPSHOT_PREFIX = "ledger:offline:snapshot:";
+        var CURRENT_KEY = "ledger:offline:current";
+
+        function readSnapshot() {
+          try {
+            var userId = localStorage.getItem(CURRENT_KEY);
+            if (!userId) return null;
+            var raw = localStorage.getItem(SNAPSHOT_PREFIX + userId);
+            if (!raw) return null;
+            var snap = JSON.parse(raw);
+            if (!snap || snap.userId !== userId) return null;
+            return snap;
+          } catch (e) {
+            return null;
+          }
+        }
+
+        function formatRupees(amount) {
+          var n = typeof amount === "number" && isFinite(amount) ? amount : 0;
+          try {
+            return new Intl.NumberFormat("en-IN", {
+              style: "currency",
+              currency: "INR",
+              maximumFractionDigits: 0,
+            }).format(n);
+          } catch (e) {
+            return "₹" + Math.round(n).toLocaleString("en-IN");
+          }
+        }
+
+        function formatDate(input) {
+          if (!input) return "";
+          var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(input);
+          var d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(input);
+          if (isNaN(d.getTime())) return String(input);
+          var dd = String(d.getDate()).padStart(2, "0");
+          var mm = String(d.getMonth() + 1).padStart(2, "0");
+          return dd + "/" + mm + "/" + d.getFullYear();
+        }
+
+        function relativeTime(iso) {
+          var then = new Date(iso).getTime();
+          if (isNaN(then)) return "";
+          var secs = Math.max(0, Math.round((Date.now() - then) / 1000));
+          if (secs < 60) return "just now";
+          var mins = Math.round(secs / 60);
+          if (mins < 60) return mins + (mins === 1 ? " minute ago" : " minutes ago");
+          var hrs = Math.round(mins / 60);
+          if (hrs < 24) return hrs + (hrs === 1 ? " hour ago" : " hours ago");
+          var days = Math.round(hrs / 24);
+          return days + (days === 1 ? " day ago" : " days ago");
+        }
+
+        function esc(s) {
+          return String(s == null ? "" : s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        }
+
+        function statClass(status) {
+          return status === "paid" ? "paid" : status === "overdue" ? "overdue" : "active";
+        }
+        function statLabel(status) {
+          return status === "paid" ? "Paid" : status === "overdue" ? "Overdue" : "Active";
+        }
+
+        function renderStats(summary) {
+          var grid = document.getElementById("statsGrid");
+          if (!summary) {
+            document.getElementById("statsGrid").hidden = true;
+            return;
+          }
+          var overdue = summary.overdueLoans || 0;
+          var items = [
+            { label: "Total Lent", value: formatRupees(summary.totalLent),
+              sub: "Across " + (summary.totalLoans || 0) + " loan" + ((summary.totalLoans === 1) ? "" : "s"), span: true },
+            { label: "Outstanding", value: formatRupees(summary.totalOutstanding), sub: "To be collected" },
+            { label: "Collected", value: formatRupees(summary.totalCollected), sub: "Safely returned" },
+            { label: overdue > 0 ? "Overdue" : "All Clear", value: String(overdue),
+              sub: overdue === 1 ? "loan overdue" : "loans overdue", span: true },
+          ];
+          grid.innerHTML = items.map(function (it) {
+            return (
+              '<div class="stat' + (it.span ? " span2" : "") + '">' +
+              '<div class="label">' + esc(it.label) + "</div>" +
+              '<div class="value">' + esc(it.value) + "</div>" +
+              '<div class="sub">' + esc(it.sub) + "</div>" +
+              "</div>"
+            );
+          }).join("");
+        }
+
+        function renderLoans(loans, detailIds) {
+          var section = document.getElementById("loansSection");
+          var list = document.getElementById("loansList");
+          if (!loans || !loans.length) {
+            section.hidden = true;
+            return;
+          }
+          list.innerHTML = loans.map(function (l) {
+            var principal = l.principalAmount || 0;
+            var paid = l.totalPaid || 0;
+            var pct = principal > 0 ? Math.min(100, Math.round((paid / principal) * 100)) : 0;
+            var over = l.status === "overdue";
+            var hasDetail = detailIds && detailIds[l.id];
+            return (
+              '<div class="loan' + (hasDetail ? " tappable" : "") + '"' +
+                (hasDetail ? ' role="button" tabindex="0" data-loan-id="' + esc(l.id) + '"' : "") + ">" +
+                '<div class="loan-top">' +
+                  "<div>" +
+                    '<div class="loan-name">' + esc(l.borrowerName) + "</div>" +
+                    (l.description ? '<div class="loan-desc">' + esc(l.description) + "</div>" : "") +
+                  "</div>" +
+                  '<span class="pill ' + statClass(l.status) + '">' + esc(statLabel(l.status)) + "</span>" +
+                "</div>" +
+                '<div class="loan-grid">' +
+                  '<div><div class="k">Principal</div><div class="v">' + esc(formatRupees(principal)) + "</div></div>" +
+                  '<div><div class="k">Collected</div><div class="v">' + esc(formatRupees(paid)) + "</div></div>" +
+                  '<div><div class="k">Remaining</div><div class="v rem' + (over ? " over" : "") + '">' + esc(formatRupees(l.remainingAmount || 0)) + "</div></div>" +
+                "</div>" +
+                '<div class="bar"><span style="width:' + pct + '%"></span></div>' +
+                '<div class="meta"><span>' + pct + "% paid</span>" +
+                  (l.dueDate ? "<span>Due " + esc(formatDate(l.dueDate)) + "</span>" : "<span></span>") +
+                "</div>" +
+                (hasDetail
+                  ? '<div class="loan-cta">Tap to view payment history →</div>'
+                  : '<div class="loan-cta muted">Open this loan online to cache its details</div>') +
+              "</div>"
+            );
+          }).join("");
+
+          if (detailIds) {
+            var rows = list.querySelectorAll(".loan.tappable");
+            for (var i = 0; i < rows.length; i++) {
+              (function (row) {
+                var lid = row.getAttribute("data-loan-id");
+                row.addEventListener("click", function () {
+                  showDetail(lid);
+                });
+                row.addEventListener("keydown", function (e) {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    showDetail(lid);
+                  }
+                });
+              })(rows[i]);
+            }
+          }
+        }
+
+        function computeEmi(principal, annualRate, months) {
+          if (!(principal > 0) || !(months > 0)) return 0;
+          var r = annualRate / 12 / 100;
+          if (r === 0) return principal / months;
+          return (principal * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
+        }
+
+        function currentEffectiveRate(baseRate, rateChanges) {
+          if (!rateChanges || !rateChanges.length) return baseRate;
+          var sorted = rateChanges.slice().sort(function (a, b) {
+            return String(a.effectiveDate).localeCompare(String(b.effectiveDate));
+          });
+          var today = new Date();
+          var rate = baseRate;
+          for (var i = 0; i < sorted.length; i++) {
+            var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(sorted[i].effectiveDate);
+            var d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(sorted[i].effectiveDate);
+            if (!isNaN(d.getTime()) && d <= today) rate = sorted[i].newRate;
+          }
+          return rate;
+        }
+
+        function renderDetail(d) {
+          var principal = d.principalAmount || 0;
+          var paid = d.totalPaid || 0;
+          var pct = principal > 0 ? Math.min(100, Math.round((paid / principal) * 100)) : 0;
+          var over = d.status === "overdue";
+          var rate = currentEffectiveRate(d.interestRate || 0, d.rateChanges);
+          var emi =
+            d.tenureMonths && d.tenureMonths > 0
+              ? computeEmi(principal, rate, d.tenureMonths)
+              : 0;
+
+          var meta = "";
+          meta += '<div class="row">Start: <b>' + (d.startDate ? esc(formatDate(d.startDate)) : "—") + "</b></div>";
+          meta += '<div class="row">Due: <b>' + (d.dueDate ? esc(formatDate(d.dueDate)) : "—") + "</b></div>";
+          if (d.tenureMonths != null) {
+            meta += '<div class="row">Tenure: <b>' + esc(d.tenureMonths) + " months</b></div>";
+          }
+          if (emi > 0) {
+            meta += '<div class="row">EMI: <b>' + esc(formatRupees(emi)) + "/mo</b></div>";
+          }
+          if (d.bank) {
+            meta += '<div class="row">Bank: <b>' + esc(d.bank) + "</b></div>";
+          }
+
+          var payments = d.payments || [];
+          var paymentsHtml;
+          if (payments.length) {
+            paymentsHtml = payments.map(function (p) {
+              return (
+                '<div class="pay">' +
+                  "<div>" +
+                    '<div class="amt">' + esc(formatRupees(p.amount || 0)) + "</div>" +
+                    '<div class="date">' + esc(formatDate(p.paymentDate)) + "</div>" +
+                    (p.notes ? '<div class="note">' + esc(p.notes) + "</div>" : "") +
+                  "</div>" +
+                "</div>"
+              );
+            }).join("");
+          } else {
+            paymentsHtml = '<div class="empty-pay">No payments recorded yet.</div>';
+          }
+
+          return (
+            '<div class="detail-card">' +
+              '<div class="detail-head">' +
+                "<div>" +
+                  '<div class="d-name">' + esc(d.borrowerName) + "</div>" +
+                  (d.description ? '<div class="d-desc">' + esc(d.description) + "</div>" : "") +
+                "</div>" +
+                '<span class="pill ' + statClass(d.status) + '">' + esc(statLabel(d.status)) + "</span>" +
+              "</div>" +
+              '<div class="detail-grid">' +
+                '<div><div class="k">Principal</div><div class="v">' + esc(formatRupees(principal)) + "</div></div>" +
+                '<div><div class="k">Collected</div><div class="v collected">' + esc(formatRupees(paid)) + "</div></div>" +
+                '<div><div class="k">Remaining</div><div class="v rem' + (over ? " over" : "") + '">' + esc(formatRupees(d.remainingAmount || 0)) + "</div></div>" +
+              "</div>" +
+              '<div class="bar"><span style="width:' + pct + '%"></span></div>' +
+              '<div class="meta"><span>' + pct + "% paid</span><span>" + esc(rate) + "% p.a.</span></div>" +
+              '<div class="detail-meta">' + meta + "</div>" +
+            "</div>" +
+            '<p class="section-title">Payment History</p>' +
+            paymentsHtml
+          );
+        }
+
+        function goToApp() {
+          window.location.replace(window.location.origin + "/");
+        }
+
+        function wireRetry(btn) {
+          if (!btn) return;
+          btn.addEventListener("click", function () {
+            btn.disabled = true;
+            btn.textContent = "Reconnecting…";
+            goToApp();
+          });
+        }
+
+        // ---- Empty-state connectivity reflection ----
+        var dot = document.getElementById("statusDot");
+        var statusText = document.getElementById("statusText");
+        var hint = document.getElementById("hint");
+        function reflectStatus() {
+          var online = navigator.onLine;
+          if (dot) dot.classList.toggle("online", online);
+          if (statusText) statusText.textContent = online ? "Back online" : "No connection";
+          if (hint) {
+            hint.textContent = online
+              ? "Connection restored — tap Retry to continue."
+              : "We'll reconnect as soon as you're back online.";
+          }
+        }
+
+        // ---- Decide which view to show ----
+        var snap = readSnapshot();
+        var hasData = snap && (snap.summary || (snap.loans && snap.loans.length));
+        var details = (snap && snap.details) || [];
+        var detailsById = {};
+        for (var di = 0; di < details.length; di++) {
+          detailsById[details[di].id] = details[di];
+        }
+
+        function showList() {
+          document.getElementById("detailView").hidden = true;
+          document.getElementById("cachedView").hidden = false;
+          if (window.scrollTo) window.scrollTo(0, 0);
+        }
+
+        function showDetail(loanId) {
+          var d = detailsById[loanId];
+          if (!d) return;
+          document.getElementById("detailBody").innerHTML = renderDetail(d);
+          var when = relativeTime(d.cachedAt);
+          if (when) {
+            document.getElementById("detailWhen").textContent =
+              "Cached " + when + ". Edits are unavailable until you reconnect.";
+          }
+          document.getElementById("cachedView").hidden = true;
+          document.getElementById("detailView").hidden = false;
+          if (window.scrollTo) window.scrollTo(0, 0);
+        }
+
+        if (hasData) {
+          document.getElementById("cachedView").hidden = false;
+          var when = relativeTime(snap.savedAt);
+          if (when) {
+            document.getElementById("cachedWhen").textContent =
+              "Last updated " + when + ". Edits are unavailable until you reconnect.";
+          }
+          renderStats(snap.summary);
+          renderLoans(snap.loans, detailsById);
+          wireRetry(document.getElementById("retryBtn2"));
+          wireRetry(document.getElementById("retryBtn3"));
+          var backBtn = document.getElementById("detailBack");
+          if (backBtn) backBtn.addEventListener("click", showList);
+        } else {
+          document.getElementById("emptyView").hidden = false;
+          wireRetry(document.getElementById("retryBtn"));
+          reflectStatus();
+          window.addEventListener("offline", reflectStatus);
+        }
+
+        // Auto-recover for both views once connectivity returns.
+        window.addEventListener("online", function () {
+          if (!hasData) reflectStatus();
+          goToApp();
+        });
+      })();
+    </script>
+  </body>
+</html>

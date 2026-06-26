@@ -97699,7 +97699,7 @@ if (process.env.NODE_ENV === "production") {
   const __dirname3 = path3.dirname(__filename2);
   const frontendDistPath = path3.resolve(__dirname3, "../../loan-tracker/dist/public");
   app.use(import_express23.default.static(frontendDistPath));
-  app.get("*", (req, res) => {
+  app.get("/{*splat}", (req, res) => {
     res.sendFile(path3.join(frontendDistPath, "index.html"));
   });
 }

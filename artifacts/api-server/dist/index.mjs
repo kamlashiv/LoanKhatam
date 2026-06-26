@@ -97707,10 +97707,7 @@ var app_default = app;
 
 // src/index.ts
 var rawPort = process.env["PORT"] || "8080";
-var port = Number(rawPort);
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
+var port = /^\d+$/.test(rawPort) ? Number(rawPort) : rawPort;
 var server = app_default.listen(port, () => {
   logger2.info({ port }, "Server listening");
 });

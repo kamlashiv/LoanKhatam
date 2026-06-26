@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Calculator, Plus, Receipt, Sparkles, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { formatRupees, formatDate } from "@/lib/loan-utils";
+import { formatRupees, formatDate, cleanFloat } from "@/lib/loan-utils";
 import { registerBackInterceptor } from "@/lib/mobile-back-guard";
 
 interface RateChangeEntry {
@@ -230,14 +230,14 @@ export function LoanForm() {
       .filter((rc) => rc.effectiveDate && rc.newRate !== "")
       .map((rc) => ({
         effectiveDate: rc.effectiveDate,
-        newRate: parseFloat(rc.newRate),
+        newRate: cleanFloat(rc.newRate),
       }))
       .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
 
     const data = {
       borrowerName: form.borrowerName,
-      principalAmount: parseFloat(form.principalAmount),
-      interestRate: parseFloat(form.interestRate),
+      principalAmount: cleanFloat(form.principalAmount),
+      interestRate: cleanFloat(form.interestRate),
       tenureMonths: form.tenureMonths ? parseInt(form.tenureMonths) : undefined,
       startDate: form.startDate || undefined,
       dueDate: form.dueDate || undefined,
@@ -257,8 +257,8 @@ export function LoanForm() {
   const cancelHref = isEditing ? `/loans/${id}` : "/loans";
 
   // Calculated EMI (Equated Monthly Installment) from principal, rate and tenure
-  const principalNum = parseFloat(form.principalAmount);
-  const rateNum = parseFloat(form.interestRate);
+  const principalNum = cleanFloat(form.principalAmount);
+  const rateNum = cleanFloat(form.interestRate);
   const tenureNum = parseInt(form.tenureMonths);
   const emiInputsValid =
     principalNum > 0 && tenureNum > 0 && !isNaN(rateNum) && rateNum >= 0;

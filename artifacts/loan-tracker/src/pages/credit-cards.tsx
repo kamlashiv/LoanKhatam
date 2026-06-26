@@ -64,7 +64,7 @@ import {
   Loader2,
   ClipboardPaste,
 } from "lucide-react";
-import { formatRupees, formatDate } from "@/lib/loan-utils";
+import { formatRupees, formatDate, cleanFloat } from "@/lib/loan-utils";
 import { useToast } from "@/hooks/use-toast";
 
 const NETWORKS = ["VISA", "MasterCard", "RuPay", "American Express", "Diners Club"];
@@ -200,7 +200,7 @@ export function CreditCardsList() {
     loans?: DetectedLoan[];
   }) {
     const existingCardKeys = new Set(
-      (cards ?? []).map((c) => `${c.bank.toLowerCase()}|${c.last4}`),
+      (Array.isArray(cards) ? cards : []).map((c) => `${c.bank.toLowerCase()}|${c.last4}`),
     );
     const newCards = (result.cards ?? []).filter(
       (c) => !existingCardKeys.has(`${c.bank.toLowerCase()}|${c.last4}`),
@@ -328,7 +328,7 @@ export function CreditCardsList() {
   });
 
   const summary = useMemo(() => {
-    const list = cards ?? [];
+    const list = Array.isArray(cards) ? cards : [];
     const totalLimit = list.reduce((s, c) => s + c.creditLimit, 0);
     const totalOutstanding = list.reduce((s, c) => s + c.outstanding, 0);
     const banks = new Set(list.map((c) => c.bank)).size;
@@ -376,7 +376,7 @@ export function CreditCardsList() {
       toast({ title: "Enter the last 4 digits", variant: "destructive" });
       return;
     }
-    const creditLimit = parseFloat(form.creditLimit);
+    const creditLimit = cleanFloat(form.creditLimit);
     if (!form.bank.trim() || !form.cardName.trim() || isNaN(creditLimit)) {
       toast({ title: "Fill in the required fields", variant: "destructive" });
       return;
@@ -387,7 +387,7 @@ export function CreditCardsList() {
       last4,
       network: form.network,
       creditLimit,
-      outstanding: form.outstanding ? parseFloat(form.outstanding) || 0 : 0,
+      outstanding: form.outstanding ? cleanFloat(form.outstanding) || 0 : 0,
       dueDate: form.dueDate || undefined,
     };
     if (editingId != null) {
@@ -515,6 +515,145 @@ export function CreditCardsList() {
           }
         />
       </div>
+
+      {/* Credit cards wallet (real) */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-extrabold">Credit cards</h3>
+          <span className="text-sm font-semibold text-muted-foreground">
+            {summary.list.length} card{summary.list.length === 1 ? "" : "s"}
+          </span>
+        </div>
+
+        {isLoading ? (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900"
+              >
+                <Skeleton className="h-32 w-full rounded-none" />
+                <div className="space-y-3 p-5">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-2 w-full rounded-full" />
+                  <Skeleton className="h-4 w-40" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {summary.list.map((c, index) => {
+              const util =
+                c.creditLimit > 0
+                  ? Math.round((c.outstanding / c.creditLimit) * 100)
+                  : 0;
+              return (
+                <div
+                  key={c.id}
+                  className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                >
+                  {/* card visual */}
+                  <div
+                    style={{ background: gradientFor(c, index) }}
+                    className="relative p-5 text-white"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 opacity-90" />
+                        <span className="text-sm font-semibold">{c.bank}</span>
+                      </div>
+                      <CreditCardIcon className="h-5 w-5 opacity-80" />
+                    </div>
+                    <p className="mt-6 font-mono text-lg tracking-widest">
+                      •••• {c.last4}
+                    </p>
+                    <div className="mt-3 flex items-end justify-between">
+                      <span className="text-xs uppercase tracking-wide opacity-80">
+                        {c.cardName}
+                      </span>
+                      <span className="text-sm font-bold italic">{c.network}</span>
+                    </div>
+                  </div>
+
+                  {/* card details */}
+                  <div className="space-y-3 p-5">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        Outstanding
+                      </span>
+                      <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                        {formatRupees(c.outstanding)}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="mb-1 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                        <span>Utilised {util}%</span>
+                        <span>{formatRupees(c.creditLimit)} limit</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                        <div
+                          className={`h-full rounded-full ${
+                            util > 50 ? "bg-amber-500" : "bg-indigo-600"
+                          }`}
+                          style={{ width: `${Math.min(100, util)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                        {c.dueDate ? (
+                          <>
+                            <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                            Due {formatDate(c.dueDate)}
+                          </>
+                        ) : (
+                          "No due date"
+                        )}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Edit ${c.bank} card ending ${c.last4}`}
+                          onClick={() => openEdit(c)}
+                          className="h-8 w-8 text-slate-500 hover:text-indigo-600"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Delete ${c.bank} card ending ${c.last4}`}
+                          onClick={() => setDeleteId(c.id)}
+                          className="h-8 w-8 text-slate-500 hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* add card manually */}
+            <button
+              type="button"
+              onClick={openAdd}
+              className="flex min-h-[260px] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-300 bg-white/50 p-5 text-slate-500 transition hover:border-indigo-400 hover:bg-indigo-50/40 hover:text-indigo-600 dark:border-slate-700 dark:bg-slate-900/50 dark:hover:border-indigo-500 dark:hover:bg-indigo-950/30"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
+                <Plus className="h-6 w-6" />
+              </div>
+              <span className="text-sm font-semibold">Add card manually</span>
+              <span className="max-w-[180px] text-center text-xs text-slate-400">
+                Enter card details yourself
+              </span>
+            </button>
+          </div>
+        )}
+      </section>
 
       {/* Auto-Sync hero (real) */}
       <section

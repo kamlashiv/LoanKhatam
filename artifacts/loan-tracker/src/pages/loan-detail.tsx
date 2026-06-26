@@ -34,7 +34,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Edit, Trash2, Plus, Calendar, Clock, Calculator, ChevronDown, TrendingUp, Landmark } from "lucide-react";
-import { formatRupees, formatDate, getLoanStatusConfig } from "@/lib/loan-utils";
+import { formatRupees, formatDate, getLoanStatusConfig, cleanFloat } from "@/lib/loan-utils";
 import { useToast } from "@/hooks/use-toast";
 import { AmortizationSection } from "@/components/amortization-section";
 import { ShareLoan } from "@/components/share-loan";
@@ -151,7 +151,7 @@ export function LoanDetail() {
 
   const handleAddPayment = (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = parseFloat(paymentAmount);
+    const amount = cleanFloat(paymentAmount);
     if (!amount || amount <= 0) return;
     addPayment.mutate({ id, data: { amount, paymentDate, notes: paymentNotes || undefined } });
   };

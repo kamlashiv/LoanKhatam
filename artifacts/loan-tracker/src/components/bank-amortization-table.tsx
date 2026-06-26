@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileSpreadsheet, FileText, Edit, Trash2, Plus } from "lucide-react";
 import type { BankStyleResult, RateChange } from "@/lib/amortization";
-import { formatDate } from "@/lib/loan-utils";
+import { formatDate, cleanFloat } from "@/lib/loan-utils";
 import { exportBankCSV, exportBankPDF } from "@/lib/export";
 import {
   Dialog,
@@ -93,7 +93,7 @@ export function BankAmortizationTable({
   const handleSaveModal = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeModal) return;
-    const amount = parseFloat(editAmount);
+    const amount = cleanFloat(editAmount);
     if (isNaN(amount) || amount <= 0) return;
     setIsSaving(true);
     try {

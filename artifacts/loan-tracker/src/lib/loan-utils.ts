@@ -106,3 +106,15 @@ export function getLoanStatusConfig(status: string) {
       };
   }
 }
+
+export function cleanFloat(val: string | number | null | undefined): number {
+  if (val == null) return 0;
+  if (typeof val === "number") return val;
+  const str = String(val).trim();
+  if (!str) return 0;
+  // Remove currency symbols, commas, percent, spaces, except digits, minus sign, and dot
+  const cleaned = str.replace(/[^0-9.-]/g, "");
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? 0 : parsed;
+}
+

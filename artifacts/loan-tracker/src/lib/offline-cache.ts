@@ -194,11 +194,13 @@ function trimLoanDetail(
     totalPaid: loan.totalPaid,
     remainingAmount: loan.remainingAmount,
     createdAt: loan.createdAt,
-    rateChanges: (loan.rateChanges ?? []).map((rc) => ({
-      effectiveDate: rc.effectiveDate,
-      newRate: rc.newRate,
-    })),
-    payments: (payments ?? []).map(trimPayment),
+    rateChanges: Array.isArray(loan.rateChanges)
+      ? loan.rateChanges.map((rc) => ({
+          effectiveDate: rc.effectiveDate,
+          newRate: rc.newRate,
+        }))
+      : [],
+    payments: Array.isArray(payments) ? payments.map(trimPayment) : [],
     cachedAt: new Date().toISOString(),
   };
 }
@@ -241,7 +243,7 @@ export function writeOfflineSnapshot(
     savedAt: new Date().toISOString(),
     summary: parts.summary ?? existing?.summary ?? null,
     loans:
-      parts.loans != null && parts.loans.length > 0
+      Array.isArray(parts.loans) && parts.loans.length > 0
         ? parts.loans.map(trimLoan)
         : existing?.loans ?? [],
     details: existing?.details ?? [],

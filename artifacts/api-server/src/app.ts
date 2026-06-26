@@ -12,6 +12,7 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 
 const app: Express = express();
 
@@ -131,7 +132,22 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(frontendDistPath));
 
   app.get("/{*splat}", (req, res) => {
-    res.sendFile(path.join(frontendDistPath, "index.html"));
+    try {
+      const filePath = path.join(frontendDistPath, "index.html");
+      fs.readFile(filePath, "utf8", (err, html) => {
+        if (err) {
+          logger.error({ err }, "Failed to read index.html");
+          return res.status(500).send("Internal Server Error");
+        }
+        const clerkKey = process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY || process.env.PUBLIC_CLERK_PUBLISHABLE_KEY || "";
+        const script = `<script>window.VITE_CLERK_PUBLISHABLE_KEY = ${JSON.stringify(clerkKey)};</script>`;
+        const modifiedHtml = html.replace("</head>", `${script}</head>`);
+        res.send(modifiedHtml);
+      });
+    } catch (err) {
+      logger.error({ err }, "Error serving index.html");
+      res.status(500).send("Internal Server Error");
+    }
   });
 }
 

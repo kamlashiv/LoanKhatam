@@ -95,7 +95,7 @@ if (import.meta.env.VITE_API_URL) {
   setBaseUrl(import.meta.env.VITE_API_URL);
 }
 
-let clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+let clerkPubKey = (window as any).VITE_CLERK_PUBLISHABLE_KEY || import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 const hostname = window.location.hostname;
 const isLocal =
   hostname === "localhost" ||
@@ -110,7 +110,7 @@ if (!isLocal && isReplit) {
   try {
     clerkPubKey = publishableKeyFromHost(
       hostname,
-      import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+      clerkPubKey,
     ) || clerkPubKey;
   } catch (e) {
     console.warn("Failed to parse Clerk key from host, using fallback:", e);

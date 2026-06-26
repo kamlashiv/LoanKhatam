@@ -736,7 +736,7 @@ function DataManagementSection({ visible }: { visible: boolean }) {
       exportedAt: new Date().toISOString(),
       version: 1,
       settings,
-      loans: loans ?? [],
+      loans: Array.isArray(loans) ? loans : [],
     };
     download(
       `loan-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`,
@@ -747,7 +747,7 @@ function DataManagementSection({ visible }: { visible: boolean }) {
   };
 
   const exportCSV = () => {
-    const rows = loans ?? [];
+    const rows = Array.isArray(loans) ? loans : [];
     const headers = [
       "id",
       "borrowerName",

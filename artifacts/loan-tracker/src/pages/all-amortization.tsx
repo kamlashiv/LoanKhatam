@@ -112,6 +112,7 @@ function LoanAmortizationAccordion({ loan }: { loan: any }) {
 
 export function AllAmortization() {
   const { data: loans, isLoading } = useListLoans();
+  const loanList = Array.isArray(loans) ? loans : [];
 
   return (
     <div className="space-y-6">
@@ -136,7 +137,7 @@ export function AllAmortization() {
         </div>
       )}
 
-      {!isLoading && loans && loans.length === 0 && (
+      {!isLoading && loanList.length === 0 && (
         <Card className="border-border shadow-sm">
           <CardContent className="py-16 text-center">
             <BarChart3 className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
@@ -153,9 +154,9 @@ export function AllAmortization() {
         </Card>
       )}
 
-      {!isLoading && loans && loans.length > 0 && (
+      {!isLoading && loanList.length > 0 && (
         <div className="space-y-3">
-          {loans.map((loan: any) => (
+          {loanList.map((loan: any) => (
             <LoanAmortizationAccordion key={loan.id} loan={loan} />
           ))}
         </div>

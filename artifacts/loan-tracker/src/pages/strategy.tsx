@@ -129,7 +129,7 @@ export default function Strategy() {
   // Real loans reduced to what the prepayment what-if needs (Smart Strategy).
   const briefLoans = useMemo<BriefLoan[]>(
     () =>
-      (loanList ?? [])
+      (Array.isArray(loanList) ? loanList : [])
         .filter((l) => l.status !== "paid" && l.remainingAmount > 0)
         .map((l) => ({
           name: l.borrowerName,

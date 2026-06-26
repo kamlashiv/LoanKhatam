@@ -1,0 +1,7 @@
+# nixpacks.toml for Hostinger Deployment
+
+[phases.install]
+cmds = ["pnpm install --ignore-scripts --no-frozen-lockfile"]
+
+[phases.build]
+cmds = ["echo 'compilation skipped on server'"]

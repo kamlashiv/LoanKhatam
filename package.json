@@ -12,7 +12,8 @@
   },
   "private": true,
   "dependencies": {
-    "vite": "^6.0.0"
+    "express": "^5.2.1",
+    "@clerk/express": "^2.1.29"
   },
   "devDependencies": {
     "prettier": "^3.8.3",

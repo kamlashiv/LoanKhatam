@@ -129,7 +129,7 @@ if (process.env.NODE_ENV === "production") {
   const __dirname = path.dirname(__filename);
   const frontendDistPath = path.resolve(__dirname, "../../loan-tracker/dist/public");
 
-  app.use(express.static(frontendDistPath));
+  app.use(express.static(frontendDistPath, { index: false }));
 
   app.get("/{*splat}", (req, res) => {
     try {

@@ -34,9 +34,27 @@ function resolveBaseUrl() {
     .filter((d) => !/\.replit\.dev$|\.repl\.co$/i.test(d));
   if (domains.length > 0) return `https://${domains[0]}`;
   // Nothing usable from REPLIT_DOMAINS (build phase, or only a dev host present)
-  // — fall back to the production placeholder, which already equals the real
-  // published domain.
-  return PLACEHOLDER;
+  // — fall back to the production Hostinger domain.
+  return "https://loankhatam.schand.store";
+}
+
+function printDiagnostics() {
+  console.log("=== BUILD DIAGNOSTICS ===");
+  const envKeys = Object.keys(process.env).filter(
+    (k) => k.startsWith("VITE_") || k.startsWith("CLERK_") || k.includes("DATABASE") || k === "NODE_ENV"
+  );
+  for (const key of envKeys) {
+    const val = process.env[key] || "";
+    if (key.includes("SECRET") || key.includes("KEY") || key.includes("DATABASE") || key.includes("PASSWORD")) {
+      const masked = val.length > 12 
+        ? `${val.slice(0, 6)}...${val.slice(-6)} (${val.length} chars)`
+        : `*** (${val.length} chars)`;
+      console.log(`  ${key}: ${masked}`);
+    } else {
+      console.log(`  ${key}: ${val}`);
+    }
+  }
+  console.log("=========================");
 }
 
 function replaceInFile(file, from, to) {
@@ -47,6 +65,7 @@ function replaceInFile(file, from, to) {
 }
 
 function main() {
+  printDiagnostics();
   const baseUrl = resolveBaseUrl();
   const indexFile = path.join(distDir, "index.html");
   const robotsFile = path.join(distDir, "robots.txt");

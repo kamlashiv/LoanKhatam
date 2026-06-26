@@ -109,10 +109,10 @@ app.use(
     const host = getClerkProxyHost(req) ?? "";
     const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
     const isReplit = host.endsWith(".replit.app") || host.endsWith(".repl.co") || host.includes("replit.dev");
-    let publishableKey = process.env.CLERK_PUBLISHABLE_KEY;
+    let publishableKey = process.env.CLERK_PUBLISHABLE_KEY || process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.PUBLIC_CLERK_PUBLISHABLE_KEY;
     if (!isLocal && isReplit) {
       try {
-        publishableKey = publishableKeyFromHost(host, process.env.CLERK_PUBLISHABLE_KEY) || publishableKey;
+        publishableKey = publishableKeyFromHost(host, publishableKey) || publishableKey;
       } catch (e) {
         logger.warn({ err: e }, "Failed to parse Clerk key from host in backend");
       }

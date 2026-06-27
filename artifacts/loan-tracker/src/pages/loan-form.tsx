@@ -80,6 +80,7 @@ export function LoanForm() {
     borrowerName: urlParams.get("borrowerName") ?? "",
     principalAmount: urlParams.get("principalAmount") ?? "",
     interestRate: urlParams.get("interestRate") ?? "",
+    interestType: urlParams.get("interestType") ?? "standard_emi",
     tenureMonths: urlParams.get("tenureMonths") ?? "",
     startDate: urlParams.get("startDate") ?? new Date().toISOString().split("T")[0],
     dueDate: urlParams.get("dueDate") ?? "",
@@ -107,6 +108,7 @@ export function LoanForm() {
         borrowerName: existingLoan.borrowerName,
         principalAmount: existingLoan.principalAmount.toString(),
         interestRate: existingLoan.interestRate.toString(),
+        interestType: existingLoan.interestType || "standard_emi",
         tenureMonths: existingLoan.tenureMonths?.toString() ?? "",
         startDate: existingLoan.startDate,
         dueDate: existingLoan.dueDate,
@@ -238,6 +240,7 @@ export function LoanForm() {
       borrowerName: form.borrowerName,
       principalAmount: cleanFloat(form.principalAmount),
       interestRate: cleanFloat(form.interestRate),
+      interestType: form.interestType,
       tenureMonths: form.tenureMonths ? parseInt(form.tenureMonths) : undefined,
       startDate: form.startDate || undefined,
       dueDate: form.dueDate || undefined,
@@ -262,17 +265,29 @@ export function LoanForm() {
   const tenureNum = parseInt(form.tenureMonths);
   const emiInputsValid =
     principalNum > 0 && tenureNum > 0 && !isNaN(rateNum) && rateNum >= 0;
+  
   let emi = 0;
-  if (emiInputsValid) {
-    const r = rateNum / 12 / 100;
-    emi =
-      r === 0
-        ? principalNum / tenureNum
-        : (principalNum * r * Math.pow(1 + r, tenureNum)) /
-          (Math.pow(1 + r, tenureNum) - 1);
+  let totalPayable = 0;
+  let totalInterest = 0;
+
+  const showMonthlyAccrual = form.interestType === "monthly_simple";
+  const monthlyAccrualAmount = principalNum * (rateNum / 100);
+
+  if (showMonthlyAccrual) {
+    totalInterest = tenureNum > 0 ? (principalNum * (rateNum / 100) * tenureNum) : 0;
+    totalPayable = principalNum + totalInterest;
+  } else {
+    if (emiInputsValid) {
+      const r = rateNum / 12 / 100;
+      emi =
+        r === 0
+          ? principalNum / tenureNum
+          : (principalNum * r * Math.pow(1 + r, tenureNum)) /
+            (Math.pow(1 + r, tenureNum) - 1);
+      totalPayable = emi * tenureNum;
+      totalInterest = totalPayable - principalNum;
+    }
   }
-  const totalPayable = emi * tenureNum;
-  const totalInterest = totalPayable - principalNum;
 
   // Live "Loan summary" recap shown in the receipt panel.
   const recapRows: { label: string; value: string }[] = [
@@ -284,7 +299,7 @@ export function LoanForm() {
     },
     {
       label: "Interest rate",
-      value: !isNaN(rateNum) ? `${form.interestRate}% p.a.` : "—",
+      value: !isNaN(rateNum) ? `${form.interestRate}% ${showMonthlyAccrual ? "p.m. (Simple)" : "p.a."}` : "—",
     },
     { label: "Tenure", value: tenureNum > 0 ? `${tenureNum} months` : "—" },
     { label: "Start date", value: form.startDate ? formatDate(form.startDate) : "—" },
@@ -372,6 +387,27 @@ export function LoanForm() {
                 Loan Terms
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="interestType">Interest Type</Label>
+                  <Select
+                    value={form.interestType}
+                    onValueChange={(value) =>
+                      setForm((prev) => ({ ...prev, interestType: value }))
+                    }
+                  >
+                    <SelectTrigger id="interestType" aria-label="Select interest type">
+                      <SelectValue placeholder="Select interest type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standard_emi">
+                        Standard Bank EMI (Compound)
+                      </SelectItem>
+                      <SelectItem value="monthly_simple">
+                        Local Monthly Interest (Desi Byaj)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="principalAmount">Principal Amount (₹)</Label>
                   <Input
@@ -387,7 +423,9 @@ export function LoanForm() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="interestRate">Interest Rate (% p.a.)</Label>
+                  <Label htmlFor="interestRate">
+                    {showMonthlyAccrual ? "Interest Rate (% per month)" : "Interest Rate (% p.a.)"}
+                  </Label>
                   <Input
                     id="interestRate"
                     name="interestRate"
@@ -535,45 +573,42 @@ export function LoanForm() {
                   <span className="text-xs font-semibold uppercase tracking-wide text-primary">
                     Live Loan Receipt
                   </span>
-                </div>
-
-                <div className="mt-5">
+                   <div className="mt-5">
                   <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                     <Calculator className="h-3.5 w-3.5 text-primary" />
-                    Calculated EMI
+                    {showMonthlyAccrual ? "Monthly Interest Accrual" : "Calculated EMI"}
                   </div>
-                  {emiInputsValid ? (
+                  {principalNum > 0 && !isNaN(rateNum) ? (
                     <>
                       <p className="mt-1.5 text-4xl font-bold tracking-tight text-foreground leading-none">
-                        {formatRupees(emi)}
+                        {formatRupees(showMonthlyAccrual ? monthlyAccrualAmount : emi)}
                       </p>
                       <p className="mt-1 text-sm text-muted-foreground">per month</p>
                       <div className="mt-5 grid grid-cols-2 gap-3">
                         <div className="rounded-lg bg-background/60 border border-primary/10 p-3">
                           <p className="text-[11px] text-muted-foreground">
-                            Total interest
+                            Total interest {tenureNum > 0 ? "" : "(est. 1 yr)"}
                           </p>
                           <p className="mt-0.5 text-sm font-semibold text-foreground">
-                            {formatRupees(totalInterest)}
+                            {formatRupees(tenureNum > 0 ? totalInterest : (monthlyAccrualAmount * 12))}
                           </p>
                         </div>
                         <div className="rounded-lg bg-background/60 border border-primary/10 p-3">
                           <p className="text-[11px] text-muted-foreground">
-                            Total payable
+                            Total payable {tenureNum > 0 ? "" : "(est. 1 yr)"}
                           </p>
                           <p className="mt-0.5 text-sm font-semibold text-foreground">
-                            {formatRupees(totalPayable)}
+                            {formatRupees(tenureNum > 0 ? totalPayable : (principalNum + monthlyAccrualAmount * 12))}
                           </p>
                         </div>
                       </div>
                     </>
                   ) : (
                     <p className="mt-2 text-sm text-muted-foreground">
-                      Enter principal, interest rate and tenure to see the monthly
-                      installment.
+                      Enter principal, interest rate and tenure to see details.
                     </p>
                   )}
-                </div>
+                </div>                </div>
               </div>
 
               {/* Recap */}

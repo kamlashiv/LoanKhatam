@@ -6,6 +6,7 @@ import { LogoGlyph } from "@/components/logo";
 import { Sun, Moon, Menu, Heart } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SocialConnect } from "@/components/social-connect";
+import { useTranslation } from "@/hooks/useTranslation";
 
 function ThemeToggle() {
   const { isDark, toggleTheme } = useTheme();
@@ -19,6 +20,20 @@ function ThemeToggle() {
       className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
     >
       {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+    </Button>
+  );
+}
+
+function LanguageToggle() {
+  const { lang, setLanguage } = useTranslation();
+  return (
+    <Button
+      variant="ghost"
+      onClick={() => setLanguage(lang === "en" ? "hi" : "en")}
+      title={lang === "en" ? "Switch to Hindi" : "Switch to English"}
+      className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 font-extrabold text-xs px-2 h-9 w-9 rounded-xl border border-slate-200/50 dark:border-slate-800"
+    >
+      {lang === "en" ? "हिं" : "EN"}
     </Button>
   );
 }
@@ -60,6 +75,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
 
           {/* Action Area */}
           <div className="flex items-center gap-2">
+            <LanguageToggle />
             <ThemeToggle />
             <Link href="/sign-in">
               <Button variant="ghost" className="font-bold hidden sm:inline-flex rounded-xl cursor-pointer">

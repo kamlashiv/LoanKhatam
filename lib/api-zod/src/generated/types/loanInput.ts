@@ -14,6 +14,7 @@ export interface LoanInput {
   principalAmount: number;
   /** @minimum 0 */
   interestRate: number;
+  interestType?: string;
   /** @minimum 1 */
   tenureMonths?: number;
   startDate?: string;

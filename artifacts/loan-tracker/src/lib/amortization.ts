@@ -58,30 +58,30 @@ export interface BankStyleResult {
   totalPrincipal: number;
 }
 
-function monthsBetween(from: string, to: string): number {
+export function monthsBetween(from: string, to: string): number {
   const a = new Date(from);
   const b = new Date(to);
   if (isNaN(a.getTime()) || isNaN(b.getTime())) return 0;
   return Math.max(
     0,
-    (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth())
+    (b.getUTCFullYear() - a.getUTCFullYear()) * 12 + (b.getUTCMonth() - a.getUTCMonth())
   );
 }
 
 function addMonths(dateStr: string, n: number): string {
   const d = new Date(dateStr);
-  d.setMonth(d.getMonth() + n);
+  d.setUTCMonth(d.getUTCMonth() + n);
   return d.toISOString().split("T")[0];
 }
 
-function firstOfMonth(dateStr: string): string {
+export function firstOfMonth(dateStr: string): string {
   const d = new Date(dateStr);
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split("T")[0];
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)).toISOString().split("T")[0];
 }
 
-function lastOfMonth(dateStr: string): string {
+export function lastOfMonth(dateStr: string): string {
   const d = new Date(dateStr);
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split("T")[0];
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).toISOString().split("T")[0];
 }
 
 /**
@@ -235,12 +235,29 @@ export function calculateSavings(
     dueDate,
     rateChanges
   );
-  const projectedRemainingInterest = remaining.totalInterest;
+  
   const estimatedInterestPaid = Math.max(0, totalPaid - principalRepaid);
-  const interestSaved = Math.max(
-    0,
-    scheduledTotalInterest - estimatedInterestPaid - projectedRemainingInterest
-  );
+
+  // Find scheduled balance for the start of the current month (i.e. the previous month's closing balance)
+  const currentMonth = currentScheduleMonth(startDate);
+  const prevMonthIdx = currentMonth - 2;
+  const scheduledBalance =
+    prevMonthIdx >= 0 && prevMonthIdx < full.schedule.length
+      ? full.schedule[prevMonthIdx].closingBalance
+      : principalAmount;
+
+  let interestSaved = 0;
+  let projectedRemainingInterest = remaining.totalInterest;
+
+  if (remainingAmount < scheduledBalance - 1) {
+    interestSaved = Math.max(
+      0,
+      scheduledTotalInterest - estimatedInterestPaid - projectedRemainingInterest
+    );
+  } else {
+    // If we are not ahead of schedule, remaining projected interest is simply scheduled interest minus estimated interest paid
+    projectedRemainingInterest = Math.max(0, scheduledTotalInterest - estimatedInterestPaid);
+  }
 
   return {
     scheduledTotalInterest: r2(scheduledTotalInterest),

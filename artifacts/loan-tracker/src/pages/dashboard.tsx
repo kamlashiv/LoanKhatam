@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useGetDashboardSummary, useGetRecentLoans } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "@/hooks/useTranslation";
 import {
   Plus, AlertCircle, CheckCircle2, Clock,
   Upload, FileText, X, Loader2, CheckCircle, AlertTriangle,
@@ -286,6 +287,7 @@ export function Dashboard() {
   const { profile } = useProfile();
   const derived = useDerivedLoans();
   const [showImport, setShowImport] = useState(false);
+  const { t } = useTranslation();
 
   const [, forceTick] = useState(0);
   useEffect(() => {
@@ -460,12 +462,12 @@ export function Dashboard() {
         </div>
         {profileSet && (
           <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-            <ProfileStat label="Monthly Income" value={formatRupees(profIncome)} tone="text-emerald-600 dark:text-emerald-400" />
-            <ProfileStat label="Monthly Surplus" value={formatRupees(profSurplus)} tone={profSurplus >= 0 ? "text-indigo-600 dark:text-indigo-400" : "text-rose-600 dark:text-rose-400"} />
-            <ProfileStat label="Outstanding Loans" value={formatRupees(derived.totalOutstanding)} tone="text-rose-600 dark:text-rose-400" />
-            <ProfileStat label="Monthly EMI" value={formatRupees(derived.aggregateEmi)} tone="text-amber-600 dark:text-amber-400" />
-            <ProfileStat label="Net Worth" value={formatRupees(profNetWorth)} tone={profNetWorth >= 0 ? "text-slate-900 dark:text-slate-50" : "text-rose-600 dark:text-rose-400"} />
-            <ProfileStat label="Risk Profile" value={profile.riskProfile} tone="text-slate-900 dark:text-slate-50 capitalize" />
+            <ProfileStat label={t("monthlyIncome")} value={formatRupees(profIncome)} tone="text-emerald-600 dark:text-emerald-400" />
+            <ProfileStat label={t("monthlySurplus")} value={formatRupees(profSurplus)} tone={profSurplus >= 0 ? "text-indigo-600 dark:text-indigo-400" : "text-rose-600 dark:text-rose-400"} />
+            <ProfileStat label={t("outstanding")} value={formatRupees(derived.totalOutstanding)} tone="text-rose-600 dark:text-rose-400" />
+            <ProfileStat label={t("monthlyEMI" as any) || "Monthly EMI"} value={formatRupees(derived.aggregateEmi)} tone="text-amber-600 dark:text-amber-400" />
+            <ProfileStat label={t("netWorth")} value={formatRupees(profNetWorth)} tone={profNetWorth >= 0 ? "text-slate-900 dark:text-slate-50" : "text-rose-600 dark:text-rose-400"} />
+            <ProfileStat label={t("riskProfile")} value={profile.riskProfile} tone="text-slate-900 dark:text-slate-50 capitalize" />
           </div>
         )}
       </div>
@@ -478,7 +480,7 @@ export function Dashboard() {
             <Wallet className="h-32 w-32" />
           </div>
           <div className="z-10 flex items-center gap-3 font-semibold text-indigo-200">
-            <HandCoins className="h-5 w-5" /> Total Lent
+            <HandCoins className="h-5 w-5" /> {t("totalLent")}
           </div>
           <div className="z-10">
             {summaryLoading ? (
@@ -497,28 +499,28 @@ export function Dashboard() {
         {/* Outstanding */}
         <div className="flex flex-col justify-between rounded-[2rem] bg-gradient-to-b from-blue-400 to-indigo-500 p-6 text-white bento-shadow bento-hover">
           <div className="flex items-center justify-between font-semibold text-blue-100">
-            <span className="flex items-center gap-2"><Clock className="h-4 w-4" /> Outstanding</span>
+            <span className="flex items-center gap-2"><Clock className="h-4 w-4" /> {t("outstanding")}</span>
             <ArrowUpRight className="h-4 w-4 text-blue-200" />
           </div>
           <div>
             <div className="text-3xl font-extrabold tracking-tight">
               {summaryLoading ? "—" : formatRupees(summary?.totalOutstanding ?? 0)}
             </div>
-            <div className="mt-1 text-sm font-medium text-blue-100/80">To be collected</div>
+            <div className="mt-1 text-sm font-medium text-blue-100/80">{t("toBeCollected")}</div>
           </div>
         </div>
 
         {/* Collected */}
         <div className="flex flex-col justify-between rounded-[2rem] bg-gradient-to-br from-emerald-400 to-teal-500 p-6 text-white bento-shadow bento-hover">
           <div className="flex items-center justify-between font-semibold text-emerald-100">
-            <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Collected</span>
+            <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> {t("collected")}</span>
             <ArrowDownRight className="h-4 w-4 text-emerald-200" />
           </div>
           <div>
             <div className="text-3xl font-extrabold tracking-tight">
               {summaryLoading ? "—" : formatRupees(summary?.totalCollected ?? 0)}
             </div>
-            <div className="mt-1 text-sm font-medium text-emerald-100/80">Safely returned</div>
+            <div className="mt-1 text-sm font-medium text-emerald-100/80">{t("safelyReturned")}</div>
           </div>
         </div>
 

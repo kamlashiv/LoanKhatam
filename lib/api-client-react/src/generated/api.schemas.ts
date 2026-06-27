@@ -42,6 +42,7 @@ export interface Loan {
   totalPaid: number;
   remainingAmount: number;
   createdAt: string;
+  interestType: string;
   rateChanges: RateChange[];
 }
 
@@ -52,6 +53,7 @@ export interface LoanInput {
   principalAmount: number;
   /** @minimum 0 */
   interestRate: number;
+  interestType?: string;
   /** @minimum 1 */
   tenureMonths?: number;
   startDate?: string;
@@ -74,6 +76,7 @@ export interface LoanUpdate {
   borrowerName?: string;
   principalAmount?: number;
   interestRate?: number;
+  interestType?: string;
   /** @minimum 1 */
   tenureMonths?: number;
   startDate?: string;
@@ -385,6 +388,42 @@ export interface DashboardSummary {
   totalOutstanding: number;
 }
 
+export interface Group {
+  id: number;
+  name: string;
+  members: string[];
+  createdAt: string;
+}
+
+export interface GroupInput {
+  /** @minLength 1 */
+  name: string;
+  members: string[];
+}
+
+export type GroupExpenseSplits = {[key: string]: number};
+
+export interface GroupExpense {
+  id: number;
+  groupId: number;
+  description: string;
+  amount: number;
+  paidBy: string;
+  splits: GroupExpenseSplits;
+  createdAt: string;
+}
+
+export type GroupExpenseInputSplits = {[key: string]: number};
+
+export interface GroupExpenseInput {
+  /** @minLength 1 */
+  description: string;
+  /** @minimum 0.01 */
+  amount: number;
+  paidBy: string;
+  splits: GroupExpenseInputSplits;
+}
+
 export type ListLoansParams = {
 status?: ListLoansStatus;
 };
@@ -397,4 +436,12 @@ export const ListLoansStatus = {
   paid: 'paid',
   overdue: 'overdue',
 } as const;
+
+export type DeleteGroup200 = {
+  success?: boolean;
+};
+
+export type DeleteGroupExpense200 = {
+  success?: boolean;
+};
 

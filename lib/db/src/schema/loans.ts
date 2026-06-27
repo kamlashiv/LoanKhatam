@@ -39,6 +39,7 @@ export const loansTable = pgTable("loans", {
   bank: text("bank"),
   description: text("description"),
   status: loanStatusEnum("status").notNull().default("active"),
+  interestType: text("interest_type").default("standard_emi").notNull(),
   rateChanges: jsonb("rate_changes").$type<RateChange[]>().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

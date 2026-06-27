@@ -24,6 +24,27 @@ jest.mock("wouter", () => ({
 // is enough since no mutations fire in these read-focused tests.
 jest.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: jest.fn() }),
+  useMutation: () => ({ mutate: jest.fn(), isPending: false }),
+}));
+
+jest.mock("@/hooks/useTranslation", () => {
+  const actual = jest.requireActual("@/hooks/useTranslation");
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string) => (actual.translations.en as any)[key] || key,
+      language: "en",
+      setLanguage: jest.fn(),
+    }),
+  };
+});
+
+jest.mock("@/hooks/usePremium", () => ({
+  usePremium: () => ({
+    isPremium: true,
+    setShowPaywall: jest.fn(),
+    lockFeature: jest.fn(),
+  }),
 }));
 
 jest.mock("@/hooks/use-toast", () => ({
@@ -57,6 +78,7 @@ jest.mock("@workspace/api-client-react", () => ({
   useAddPayment: () => inertMutation,
   useDeletePayment: () => inertMutation,
   useDeleteLoan: () => inertMutation,
+  useUpdateLoan: () => inertMutation,
   getGetLoanQueryKey: () => ["loan", 1],
   getListPaymentsQueryKey: () => ["payments", 1],
   getGetDashboardSummaryQueryKey: () => ["dashboard"],

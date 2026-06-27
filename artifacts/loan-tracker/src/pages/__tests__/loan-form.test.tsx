@@ -25,6 +25,26 @@ jest.mock("wouter", () => ({
   useSearch: () => mockUseSearch(),
 }));
 
+jest.mock("@/hooks/useTranslation", () => {
+  const actual = jest.requireActual("@/hooks/useTranslation");
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string) => (actual.translations.en as any)[key] || key,
+      language: "en",
+      setLanguage: jest.fn(),
+    }),
+  };
+});
+
+jest.mock("@/hooks/usePremium", () => ({
+  usePremium: () => ({
+    isPremium: true,
+    setShowPaywall: jest.fn(),
+    lockFeature: jest.fn(),
+  }),
+}));
+
 // Pretend we're running inside the Android (Capacitor) WebView so the
 // back-button discard guard registers. `runBackInterceptor` simulates the
 // hardware back press dispatched from App.tsx.
@@ -118,6 +138,9 @@ describe("Loan form", () => {
         dueDate: "2026-11-01",
         description: "Car loan",
         rateChanges: [],
+        interestType: "standard_emi",
+        bank: undefined,
+        tenureMonths: undefined,
       },
     });
   });

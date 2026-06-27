@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Calculator, Sparkles, TrendingUp, ArrowRight, ShieldCheck, HelpCircle } from "lucide-react";
+import { Calculator, Sparkles, TrendingUp, ArrowRight, ShieldCheck, HelpCircle, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const toolsList = [
@@ -20,12 +20,28 @@ const toolsList = [
     color: "from-emerald-500/10 to-teal-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/50",
   },
   {
+    href: "/tools/emi-vs-sip",
+    icon: Scale,
+    title: "EMI vs. SIP Calculator",
+    description: "Compare whether it is mathematically wiser to prepay your loan or invest your monthly surplus in a mutual fund SIP.",
+    badge: "Highly Advanced",
+    color: "from-indigo-500/10 to-blue-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/50",
+  },
+  {
     href: "/tools/ai-assistant",
     icon: Sparkles,
     title: "AI Financial Guide",
     description: "Struggling with debt? Ask our interactive AI helper about snowball, avalanche, and other smart loan strategies.",
     badge: "Smart AI",
     color: "from-purple-500/10 to-pink-500/10 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-900/50",
+  },
+  {
+    href: "/tools/loan-closure-checklist",
+    icon: ShieldCheck,
+    title: "Loan Closure Checklist",
+    description: "Get a step-by-step checklist of legal documents (NOC, NDC, hypothecation removal) to collect from banks upon loan closure.",
+    badge: "New Release",
+    color: "from-amber-500/10 to-orange-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/50",
   },
 ];
 

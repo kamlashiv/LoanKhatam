@@ -175,7 +175,8 @@ app.get("/{*splat}", (req, res) => {
         fs.readFile(fallbackPath, "utf8", (fallbackErr, fallbackHtml) => {
           if (fallbackErr) {
             logger.error({ err: fallbackErr }, "Failed to read index.html fallback");
-            return res.status(500).send("Internal Server Error");
+            res.status(500).send("Internal Server Error");
+            return;
           }
           sendHtmlWithKeys(fallbackHtml, res);
         });
@@ -192,10 +193,26 @@ app.get("/{*splat}", (req, res) => {
 function sendHtmlWithKeys(html: string, res: any) {
   const clerkKey = process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY || process.env.PUBLIC_CLERK_PUBLISHABLE_KEY || "";
   const clerkProxy = process.env.VITE_CLERK_PROXY_URL || "";
+  const gaId = process.env.VITE_GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID || "";
+
+  let extraScripts = "";
+  if (gaId) {
+    extraScripts += `
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', ${JSON.stringify(gaId)});
+    </script>
+    `;
+  }
+
   const script = `<script>
     window.VITE_CLERK_PUBLISHABLE_KEY = ${JSON.stringify(clerkKey)};
     ${clerkProxy ? `window.VITE_CLERK_PROXY_URL = ${JSON.stringify(clerkProxy)};` : ""}
-  </script>`;
+  </script>${extraScripts}`;
   const modifiedHtml = html.replace("</head>", `${script}</head>`);
   res.send(modifiedHtml);
 }

@@ -7,6 +7,7 @@ import {
   useAddPayment,
   useDeletePayment,
   useDeleteLoan,
+  useUpdateLoan,
   getGetLoanQueryKey,
   getListPaymentsQueryKey,
   getGetDashboardSummaryQueryKey,
@@ -135,6 +136,46 @@ export function LoanDetail() {
 
   const handleAddPaymentDirect = async (amount: number, paymentDate: string, notes?: string) => {
     await addPayment.mutateAsync({ id, data: { amount, paymentDate, notes } });
+  };
+
+  const updateLoan = useUpdateLoan({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetLoanQueryKey(id) });
+        queryClient.invalidateQueries({ queryKey: getListLoansQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+        toast({ title: "Interest rate changes updated" });
+      },
+    },
+  });
+
+  const handleAddRateChange = async (effectiveDate: string, newRate: number) => {
+    if (!loan) return;
+    const currentRateChanges = loan.rateChanges ?? [];
+    const updatedRateChanges = [
+      ...currentRateChanges,
+      { effectiveDate, newRate }
+    ].sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
+
+    await updateLoan.mutateAsync({
+      id,
+      data: {
+        rateChanges: updatedRateChanges
+      }
+    });
+  };
+
+  const handleDeleteRateChange = async (index: number) => {
+    if (!loan) return;
+    const currentRateChanges = [...(loan.rateChanges ?? [])];
+    currentRateChanges.splice(index, 1);
+
+    await updateLoan.mutateAsync({
+      id,
+      data: {
+        rateChanges: currentRateChanges
+      }
+    });
   };
 
   const deleteLoan = useDeleteLoan({
@@ -522,6 +563,8 @@ export function LoanDetail() {
           onAddPayment={handleAddPaymentDirect}
           onEditPayment={handleUpdatePayment}
           onDeletePayment={(paymentId) => deletePayment.mutate({ id, paymentId })}
+          onAddRateChange={handleAddRateChange}
+          onDeleteRateChange={handleDeleteRateChange}
         />
       )}
     </div>

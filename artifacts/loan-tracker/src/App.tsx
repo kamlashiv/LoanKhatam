@@ -2,6 +2,9 @@ import { lazy, Suspense, useEffect, useRef } from "react";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
+import { TranslationProvider } from "@/hooks/useTranslation";
+import { PremiumProvider, usePremium } from "@/hooks/usePremium";
+import { Crown } from "lucide-react";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { Capacitor } from "@capacitor/core";
 import { App as CapacitorApp } from "@capacitor/app";
@@ -22,6 +25,7 @@ import { FramePreviewBanner } from "@/components/frame-preview-banner";
 import { AuthShowcase } from "@/components/auth-showcase";
 import { writeOfflineSnapshot, clearOfflineSnapshots } from "@/lib/offline-cache";
 import { runBackInterceptor } from "@/lib/mobile-back-guard";
+import { Button } from "@/components/ui/button";
 
 import NotFound from "@/pages/not-found";
 import { Layout } from "@/components/layout";
@@ -50,6 +54,12 @@ const AiAssistantPage = lazy(() =>
 );
 const LoanClosureChecklistPage = lazy(() =>
   import("@/pages/loan-closure-checklist").then((m) => ({ default: m.LoanClosureChecklistPage })),
+);
+const EmiVsSipPage = lazy(() =>
+  import("@/pages/emi-vs-sip").then((m) => ({ default: m.EmiVsSipPage })),
+);
+const GroupSplitPage = lazy(() =>
+  import("@/pages/group-split").then((m) => ({ default: m.GroupSplitPage })),
 );
 const BlogsPage = lazy(() =>
   import("@/pages/blogs").then((m) => ({ default: m.BlogsPage })),
@@ -363,6 +373,47 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   );
 }
 
+function PremiumProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  const { isPremium, setShowPaywall } = usePremium();
+  return (
+    <>
+      <Show when="signed-in">
+        <Layout>
+          {isPremium ? (
+            <Component />
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] bg-white/40 dark:bg-slate-900/40 max-w-lg mx-auto mt-12 space-y-6">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shadow-md">
+                <Crown className="h-8 w-8 animate-pulse" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100">
+                  Premium Feature Locked
+                </h2>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+                  This advanced strategy or planning feature is exclusive to our Premium members.
+                </p>
+              </div>
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl px-6 py-3 text-sm font-bold text-amber-600 dark:text-amber-400">
+                Limited Time Offer: ₹99 Only (Regular Price: ₹1,000)
+              </div>
+              <Button 
+                onClick={() => setShowPaywall(true)}
+                className="rounded-xl font-bold bg-amber-600 hover:bg-amber-700 text-white px-6"
+              >
+                Unlock Premium Now
+              </Button>
+            </div>
+          )}
+        </Layout>
+      </Show>
+      <Show when="signed-out">
+        <Redirect to="/" />
+      </Show>
+    </>
+  );
+}
+
 function PublicRoute({ component: Component }: { component: React.ComponentType }) {
   return (
     <>
@@ -439,10 +490,11 @@ function ClerkProviderWithRoutes() {
           <Route path="/loans/:id/edit" component={() => <ProtectedRoute component={LoanForm} />} />
           <Route path="/loans/:id" component={() => <ProtectedRoute component={LoanDetail} />} />
           <Route path="/amortization" component={() => <ProtectedRoute component={AllAmortization} />} />
-          <Route path="/planner" component={() => <ProtectedRoute component={Planner} />} />
-          <Route path="/strategy" component={() => <ProtectedRoute component={Strategy} />} />
+          <Route path="/planner" component={() => <PremiumProtectedRoute component={Planner} />} />
+          <Route path="/strategy" component={() => <PremiumProtectedRoute component={Strategy} />} />
           <Route path="/profile" component={() => <ProtectedRoute component={ProfilePage} />} />
           <Route path="/settings" component={() => <ProtectedRoute component={SettingsPage} />} />
+          <Route path="/group-split" component={() => <PremiumProtectedRoute component={GroupSplitPage} />} />
           <Route path="/about" component={() => <PublicRoute component={AboutPage} />} />
           <Route path="/help" component={() => <PublicRoute component={HelpPage} />} />
           <Route path="/privacy-policy" component={() => <PublicRoute component={PrivacyPolicyPage} />} />
@@ -461,7 +513,8 @@ function ClerkProviderWithRoutes() {
           <Route path="/tools/car-loan-emi-calculator" component={() => <PublicRoute component={EmiCalculatorPage} />} />
           <Route path="/tools/personal-loan-emi-calculator" component={() => <PublicRoute component={EmiCalculatorPage} />} />
           <Route path="/tools/loan-calculator" component={() => <PublicRoute component={LoanCalculatorPage} />} />
-          <Route path="/tools/ai-assistant" component={() => <PublicRoute component={AiAssistantPage} />} />
+          <Route path="/tools/emi-vs-sip" component={() => <PublicRoute component={EmiVsSipPage} />} />
+          <Route path="/tools/ai-assistant" component={() => <PremiumProtectedRoute component={AiAssistantPage} />} />
           <Route path="/tools/loan-closure-checklist" component={() => <PublicRoute component={LoanClosureChecklistPage} />} />
           <Route path="/blogs/*?" component={() => <PublicRoute component={BlogsPage} />} />
           
@@ -478,13 +531,17 @@ function ClerkProviderWithRoutes() {
 function App() {
   return (
     <ThemeProvider>
-      <TooltipProvider>
-        <FramePreviewBanner />
-        <WouterRouter base={basePath}>
-          <ClerkProviderWithRoutes />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+      <TranslationProvider>
+        <PremiumProvider>
+          <TooltipProvider>
+            <FramePreviewBanner />
+            <WouterRouter base={basePath}>
+              <ClerkProviderWithRoutes />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </PremiumProvider>
+      </TranslationProvider>
     </ThemeProvider>
   );
 }

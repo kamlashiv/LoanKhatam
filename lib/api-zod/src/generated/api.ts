@@ -254,6 +254,7 @@ export const ListLoansQueryParams = zod.object({
   "status": zod.enum(['active', 'paid', 'overdue']).optional()
 })
 
+export const listLoansResponseInterestTypeDefault = `standard_emi`;
 export const listLoansResponseRateChangesItemNewRateMin = 0;
 
 
@@ -273,6 +274,7 @@ export const ListLoansResponseItem = zod.object({
   "totalPaid": zod.number(),
   "remainingAmount": zod.number(),
   "createdAt": zod.string(),
+  "interestType": zod.string().default(listLoansResponseInterestTypeDefault),
   "rateChanges": zod.array(zod.object({
   "effectiveDate": zod.string(),
   "newRate": zod.number().min(listLoansResponseRateChangesItemNewRateMin)
@@ -289,7 +291,7 @@ export const createLoanBodyPrincipalAmountMin = 0;
 
 export const createLoanBodyInterestRateMin = 0;
 
-
+export const createLoanBodyInterestTypeDefault = `standard_emi`;
 export const createLoanBodyRateChangesItemNewRateMin = 0;
 
 
@@ -298,6 +300,7 @@ export const CreateLoanBody = zod.object({
   "borrowerName": zod.string().min(1),
   "principalAmount": zod.number().min(createLoanBodyPrincipalAmountMin),
   "interestRate": zod.number().min(createLoanBodyInterestRateMin),
+  "interestType": zod.string().default(createLoanBodyInterestTypeDefault),
   "tenureMonths": zod.number().min(1).optional(),
   "startDate": zod.string().optional(),
   "dueDate": zod.string().optional(),
@@ -317,6 +320,7 @@ export const GetLoanParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const getLoanResponseInterestTypeDefault = `standard_emi`;
 export const getLoanResponseRateChangesItemNewRateMin = 0;
 
 
@@ -336,6 +340,7 @@ export const GetLoanResponse = zod.object({
   "totalPaid": zod.number(),
   "remainingAmount": zod.number(),
   "createdAt": zod.string(),
+  "interestType": zod.string().default(getLoanResponseInterestTypeDefault),
   "rateChanges": zod.array(zod.object({
   "effectiveDate": zod.string(),
   "newRate": zod.number().min(getLoanResponseRateChangesItemNewRateMin)
@@ -350,7 +355,7 @@ export const UpdateLoanParams = zod.object({
   "id": zod.coerce.number()
 })
 
-
+export const updateLoanBodyInterestTypeDefault = `standard_emi`;
 export const updateLoanBodyRateChangesItemNewRateMin = 0;
 
 
@@ -359,6 +364,7 @@ export const UpdateLoanBody = zod.object({
   "borrowerName": zod.string().optional(),
   "principalAmount": zod.number().optional(),
   "interestRate": zod.number().optional(),
+  "interestType": zod.string().default(updateLoanBodyInterestTypeDefault),
   "tenureMonths": zod.number().min(1).optional(),
   "startDate": zod.string().optional(),
   "dueDate": zod.string().optional(),
@@ -371,6 +377,7 @@ export const UpdateLoanBody = zod.object({
 })).optional()
 })
 
+export const updateLoanResponseInterestTypeDefault = `standard_emi`;
 export const updateLoanResponseRateChangesItemNewRateMin = 0;
 
 
@@ -390,6 +397,7 @@ export const UpdateLoanResponse = zod.object({
   "totalPaid": zod.number(),
   "remainingAmount": zod.number(),
   "createdAt": zod.string(),
+  "interestType": zod.string().default(updateLoanResponseInterestTypeDefault),
   "rateChanges": zod.array(zod.object({
   "effectiveDate": zod.string(),
   "newRate": zod.number().min(updateLoanResponseRateChangesItemNewRateMin)
@@ -583,6 +591,7 @@ export const GetDashboardSummaryResponse = zod.object({
 /**
  * @summary Get recent loans (last 5)
  */
+export const getRecentLoansResponseInterestTypeDefault = `standard_emi`;
 export const getRecentLoansResponseRateChangesItemNewRateMin = 0;
 
 
@@ -602,12 +611,101 @@ export const GetRecentLoansResponseItem = zod.object({
   "totalPaid": zod.number(),
   "remainingAmount": zod.number(),
   "createdAt": zod.string(),
+  "interestType": zod.string().default(getRecentLoansResponseInterestTypeDefault),
   "rateChanges": zod.array(zod.object({
   "effectiveDate": zod.string(),
   "newRate": zod.number().min(getRecentLoansResponseRateChangesItemNewRateMin)
 }))
 })
 export const GetRecentLoansResponse = zod.array(GetRecentLoansResponseItem)
+
+
+/**
+ * @summary List all groups for the current user
+ */
+export const ListGroupsResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "members": zod.array(zod.string()),
+  "createdAt": zod.string()
+})
+export const ListGroupsResponse = zod.array(ListGroupsResponseItem)
+
+
+/**
+ * @summary Create a new group
+ */
+
+
+
+export const CreateGroupBody = zod.object({
+  "name": zod.string().min(1),
+  "members": zod.array(zod.string())
+})
+
+
+/**
+ * @summary Delete a group by ID
+ */
+export const DeleteGroupParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteGroupResponse = zod.object({
+  "success": zod.boolean().optional()
+})
+
+
+/**
+ * @summary List all expenses for a group
+ */
+export const ListGroupExpensesParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ListGroupExpensesResponseItem = zod.object({
+  "id": zod.number(),
+  "groupId": zod.number(),
+  "description": zod.string(),
+  "amount": zod.number(),
+  "paidBy": zod.string(),
+  "splits": zod.record(zod.string(), zod.number()),
+  "createdAt": zod.string()
+})
+export const ListGroupExpensesResponse = zod.array(ListGroupExpensesResponseItem)
+
+
+/**
+ * @summary Add a new expense to a group
+ */
+export const CreateGroupExpenseParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+export const createGroupExpenseBodyAmountMin = 0.01;
+
+
+
+export const CreateGroupExpenseBody = zod.object({
+  "description": zod.string().min(1),
+  "amount": zod.number().min(createGroupExpenseBodyAmountMin),
+  "paidBy": zod.string(),
+  "splits": zod.record(zod.string(), zod.number())
+})
+
+
+/**
+ * @summary Delete a group expense by ID
+ */
+export const DeleteGroupExpenseParams = zod.object({
+  "id": zod.coerce.number(),
+  "expenseId": zod.coerce.number()
+})
+
+export const DeleteGroupExpenseResponse = zod.object({
+  "success": zod.boolean().optional()
+})
 
 
 /**

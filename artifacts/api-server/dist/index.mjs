@@ -20641,27 +20641,27 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router13;
+    module.exports = Router14;
     module.exports.Route = Route;
-    function Router13(options) {
-      if (!(this instanceof Router13)) {
-        return new Router13(options);
+    function Router14(options) {
+      if (!(this instanceof Router14)) {
+        return new Router14(options);
       }
       const opts = options || {};
-      function router13(req, res, next) {
-        router13.handle(req, res, next);
+      function router14(req, res, next) {
+        router14.handle(req, res, next);
       }
-      Object.setPrototypeOf(router13, this);
-      router13.caseSensitive = opts.caseSensitive;
-      router13.mergeParams = opts.mergeParams;
-      router13.params = {};
-      router13.strict = opts.strict;
-      router13.stack = [];
-      return router13;
+      Object.setPrototypeOf(router14, this);
+      router14.caseSensitive = opts.caseSensitive;
+      router14.mergeParams = opts.mergeParams;
+      router14.params = {};
+      router14.strict = opts.strict;
+      router14.stack = [];
+      return router14;
     }
-    Router13.prototype = function() {
+    Router14.prototype = function() {
     };
-    Router13.prototype.param = function param(name, fn) {
+    Router14.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20681,7 +20681,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router13.prototype.handle = function handle(req, res, callback) {
+    Router14.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20808,7 +20808,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router13.prototype.use = function use(handler) {
+    Router14.prototype.use = function use(handler) {
       let offset = 0;
       let path4 = "/";
       if (typeof handler !== "function") {
@@ -20841,7 +20841,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router13.prototype.route = function route(path4) {
+    Router14.prototype.route = function route(path4) {
       const route2 = new Route(path4);
       const layer = new Layer(path4, {
         sensitive: this.caseSensitive,
@@ -20856,7 +20856,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router13.prototype[method] = function(path4) {
+      Router14.prototype[method] = function(path4) {
         const route = this.route(path4);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -21039,13 +21039,13 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = __require("node:path").resolve;
     var once = require_once();
-    var Router13 = require_router();
+    var Router14 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports = module.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router13 = null;
+      var router14 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -21054,13 +21054,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router13 === null) {
-            router13 = new Router13({
+          if (router14 === null) {
+            router14 = new Router14({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router13;
+          return router14;
         }
       });
     };
@@ -21131,15 +21131,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router13 = this.router;
+      var router14 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router13.use(path4, fn2);
+          return router14.use(path4, fn2);
         }
         debug7(".use app under %s", path4);
         fn2.mountpath = path4;
         fn2.parent = this;
-        router13.use(path4, function mounted_app(req, res, next) {
+        router14.use(path4, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -23712,7 +23712,7 @@ var require_express = __commonJS({
     var EventEmitter2 = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router13 = require_router();
+    var Router14 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23734,8 +23734,8 @@ var require_express = __commonJS({
     exports.application = proto;
     exports.request = req;
     exports.response = res;
-    exports.Route = Router13.Route;
-    exports.Router = Router13;
+    exports.Route = Router14.Route;
+    exports.Router = Router14;
     exports.json = bodyParser.json;
     exports.raw = bodyParser.raw;
     exports.static = require_serve_static();
@@ -53536,7 +53536,7 @@ process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || "dummy-openai-key";
 process.env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "dummy-anthropic-key";
 
 // src/app.ts
-var import_express23 = __toESM(require_express2(), 1);
+var import_express25 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 
@@ -63250,11 +63250,11 @@ function parsePathRewriteRules(rewriteConfig) {
 var debug4 = Debug.extend("router");
 async function getTarget(req, res, config2) {
   let newTarget;
-  const router13 = config2.router;
-  if (isPlainObject(router13)) {
-    newTarget = getTargetFromProxyTable(req, router13);
-  } else if (typeof router13 === "function") {
-    newTarget = await router13(req, res, config2);
+  const router14 = config2.router;
+  if (isPlainObject(router14)) {
+    newTarget = getTargetFromProxyTable(req, router14);
+  } else if (typeof router14 === "function") {
+    newTarget = await router14(req, res, config2);
   }
   return newTarget;
 }
@@ -63539,7 +63539,7 @@ function clerkProxyMiddleware() {
 }
 
 // src/routes/index.ts
-var import_express22 = __toESM(require_express2(), 1);
+var import_express24 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -67638,6 +67638,7 @@ var HealthCheckResponse = objectType({
 var ListLoansQueryParams = objectType({
   "status": enumType(["active", "paid", "overdue"]).optional()
 });
+var listLoansResponseInterestTypeDefault = `standard_emi`;
 var listLoansResponseRateChangesItemNewRateMin = 0;
 var ListLoansResponseItem = objectType({
   "id": numberType(),
@@ -67654,6 +67655,7 @@ var ListLoansResponseItem = objectType({
   "totalPaid": numberType(),
   "remainingAmount": numberType(),
   "createdAt": stringType(),
+  "interestType": stringType().default(listLoansResponseInterestTypeDefault),
   "rateChanges": arrayType(objectType({
     "effectiveDate": stringType(),
     "newRate": numberType().min(listLoansResponseRateChangesItemNewRateMin)
@@ -67662,11 +67664,13 @@ var ListLoansResponseItem = objectType({
 var ListLoansResponse = arrayType(ListLoansResponseItem);
 var createLoanBodyPrincipalAmountMin = 0;
 var createLoanBodyInterestRateMin = 0;
+var createLoanBodyInterestTypeDefault = `standard_emi`;
 var createLoanBodyRateChangesItemNewRateMin = 0;
 var CreateLoanBody = objectType({
   "borrowerName": stringType().min(1),
   "principalAmount": numberType().min(createLoanBodyPrincipalAmountMin),
   "interestRate": numberType().min(createLoanBodyInterestRateMin),
+  "interestType": stringType().default(createLoanBodyInterestTypeDefault),
   "tenureMonths": numberType().min(1).optional(),
   "startDate": stringType().optional(),
   "dueDate": stringType().optional(),
@@ -67680,6 +67684,7 @@ var CreateLoanBody = objectType({
 var GetLoanParams = objectType({
   "id": coerce.number()
 });
+var getLoanResponseInterestTypeDefault = `standard_emi`;
 var getLoanResponseRateChangesItemNewRateMin = 0;
 var GetLoanResponse = objectType({
   "id": numberType(),
@@ -67696,6 +67701,7 @@ var GetLoanResponse = objectType({
   "totalPaid": numberType(),
   "remainingAmount": numberType(),
   "createdAt": stringType(),
+  "interestType": stringType().default(getLoanResponseInterestTypeDefault),
   "rateChanges": arrayType(objectType({
     "effectiveDate": stringType(),
     "newRate": numberType().min(getLoanResponseRateChangesItemNewRateMin)
@@ -67704,11 +67710,13 @@ var GetLoanResponse = objectType({
 var UpdateLoanParams = objectType({
   "id": coerce.number()
 });
+var updateLoanBodyInterestTypeDefault = `standard_emi`;
 var updateLoanBodyRateChangesItemNewRateMin = 0;
 var UpdateLoanBody = objectType({
   "borrowerName": stringType().optional(),
   "principalAmount": numberType().optional(),
   "interestRate": numberType().optional(),
+  "interestType": stringType().default(updateLoanBodyInterestTypeDefault),
   "tenureMonths": numberType().min(1).optional(),
   "startDate": stringType().optional(),
   "dueDate": stringType().optional(),
@@ -67720,6 +67728,7 @@ var UpdateLoanBody = objectType({
     "newRate": numberType().min(updateLoanBodyRateChangesItemNewRateMin)
   })).optional()
 });
+var updateLoanResponseInterestTypeDefault = `standard_emi`;
 var updateLoanResponseRateChangesItemNewRateMin = 0;
 var UpdateLoanResponse = objectType({
   "id": numberType(),
@@ -67736,6 +67745,7 @@ var UpdateLoanResponse = objectType({
   "totalPaid": numberType(),
   "remainingAmount": numberType(),
   "createdAt": stringType(),
+  "interestType": stringType().default(updateLoanResponseInterestTypeDefault),
   "rateChanges": arrayType(objectType({
     "effectiveDate": stringType(),
     "newRate": numberType().min(updateLoanResponseRateChangesItemNewRateMin)
@@ -67850,6 +67860,7 @@ var GetDashboardSummaryResponse = objectType({
   "totalCollected": numberType(),
   "totalOutstanding": numberType()
 });
+var getRecentLoansResponseInterestTypeDefault = `standard_emi`;
 var getRecentLoansResponseRateChangesItemNewRateMin = 0;
 var GetRecentLoansResponseItem = objectType({
   "id": numberType(),
@@ -67866,12 +67877,60 @@ var GetRecentLoansResponseItem = objectType({
   "totalPaid": numberType(),
   "remainingAmount": numberType(),
   "createdAt": stringType(),
+  "interestType": stringType().default(getRecentLoansResponseInterestTypeDefault),
   "rateChanges": arrayType(objectType({
     "effectiveDate": stringType(),
     "newRate": numberType().min(getRecentLoansResponseRateChangesItemNewRateMin)
   }))
 });
 var GetRecentLoansResponse = arrayType(GetRecentLoansResponseItem);
+var ListGroupsResponseItem = objectType({
+  "id": numberType(),
+  "name": stringType(),
+  "members": arrayType(stringType()),
+  "createdAt": stringType()
+});
+var ListGroupsResponse = arrayType(ListGroupsResponseItem);
+var CreateGroupBody = objectType({
+  "name": stringType().min(1),
+  "members": arrayType(stringType())
+});
+var DeleteGroupParams = objectType({
+  "id": coerce.number()
+});
+var DeleteGroupResponse = objectType({
+  "success": booleanType().optional()
+});
+var ListGroupExpensesParams = objectType({
+  "id": coerce.number()
+});
+var ListGroupExpensesResponseItem = objectType({
+  "id": numberType(),
+  "groupId": numberType(),
+  "description": stringType(),
+  "amount": numberType(),
+  "paidBy": stringType(),
+  "splits": recordType(stringType(), numberType()),
+  "createdAt": stringType()
+});
+var ListGroupExpensesResponse = arrayType(ListGroupExpensesResponseItem);
+var CreateGroupExpenseParams = objectType({
+  "id": coerce.number()
+});
+var createGroupExpenseBodyAmountMin = 0.01;
+var CreateGroupExpenseBody = objectType({
+  "description": stringType().min(1),
+  "amount": numberType().min(createGroupExpenseBodyAmountMin),
+  "paidBy": stringType(),
+  "splits": recordType(stringType(), numberType())
+});
+var DeleteGroupExpenseParams = objectType({
+  "id": coerce.number(),
+  "expenseId": coerce.number()
+});
+var DeleteGroupExpenseResponse = objectType({
+  "success": booleanType().optional()
+});
 var ExtractFinancialsBody = objectType({
   "text": stringType().min(1).describe("Pasted statement, email, or message text to analyse")
 });
@@ -75052,6 +75111,8 @@ __export(schema_exports, {
   creditCardsTable: () => creditCardsTable,
   feedbackTable: () => feedbackTable,
   financialProfilesTable: () => financialProfilesTable,
+  groupExpensesTable: () => groupExpensesTable,
+  groupsTable: () => groupsTable,
   insertConversationSchema: () => insertConversationSchema,
   insertCreditCardSchema: () => insertCreditCardSchema,
   insertLoanSchema: () => insertLoanSchema,
@@ -86478,6 +86539,7 @@ var loansTable = pgTable("loans", {
   bank: text("bank"),
   description: text("description"),
   status: loanStatusEnum("status").notNull().default("active"),
+  interestType: text("interest_type").default("standard_emi").notNull(),
   rateChanges: jsonb("rate_changes").$type().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow()
 });
@@ -86583,6 +86645,26 @@ var siteLikesTable = pgTable("site_likes", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
 });
 
+// ../../lib/db/src/schema/groups.ts
+var groupsTable = pgTable("groups", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  members: jsonb("members").$type().notNull().default([]),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
+// ../../lib/db/src/schema/group_expenses.ts
+var groupExpensesTable = pgTable("group_expenses", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").references(() => groupsTable.id, { onDelete: "cascade" }).notNull(),
+  description: text("description").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  paidBy: text("paid_by").notNull(),
+  splits: jsonb("splits").$type().notNull().default({}),
+  createdAt: timestamp("created_at").notNull().defaultNow()
+});
+
 // ../../lib/db/src/index.ts
 var { Pool: Pool3 } = esm_default;
 if (!process.env.DATABASE_URL) {
@@ -86627,10 +86709,29 @@ function computeLoanFields(loan, payments) {
     (sum, p) => sum + parseFloat(p.amount),
     0
   );
-  const remaining = Math.max(
-    0,
-    parseFloat(loan.principalAmount) - totalPaid
-  );
+  let remaining = 0;
+  let accruedInterest = 0;
+  if (loan.interestType === "monthly_simple") {
+    const startStr = loan.startDate;
+    if (startStr) {
+      const start = new Date(startStr);
+      const today2 = /* @__PURE__ */ new Date();
+      const diffTime = Math.max(0, today2.getTime() - start.getTime());
+      const diffDays = diffTime / (1e3 * 60 * 60 * 24);
+      const monthsPassed = diffDays / 30.44;
+      const rate = parseFloat(loan.interestRate);
+      accruedInterest = parseFloat(loan.principalAmount) * (rate / 100) * monthsPassed;
+    }
+    remaining = Math.max(
+      0,
+      parseFloat(loan.principalAmount) + accruedInterest - totalPaid
+    );
+  } else {
+    remaining = Math.max(
+      0,
+      parseFloat(loan.principalAmount) - totalPaid
+    );
+  }
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   let status = loan.status;
   if (status === "active" && loan.dueDate && loan.dueDate < today && remaining > 0) {
@@ -86642,6 +86743,7 @@ function computeLoanFields(loan, payments) {
     borrowerName: loan.borrowerName,
     principalAmount: parseFloat(loan.principalAmount),
     interestRate: parseFloat(loan.interestRate),
+    interestType: loan.interestType || "standard_emi",
     tenureMonths: loan.tenureMonths ?? null,
     startDate: loan.startDate ?? "",
     dueDate: loan.dueDate ?? "",
@@ -86685,12 +86787,13 @@ router2.post("/", requireAuth, async (req, res) => {
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid input" });
     }
-    const { borrowerName, principalAmount, interestRate, tenureMonths, startDate, dueDate, bank, description, rateChanges } = parsed.data;
+    const { borrowerName, principalAmount, interestRate, interestType, tenureMonths, startDate, dueDate, bank, description, rateChanges } = parsed.data;
     const [loan] = await db.insert(loansTable).values({
       userId: req.userId,
       borrowerName,
       principalAmount: principalAmount.toString(),
       interestRate: interestRate.toString(),
+      interestType: interestType || "standard_emi",
       tenureMonths: tenureMonths ?? null,
       startDate: startDate || null,
       dueDate: dueDate || null,
@@ -86750,6 +86853,7 @@ router2.patch("/:id", requireAuth, async (req, res) => {
       updates.principalAmount = d.principalAmount.toString();
     if (d.interestRate !== void 0)
       updates.interestRate = d.interestRate.toString();
+    if (d.interestType !== void 0) updates.interestType = d.interestType;
     if (d.tenureMonths !== void 0) updates.tenureMonths = d.tenureMonths;
     if (d.startDate !== void 0) updates.startDate = d.startDate || null;
     if (d.dueDate !== void 0) updates.dueDate = d.dueDate || null;
@@ -97594,26 +97698,171 @@ router11.post("/", requireAuth10, async (req, res) => {
 });
 var feedback_default = router11;
 
-// src/routes/index.ts
+// src/routes/groups.ts
+var import_express22 = __toESM(require_express2(), 1);
 var router12 = (0, import_express22.Router)();
-router12.use(health_default);
-router12.use("/loans", loans_default);
-router12.use("/credit-cards", credit_cards_default);
-router12.use("/loans/:id/payments", payments_default);
-router12.use("/dashboard", dashboard_default);
-router12.use("/extract-loan", extract_loan_default);
-router12.use("/extract-financials", extract_financials_default);
-router12.use("/gmail", gmail_default);
-router12.use("/profile", profile_default);
-router12.use("/settings", settings_default);
-router12.use("/feedback", feedback_default);
-var routes_default = router12;
+function requireAuth11(req, res, next) {
+  const auth = getAuth(req);
+  const userId = auth?.sessionClaims?.userId || auth?.userId;
+  if (!userId) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  req.userId = userId;
+  next();
+}
+router12.get("/", requireAuth11, async (req, res) => {
+  try {
+    const groups = await db.select().from(groupsTable).where(eq(groupsTable.userId, req.userId)).orderBy(desc(groupsTable.createdAt));
+    return res.json(
+      groups.map((g) => ({
+        id: g.id,
+        name: g.name,
+        members: g.members,
+        createdAt: g.createdAt.toISOString()
+      }))
+    );
+  } catch (err) {
+    logger2.error({ err }, "Error listing groups");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+router12.post("/", requireAuth11, async (req, res) => {
+  try {
+    const parsed = CreateGroupBody.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid input" });
+    }
+    const { name, members } = parsed.data;
+    const [group] = await db.insert(groupsTable).values({
+      userId: req.userId,
+      name,
+      members
+    }).returning();
+    return res.status(201).json({
+      id: group.id,
+      name: group.name,
+      members: group.members,
+      createdAt: group.createdAt.toISOString()
+    });
+  } catch (err) {
+    logger2.error({ err }, "Error creating group");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+router12.delete("/:id", requireAuth11, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    const [existing] = await db.select().from(groupsTable).where(and(eq(groupsTable.id, id), eq(groupsTable.userId, req.userId)));
+    if (!existing) return res.status(404).json({ error: "Not found" });
+    await db.delete(groupsTable).where(eq(groupsTable.id, id));
+    return res.json({ success: true });
+  } catch (err) {
+    logger2.error({ err }, "Error deleting group");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+router12.get("/:id/expenses", requireAuth11, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    const [existing] = await db.select().from(groupsTable).where(and(eq(groupsTable.id, id), eq(groupsTable.userId, req.userId)));
+    if (!existing) return res.status(404).json({ error: "Group not found" });
+    const expenses = await db.select().from(groupExpensesTable).where(eq(groupExpensesTable.groupId, id)).orderBy(desc(groupExpensesTable.createdAt));
+    return res.json(
+      expenses.map((e) => ({
+        id: e.id,
+        groupId: e.groupId,
+        description: e.description,
+        amount: parseFloat(e.amount),
+        paidBy: e.paidBy,
+        splits: e.splits,
+        createdAt: e.createdAt.toISOString()
+      }))
+    );
+  } catch (err) {
+    logger2.error({ err }, "Error listing group expenses");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+router12.post("/:id/expenses", requireAuth11, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    const [existing] = await db.select().from(groupsTable).where(and(eq(groupsTable.id, id), eq(groupsTable.userId, req.userId)));
+    if (!existing) return res.status(404).json({ error: "Group not found" });
+    const parsed = CreateGroupExpenseBody.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid input" });
+    }
+    const { description, amount, paidBy, splits } = parsed.data;
+    const [expense] = await db.insert(groupExpensesTable).values({
+      groupId: id,
+      description,
+      amount: amount.toString(),
+      paidBy,
+      splits
+    }).returning();
+    return res.status(201).json({
+      id: expense.id,
+      groupId: expense.groupId,
+      description: expense.description,
+      amount: parseFloat(expense.amount),
+      paidBy: expense.paidBy,
+      splits: expense.splits,
+      createdAt: expense.createdAt.toISOString()
+    });
+  } catch (err) {
+    logger2.error({ err }, "Error creating group expense");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+router12.delete("/:id/expenses/:expenseId", requireAuth11, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const expenseId = parseInt(req.params.expenseId);
+    if (isNaN(id) || isNaN(expenseId)) {
+      return res.status(400).json({ error: "Invalid id" });
+    }
+    const [existingGroup] = await db.select().from(groupsTable).where(and(eq(groupsTable.id, id), eq(groupsTable.userId, req.userId)));
+    if (!existingGroup) return res.status(404).json({ error: "Group not found" });
+    const [existingExpense] = await db.select().from(groupExpensesTable).where(
+      and(
+        eq(groupExpensesTable.id, expenseId),
+        eq(groupExpensesTable.groupId, id)
+      )
+    );
+    if (!existingExpense) return res.status(404).json({ error: "Expense not found" });
+    await db.delete(groupExpensesTable).where(eq(groupExpensesTable.id, expenseId));
+    return res.json({ success: true });
+  } catch (err) {
+    logger2.error({ err }, "Error deleting group expense");
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+var groups_default = router12;
+
+// src/routes/index.ts
+var router13 = (0, import_express24.Router)();
+router13.use(health_default);
+router13.use("/loans", loans_default);
+router13.use("/credit-cards", credit_cards_default);
+router13.use("/loans/:id/payments", payments_default);
+router13.use("/dashboard", dashboard_default);
+router13.use("/extract-loan", extract_loan_default);
+router13.use("/extract-financials", extract_financials_default);
+router13.use("/gmail", gmail_default);
+router13.use("/profile", profile_default);
+router13.use("/settings", settings_default);
+router13.use("/feedback", feedback_default);
+router13.use("/groups", groups_default);
+var routes_default = router13;
 
 // src/app.ts
 import path3 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 import fs2 from "fs";
-var app = (0, import_express23.default)();
+var app = (0, import_express25.default)();
 app.use(
   (0, import_pino_http.default)({
     logger: logger2,
@@ -97676,8 +97925,8 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.use(import_express23.default.json({ limit: "25mb" }));
-app.use(import_express23.default.urlencoded({ extended: true, limit: "25mb" }));
+app.use(import_express25.default.json({ limit: "25mb" }));
+app.use(import_express25.default.urlencoded({ extended: true, limit: "25mb" }));
 app.use(
   clerkMiddleware((req) => {
     const host = getClerkProxyHost(req) ?? "";
@@ -97699,10 +97948,24 @@ if (process.env.NODE_ENV === "production") {
   let sendHtmlWithKeys2 = function(html, res) {
     const clerkKey = process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY || process.env.PUBLIC_CLERK_PUBLISHABLE_KEY || "";
     const clerkProxy = process.env.VITE_CLERK_PROXY_URL || "";
+    const gaId = process.env.VITE_GA_MEASUREMENT_ID || process.env.GA_MEASUREMENT_ID || "";
+    let extraScripts = "";
+    if (gaId) {
+      extraScripts += `
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', ${JSON.stringify(gaId)});
+    </script>
+    `;
+    }
     const script = `<script>
     window.VITE_CLERK_PUBLISHABLE_KEY = ${JSON.stringify(clerkKey)};
     ${clerkProxy ? `window.VITE_CLERK_PROXY_URL = ${JSON.stringify(clerkProxy)};` : ""}
-  </script>`;
+  </script>${extraScripts}`;
     const modifiedHtml = html.replace("</head>", `${script}</head>`);
     res.send(modifiedHtml);
   };
@@ -97710,7 +97973,7 @@ if (process.env.NODE_ENV === "production") {
   const __filename2 = fileURLToPath2(import.meta.url);
   const __dirname3 = path3.dirname(__filename2);
   const frontendDistPath = path3.resolve(__dirname3, "../../loan-tracker/dist/public");
-  app.use(import_express23.default.static(frontendDistPath, { index: false }));
+  app.use(import_express25.default.static(frontendDistPath, { index: false }));
   const routeFileMap = {
     "/": "index.html",
     "/about": "about.html",

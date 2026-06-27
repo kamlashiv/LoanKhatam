@@ -21,6 +21,8 @@ tags:
     description: User account preferences
   - name: feedback
     description: User feedback and feature requests
+  - name: groups
+    description: Group expense splitting
 
 paths:
   /profile:
@@ -454,6 +456,151 @@ paths:
         "401":
           description: Unauthorized
 
+  /groups:
+    get:
+      operationId: listGroups
+      tags: [groups]
+      summary: List all groups for the current user
+      responses:
+        "200":
+          description: List of groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: createGroup
+      tags: [groups]
+      summary: Create a new group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupInput"
+      responses:
+        "201":
+          description: Group created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+
+  /groups/{id}:
+    delete:
+      operationId: deleteGroup
+      tags: [groups]
+      summary: Delete a group by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Group deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        "404":
+          description: Group not found
+        "401":
+          description: Unauthorized
+
+  /groups/{id}/expenses:
+    get:
+      operationId: listGroupExpenses
+      tags: [groups]
+      summary: List all expenses for a group
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of group expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GroupExpense"
+        "401":
+          description: Unauthorized
+    post:
+      operationId: createGroupExpense
+      tags: [groups]
+      summary: Add a new expense to a group
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupExpenseInput"
+      responses:
+        "201":
+          description: Group expense added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupExpense"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+
+  /groups/{id}/expenses/{expenseId}:
+    delete:
+      operationId: deleteGroupExpense
+      tags: [groups]
+      summary: Delete a group expense by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: expenseId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Group expense deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        "404":
+          description: Expense not found
+        "401":
+          description: Unauthorized
+
   /extract-financials:
     post:
       operationId: extractFinancials
@@ -546,6 +693,7 @@ components:
         - remainingAmount
         - createdAt
         - rateChanges
+        - interestType
       properties:
         id:
           type: integer
@@ -576,6 +724,9 @@ components:
           type: number
         createdAt:
           type: string
+        interestType:
+          type: string
+          default: standard_emi
         rateChanges:
           type: array
           items:
@@ -597,6 +748,9 @@ components:
         interestRate:
           type: number
           minimum: 0
+        interestType:
+          type: string
+          default: standard_emi
         tenureMonths:
           type: integer
           minimum: 1
@@ -622,6 +776,9 @@ components:
           type: number
         interestRate:
           type: number
+        interestType:
+          type: string
+          default: standard_emi
         tenureMonths:
           type: integer
           minimum: 1
@@ -1137,3 +1294,85 @@ components:
           type: number
         totalOutstanding:
           type: number
+
+    Group:
+      type: object
+      required:
+        - id
+        - name
+        - members
+        - createdAt
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        members:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+
+    GroupInput:
+      type: object
+      required:
+        - name
+        - members
+      properties:
+        name:
+          type: string
+          minLength: 1
+        members:
+          type: array
+          items:
+            type: string
+
+    GroupExpense:
+      type: object
+      required:
+        - id
+        - groupId
+        - description
+        - amount
+        - paidBy
+        - splits
+        - createdAt
+      properties:
+        id:
+          type: integer
+        groupId:
+          type: integer
+        description:
+          type: string
+        amount:
+          type: number
+        paidBy:
+          type: string
+        splits:
+          type: object
+          additionalProperties:
+            type: number
+        createdAt:
+          type: string
+
+    GroupExpenseInput:
+      type: object
+      required:
+        - description
+        - amount
+        - paidBy
+        - splits
+      properties:
+        description:
+          type: string
+          minLength: 1
+        amount:
+          type: number
+          minimum: 0.01
+        paidBy:
+          type: string
+        splits:
+          type: object
+          additionalProperties:
+            type: number

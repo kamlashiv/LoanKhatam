@@ -18,6 +18,26 @@ jest.mock("wouter", () => ({
   useLocation: () => ["/", () => {}],
 }));
 
+jest.mock("@/hooks/useTranslation", () => {
+  const actual = jest.requireActual("@/hooks/useTranslation");
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string) => (actual.translations.en as any)[key] || key,
+      language: "en",
+      setLanguage: jest.fn(),
+    }),
+  };
+});
+
+jest.mock("@/hooks/usePremium", () => ({
+  usePremium: () => ({
+    isPremium: true,
+    setShowPaywall: jest.fn(),
+    lockFeature: jest.fn(),
+  }),
+}));
+
 // Control the two data hooks the dashboard reads from.
 const mockUseGetDashboardSummary = jest.fn();
 const mockUseGetRecentLoans = jest.fn();

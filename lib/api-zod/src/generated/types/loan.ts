@@ -26,5 +26,6 @@ export interface Loan {
   totalPaid: number;
   remainingAmount: number;
   createdAt: string;
+  interestType: string;
   rateChanges: RateChange[];
 }

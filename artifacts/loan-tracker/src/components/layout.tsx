@@ -2,10 +2,12 @@ import { Link, useLocation } from "wouter";
 import { useClerk, useUser } from "@clerk/react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme";
+import { useTranslation } from "@/hooks/useTranslation";
+import { usePremium } from "@/hooks/usePremium";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
 import {
   Wallet, LayoutDashboard, List, LogOut, Plus, Menu, BarChart3, Target, Flame,
-  Sun, Moon, Sparkles, UserCircle, Settings, Share2, CreditCard,
+  Sun, Moon, Sparkles, UserCircle, Settings, Share2, CreditCard, Calculator, Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -31,15 +33,30 @@ function ThemeToggle({ className }: { className?: string }) {
   );
 }
 
+function LanguageToggle({ className }: { className?: string }) {
+  const { lang, setLanguage } = useTranslation();
+  return (
+    <Button
+      variant="ghost"
+      onClick={() => setLanguage(lang === "en" ? "hi" : "en")}
+      title={lang === "en" ? "Switch to Hindi" : "Switch to English"}
+      className={cn("text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 font-extrabold text-xs px-2 h-9 w-9 rounded-xl border border-slate-200/50 dark:border-slate-800", className)}
+    >
+      {lang === "en" ? "हिं" : "EN"}
+    </Button>
+  );
+}
+
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/credit-cards", label: "Cards & Accounts", icon: CreditCard },
-  { href: "/profile", label: "Financial Profile", icon: UserCircle },
-  { href: "/planner", label: "Smart Strategy", icon: Target },
-  { href: "/strategy", label: "Financial Strategy", icon: Sparkles },
-  
-  { href: "/amortization", label: "Amortization", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard", label: "dashboard", icon: LayoutDashboard },
+  { href: "/credit-cards", label: "cardsAccounts", icon: CreditCard },
+  { href: "/profile", label: "financialProfile", icon: UserCircle },
+  { href: "/planner", label: "smartStrategy", icon: Target },
+  { href: "/strategy", label: "financialStrategy", icon: Sparkles },
+  { href: "/group-split", label: "groupSplit", icon: List },
+  { href: "/tools", label: "planningTools", icon: Calculator },
+  { href: "/amortization", label: "amortization", icon: BarChart3 },
+  { href: "/settings", label: "settings", icon: Settings },
 ];
 
 function Brand() {
@@ -69,6 +86,7 @@ function Brand() {
 }
 
 function NavLinks({ location }: { location: string }) {
+  const { t } = useTranslation();
   return (
     <nav className="space-y-2">
       {navItems.map((item) => {
@@ -84,7 +102,7 @@ function NavLinks({ location }: { location: string }) {
               )}
             >
               <item.icon className="h-5 w-5" />
-              <span>{item.label}</span>
+              <span>{t(item.label as any)}</span>
             </div>
           </Link>
         );
@@ -94,6 +112,7 @@ function NavLinks({ location }: { location: string }) {
 }
 
 function StayOnTopCard() {
+  const { t } = useTranslation();
   const { data: summary } = useGetDashboardSummary();
   const overdue = summary?.overdueLoans ?? 0;
 
@@ -102,23 +121,60 @@ function StayOnTopCard() {
       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-white text-indigo-600 shadow-sm dark:bg-slate-800 dark:text-indigo-300">
         <Flame className="h-5 w-5" />
       </div>
-      <h4 className="mb-1 font-bold text-slate-800 dark:text-slate-100">Stay on top</h4>
+      <h4 className="mb-1 font-bold text-slate-800 dark:text-slate-100">{t("stayOnTop")}</h4>
       <p className="mb-4 text-sm font-medium leading-relaxed text-slate-500 dark:text-slate-400">
         {overdue > 0
           ? `You have ${overdue} overdue loan${overdue === 1 ? "" : "s"} that need${overdue === 1 ? "s" : ""} your attention.`
-          : "Every loan is on track. Nice work staying ahead."}
+          : t("everyLoanOnTrack")}
       </p>
       <Link
         href={overdue > 0 ? "/loans?status=overdue" : "/loans"}
         className="block w-full rounded-xl bg-indigo-600 py-2.5 text-center font-bold text-white shadow-sm transition-colors hover:bg-indigo-700"
       >
-        {overdue > 0 ? "Review Now" : "View All Loans"}
+        {overdue > 0 ? "Review Now" : t("viewAllLoans")}
       </Link>
     </div>
   );
 }
 
+function PremiumUpgradeCard() {
+  const { isPremium, setShowPaywall } = usePremium();
+  if (isPremium) {
+    return (
+      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-center gap-3 dark:border-amber-500/20">
+        <Crown className="h-5 w-5 text-amber-500 shrink-0 animate-pulse" />
+        <span className="text-xs font-black text-amber-600 dark:text-amber-400">
+          Premium Unlocked
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-3xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-950 dark:bg-amber-950/20 space-y-3 relative overflow-hidden">
+      <div className="absolute top-2.5 right-2.5 bg-rose-500 text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm">
+        90% OFF
+      </div>
+      <div className="flex items-center gap-2">
+        <Crown className="h-4.5 w-4.5 text-amber-500 shrink-0" />
+        <h4 className="font-extrabold text-xs text-amber-800 dark:text-amber-400 leading-none">
+          Premium Plan Upgrade
+        </h4>
+      </div>
+      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
+        Get <strong>1 Year + 1 Year Extra FREE</strong> for just <strong>₹99</strong> <span className="line-through text-slate-400 font-normal">₹1,000</span>
+      </p>
+      <Button
+        onClick={() => setShowPaywall(true)}
+        className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 text-white py-1.5 h-auto text-xs font-bold shadow-sm"
+      >
+        Unlock Now
+      </Button>
+    </div>
+  );
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const [location] = useLocation();
   const { signOut } = useClerk();
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -132,7 +188,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Mobile Header */}
       <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/80 p-4 backdrop-blur-xl md:hidden dark:border-slate-800 dark:bg-slate-900/80">
         <Brand />
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          <LanguageToggle className="text-slate-700 dark:text-slate-300" />
           <ThemeToggle className="text-slate-700 dark:text-slate-300" />
           <Sheet>
             <SheetTrigger asChild>
@@ -145,15 +202,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Brand />
             </div>
             <NavLinks location={location} />
-            <div className="mt-6">
+             <div className="mt-6">
               <Button asChild className="w-full justify-start gap-2 rounded-xl shadow-sm" size="lg">
                 <Link href="/loans/new">
                   <Plus className="h-5 w-5" />
-                  Add Loan
+                  {t("addLoan")}
                 </Link>
               </Button>
             </div>
             <div className="mt-auto space-y-3">
+              <PremiumUpgradeCard />
               <StayOnTopCard />
               <ShareApp
                 trigger={
@@ -169,7 +227,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 onClick={handleLogout}
               >
                 <LogOut className="h-5 w-5" />
-                Log out
+                {t("logout")}
               </Button>
             </div>
             </SheetContent>
@@ -188,12 +246,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Button asChild className="w-full justify-start gap-2 rounded-xl shadow-sm" size="lg">
               <Link href="/loans/new">
                 <Plus className="h-5 w-5" />
-                Add Loan
+                {t("addLoan")}
               </Link>
             </Button>
           </div>
         </div>
         <div className="space-y-3">
+          <PremiumUpgradeCard />
           <StayOnTopCard />
           <ShareApp
             trigger={
@@ -203,15 +262,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Button>
             }
           />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Button
               variant="ghost"
               className="flex-1 justify-start gap-3 text-slate-500 hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
               onClick={handleLogout}
             >
               <LogOut className="h-5 w-5" />
-              Log out
+              {t("logout")}
             </Button>
+            <LanguageToggle className="shrink-0 hover:bg-slate-100 dark:hover:bg-slate-800" />
             <ThemeToggle className="shrink-0 hover:bg-slate-100 dark:hover:bg-slate-800" />
           </div>
         </div>

@@ -26,10 +26,32 @@ function computeLoanFields(loan: any, payments: any[]) {
     (sum, p) => sum + parseFloat(p.amount),
     0,
   );
-  const remaining = Math.max(
-    0,
-    parseFloat(loan.principalAmount) - totalPaid,
-  );
+  
+  let remaining = 0;
+  let accruedInterest = 0;
+  
+  if (loan.interestType === "monthly_simple") {
+    const startStr = loan.startDate;
+    if (startStr) {
+      const start = new Date(startStr);
+      const today = new Date();
+      const diffTime = Math.max(0, today.getTime() - start.getTime());
+      const diffDays = diffTime / (1000 * 60 * 60 * 24);
+      const monthsPassed = diffDays / 30.44;
+      const rate = parseFloat(loan.interestRate);
+      accruedInterest = parseFloat(loan.principalAmount) * (rate / 100) * monthsPassed;
+    }
+    remaining = Math.max(
+      0,
+      parseFloat(loan.principalAmount) + accruedInterest - totalPaid,
+    );
+  } else {
+    remaining = Math.max(
+      0,
+      parseFloat(loan.principalAmount) - totalPaid,
+    );
+  }
+
   const today = new Date().toISOString().split("T")[0];
   let status = loan.status;
   if (status === "active" && loan.dueDate && loan.dueDate < today && remaining > 0) {
@@ -41,6 +63,7 @@ function computeLoanFields(loan: any, payments: any[]) {
     borrowerName: loan.borrowerName,
     principalAmount: parseFloat(loan.principalAmount),
     interestRate: parseFloat(loan.interestRate),
+    interestType: loan.interestType || "standard_emi",
     tenureMonths: loan.tenureMonths ?? null,
     startDate: loan.startDate ?? "",
     dueDate: loan.dueDate ?? "",
@@ -107,7 +130,7 @@ router.post("/", requireAuth, async (req: any, res) => {
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid input" });
     }
-    const { borrowerName, principalAmount, interestRate, tenureMonths, startDate, dueDate, bank, description, rateChanges } =
+    const { borrowerName, principalAmount, interestRate, interestType, tenureMonths, startDate, dueDate, bank, description, rateChanges } =
       parsed.data;
     const [loan] = await db
       .insert(loansTable)
@@ -116,6 +139,7 @@ router.post("/", requireAuth, async (req: any, res) => {
         borrowerName,
         principalAmount: principalAmount.toString(),
         interestRate: interestRate.toString(),
+        interestType: interestType || "standard_emi",
         tenureMonths: tenureMonths ?? null,
         startDate: startDate || null,
         dueDate: dueDate || null,
@@ -207,6 +231,7 @@ router.patch("/:id", requireAuth, async (req: any, res) => {
       updates.principalAmount = d.principalAmount.toString();
     if (d.interestRate !== undefined)
       updates.interestRate = d.interestRate.toString();
+    if (d.interestType !== undefined) updates.interestType = d.interestType;
     if (d.tenureMonths !== undefined) updates.tenureMonths = d.tenureMonths;
     if (d.startDate !== undefined) updates.startDate = d.startDate || null;
     if (d.dueDate !== undefined) updates.dueDate = d.dueDate || null;

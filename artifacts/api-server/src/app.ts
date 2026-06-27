@@ -151,6 +151,7 @@ const routeFileMap: Record<string, string> = {
   "/tools/personal-loan-emi-calculator": "personal-loan-emi-calculator.html",
   "/tools/loan-calculator": "loan-calculator.html",
   "/tools/ai-assistant": "ai-assistant.html",
+  "/tools/loan-closure-checklist": "loan-closure-checklist.html",
   "/blogs": "blogs.html",
   "/blogs/5-ways-to-pay-off-loans-faster": "blogs/5-ways-to-pay-off-loans-faster.html",
   "/blogs/snowball-vs-avalanche-debt-payoff": "blogs/snowball-vs-avalanche-debt-payoff.html",

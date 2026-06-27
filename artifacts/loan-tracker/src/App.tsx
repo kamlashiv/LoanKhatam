@@ -48,6 +48,9 @@ const LoanCalculatorPage = lazy(() =>
 const AiAssistantPage = lazy(() =>
   import("@/pages/ai-assistant").then((m) => ({ default: m.AiAssistantPage })),
 );
+const LoanClosureChecklistPage = lazy(() =>
+  import("@/pages/loan-closure-checklist").then((m) => ({ default: m.LoanClosureChecklistPage })),
+);
 const BlogsPage = lazy(() =>
   import("@/pages/blogs").then((m) => ({ default: m.BlogsPage })),
 );
@@ -459,6 +462,7 @@ function ClerkProviderWithRoutes() {
           <Route path="/tools/personal-loan-emi-calculator" component={() => <PublicRoute component={EmiCalculatorPage} />} />
           <Route path="/tools/loan-calculator" component={() => <PublicRoute component={LoanCalculatorPage} />} />
           <Route path="/tools/ai-assistant" component={() => <PublicRoute component={AiAssistantPage} />} />
+          <Route path="/tools/loan-closure-checklist" component={() => <PublicRoute component={LoanClosureChecklistPage} />} />
           <Route path="/blogs/*?" component={() => <PublicRoute component={BlogsPage} />} />
           
           <Route component={NotFound} />

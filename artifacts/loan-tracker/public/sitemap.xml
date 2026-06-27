@@ -96,6 +96,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://loan-khatam.replit.app/tools/loan-closure-checklist</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://loan-khatam.replit.app/blogs</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

@@ -27,6 +27,7 @@ import { ToolsPage } from "@/pages/tools";
 import { EmiCalculatorPage } from "@/pages/emi-calculator";
 import { LoanCalculatorPage } from "@/pages/loan-calculator";
 import { AiAssistantPage } from "@/pages/ai-assistant";
+import { LoanClosureChecklistPage } from "@/pages/loan-closure-checklist";
 import { BlogsPage } from "@/pages/blogs";
 
 const DESC =
@@ -209,6 +210,14 @@ export const ROUTES: RouteMeta[] = [
     description: "Talk to our virtual helper to understand the snowball vs avalanche methods and get custom debt-free advice.",
     indexable: true,
     component: AiAssistantPage,
+  },
+  {
+    path: "/tools/loan-closure-checklist",
+    file: "loan-closure-checklist.html",
+    title: "Loan Closure Document Checklist & NOC Guide — Loan Khatam",
+    description: "An interactive checklist of documents to collect when closing a home, car, or personal loan. Verify NOC, CIBIL updates, and hypothecation removal.",
+    indexable: true,
+    component: LoanClosureChecklistPage,
   },
   {
     path: "/blogs",

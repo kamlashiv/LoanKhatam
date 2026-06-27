@@ -191,10 +191,10 @@ app.get("/{*splat}", (req, res) => {
 
 function sendHtmlWithKeys(html: string, res: any) {
   const clerkKey = process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY || process.env.PUBLIC_CLERK_PUBLISHABLE_KEY || "";
-  const clerkProxy = process.env.VITE_CLERK_PROXY_URL || "/api/__clerk";
+  const clerkProxy = process.env.VITE_CLERK_PROXY_URL || "";
   const script = `<script>
     window.VITE_CLERK_PUBLISHABLE_KEY = ${JSON.stringify(clerkKey)};
-    window.VITE_CLERK_PROXY_URL = ${JSON.stringify(clerkProxy)};
+    ${clerkProxy ? `window.VITE_CLERK_PROXY_URL = ${JSON.stringify(clerkProxy)};` : ""}
   </script>`;
   const modifiedHtml = html.replace("</head>", `${script}</head>`);
   res.send(modifiedHtml);

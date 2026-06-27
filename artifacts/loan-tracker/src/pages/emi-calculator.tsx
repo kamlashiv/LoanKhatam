@@ -1,15 +1,104 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "wouter";
 import { ArrowLeft, Calculator, Table, PieChart, Info, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+interface EmiConfig {
+  title: string;
+  subtitle: string;
+  defaultPrincipal: number;
+  defaultRate: number;
+  defaultTenure: number;
+  tenureUnit: "years" | "months";
+}
+
+const BANK_CONFIGS: Record<string, EmiConfig> = {
+  sbi: {
+    title: "SBI Loan EMI Calculator",
+    subtitle: "Calculate your State Bank of India (SBI) loan monthly payments, interest rates, and amortization schedule.",
+    defaultPrincipal: 1000000,
+    defaultRate: 8.75,
+    defaultTenure: 15,
+    tenureUnit: "years",
+  },
+  hdfc: {
+    title: "HDFC Bank Loan EMI Calculator",
+    subtitle: "Calculate your HDFC Bank monthly EMI instalments, interest components, and check repayment plans.",
+    defaultPrincipal: 1000000,
+    defaultRate: 8.90,
+    defaultTenure: 15,
+    tenureUnit: "years",
+  },
+  icici: {
+    title: "ICICI Bank Loan EMI Calculator",
+    subtitle: "Estimate your ICICI Bank home, car, or personal loan instalments and check total interest payable.",
+    defaultPrincipal: 1000000,
+    defaultRate: 9.00,
+    defaultTenure: 15,
+    tenureUnit: "years",
+  },
+  home: {
+    title: "Home Loan EMI Calculator",
+    subtitle: "Plan your house purchase with our interactive housing loan EMI calculator. Calculate interest and monthly payments.",
+    defaultPrincipal: 3000000,
+    defaultRate: 8.5,
+    defaultTenure: 20,
+    tenureUnit: "years",
+  },
+  car: {
+    title: "Car Loan EMI Calculator",
+    subtitle: "Calculate monthly payments for your new vehicle. Interactive sliders for auto loans.",
+    defaultPrincipal: 800000,
+    defaultRate: 9.2,
+    defaultTenure: 7,
+    tenureUnit: "years",
+  },
+  personal: {
+    title: "Personal Loan EMI Calculator",
+    subtitle: "Calculate monthly instalments for unsecured personal loans. See total interest outgo easily.",
+    defaultPrincipal: 500000,
+    defaultRate: 10.5,
+    defaultTenure: 5,
+    tenureUnit: "years",
+  },
+};
+
 export function EmiCalculatorPage() {
+  const pathname = typeof window !== "undefined" ? window.location.pathname : "";
+  
+  const config = useMemo(() => {
+    if (pathname.includes("sbi")) return BANK_CONFIGS.sbi;
+    if (pathname.includes("hdfc")) return BANK_CONFIGS.hdfc;
+    if (pathname.includes("icici")) return BANK_CONFIGS.icici;
+    if (pathname.includes("home")) return BANK_CONFIGS.home;
+    if (pathname.includes("car")) return BANK_CONFIGS.car;
+    if (pathname.includes("personal")) return BANK_CONFIGS.personal;
+    
+    // Default fallback
+    return {
+      title: "EMI Calculator",
+      subtitle: "Calculate your Equated Monthly Instalments (EMI) and view a full amortization schedule for your loan.",
+      defaultPrincipal: 500000,
+      defaultRate: 10.5,
+      defaultTenure: 5,
+      tenureUnit: "years" as const,
+    };
+  }, [pathname]);
+
   // Input states
-  const [principal, setPrincipal] = useState<number>(500000);
-  const [interestRate, setInterestRate] = useState<number>(10.5);
-  const [tenure, setTenure] = useState<number>(5);
-  const [tenureUnit, setTenureUnit] = useState<"years" | "months">("years");
+  const [principal, setPrincipal] = useState<number>(config.defaultPrincipal);
+  const [interestRate, setInterestRate] = useState<number>(config.defaultRate);
+  const [tenure, setTenure] = useState<number>(config.defaultTenure);
+  const [tenureUnit, setTenureUnit] = useState<"years" | "months">(config.tenureUnit);
+
+  // Sync state when config changes (navigation between bank tools)
+  useEffect(() => {
+    setPrincipal(config.defaultPrincipal);
+    setInterestRate(config.defaultRate);
+    setTenure(config.defaultTenure);
+    setTenureUnit(config.tenureUnit);
+  }, [config]);
 
   // Calculate values
   const { emi, totalInterest, totalPayment, principalPct, interestPct, schedule } = useMemo(() => {
@@ -86,10 +175,10 @@ export function EmiCalculatorPage() {
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-600/20">
             <Calculator className="h-5 w-5" />
           </span>
-          EMI Calculator
+          {config.title}
         </h1>
         <p className="text-slate-500 dark:text-slate-400 font-medium">
-          Calculate your Equated Monthly Instalments (EMI) and view a full amortization schedule for your loan.
+          {config.subtitle}
         </p>
       </header>
 

@@ -56,6 +56,36 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://loankhatam.schand.store/tools/sbi-emi-calculator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://loankhatam.schand.store/tools/hdfc-emi-calculator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://loankhatam.schand.store/tools/icici-emi-calculator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://loankhatam.schand.store/tools/home-loan-emi-calculator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://loankhatam.schand.store/tools/car-loan-emi-calculator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://loankhatam.schand.store/tools/personal-loan-emi-calculator</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://loankhatam.schand.store/tools/loan-calculator</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>

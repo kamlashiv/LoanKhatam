@@ -451,6 +451,12 @@ function ClerkProviderWithRoutes() {
           
           <Route path="/tools" component={() => <PublicRoute component={ToolsPage} />} />
           <Route path="/tools/emi-calculator" component={() => <PublicRoute component={EmiCalculatorPage} />} />
+          <Route path="/tools/sbi-emi-calculator" component={() => <PublicRoute component={EmiCalculatorPage} />} />
+          <Route path="/tools/hdfc-emi-calculator" component={() => <PublicRoute component={EmiCalculatorPage} />} />
+          <Route path="/tools/icici-emi-calculator" component={() => <PublicRoute component={EmiCalculatorPage} />} />
+          <Route path="/tools/home-loan-emi-calculator" component={() => <PublicRoute component={EmiCalculatorPage} />} />
+          <Route path="/tools/car-loan-emi-calculator" component={() => <PublicRoute component={EmiCalculatorPage} />} />
+          <Route path="/tools/personal-loan-emi-calculator" component={() => <PublicRoute component={EmiCalculatorPage} />} />
           <Route path="/tools/loan-calculator" component={() => <PublicRoute component={LoanCalculatorPage} />} />
           <Route path="/tools/ai-assistant" component={() => <PublicRoute component={AiAssistantPage} />} />
           <Route path="/blogs/*?" component={() => <PublicRoute component={BlogsPage} />} />

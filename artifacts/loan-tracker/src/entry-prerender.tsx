@@ -23,6 +23,11 @@ import { DisclaimerPage } from "@/pages/disclaimer";
 import { CookiePolicyPage } from "@/pages/cookie-policy";
 import { DataUsagePage } from "@/pages/data-usage";
 import { LicensePage } from "@/pages/license";
+import { ToolsPage } from "@/pages/tools";
+import { EmiCalculatorPage } from "@/pages/emi-calculator";
+import { LoanCalculatorPage } from "@/pages/loan-calculator";
+import { AiAssistantPage } from "@/pages/ai-assistant";
+import { BlogsPage } from "@/pages/blogs";
 
 const DESC =
   "Loan Khatam is a free personal loan and udhaar tracker — record money you lend to friends and family, track repayments and EMIs, and watch outstanding balances settle. Amounts shown in ₹.";
@@ -124,6 +129,70 @@ export const ROUTES: RouteMeta[] = [
       "The terms under which Loan Khatam is made available to you, including usage limitations for this educational planning tool.",
     indexable: true,
     component: LicensePage,
+  },
+  {
+    path: "/tools",
+    file: "tools.html",
+    title: "Financial Planning Tools — Loan Khatam",
+    description: "Free online calculators for personal loans and debt tracking. Try our EMI Calculator, Loan Prepayment Saver, and AI Assistant.",
+    indexable: true,
+    component: ToolsPage,
+  },
+  {
+    path: "/tools/emi-calculator",
+    file: "emi-calculator.html",
+    title: "EMI Calculator — Loan Khatam",
+    description: "Calculate equated monthly instalments (EMIs), see total interest outgo, and export your monthly amortization schedule.",
+    indexable: true,
+    component: EmiCalculatorPage,
+  },
+  {
+    path: "/tools/loan-calculator",
+    file: "loan-calculator.html",
+    title: "Loan Prepayment & Payoff Saver — Loan Khatam",
+    description: "Compare your payoff plan with extra payments. Estimate how much interest and months you will save by prepaying your loan.",
+    indexable: true,
+    component: LoanCalculatorPage,
+  },
+  {
+    path: "/tools/ai-assistant",
+    file: "ai-assistant.html",
+    title: "AI Financial Guide & Assistant — Loan Khatam",
+    description: "Talk to our virtual helper to understand the snowball vs avalanche methods and get custom debt-free advice.",
+    indexable: true,
+    component: AiAssistantPage,
+  },
+  {
+    path: "/blogs",
+    file: "blogs.html",
+    title: "Educational Blogs & Financial Guides — Loan Khatam",
+    description: "Read expert articles on debt management, loan prepayment strategies, and understanding EMI calculation cycles.",
+    indexable: true,
+    component: BlogsPage,
+  },
+  {
+    path: "/blogs/5-ways-to-pay-off-loans-faster",
+    file: "blogs/5-ways-to-pay-off-loans-faster.html",
+    title: "5 Smart Ways to Pay Off Your Personal Loan Faster — Loan Khatam",
+    description: "Tired of monthly EMIs? Here are 5 practical, mathematical strategies to prepay and close your personal loans early.",
+    indexable: true,
+    component: BlogsPage,
+  },
+  {
+    path: "/blogs/snowball-vs-avalanche-debt-payoff",
+    file: "blogs/snowball-vs-avalanche-debt-payoff.html",
+    title: "Snowball vs. Avalanche: Which Debt Payoff Strategy is Best? — Loan Khatam",
+    description: "Compare the two most popular debt payoff strategies: the behavior-focused Debt Snowball and the interest-minimizing Debt Avalanche.",
+    indexable: true,
+    component: BlogsPage,
+  },
+  {
+    path: "/blogs/understanding-emi-calculations",
+    file: "blogs/understanding-emi-calculations.html",
+    title: "Understanding EMI: How Your Monthly Loan Payment is Calculated — Loan Khatam",
+    description: "Demystifying Equated Monthly Instalments (EMIs). Learn the math behind your payments and how interest vs principal changes over time.",
+    indexable: true,
+    component: BlogsPage,
   },
   // Auth utility pages: route-specific metadata + noindex, no SSR body (Clerk
   // renders client-side). Intentionally excluded from sitemap.xml and llms.txt.

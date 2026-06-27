@@ -131,24 +131,67 @@ if (process.env.NODE_ENV === "production") {
 
   app.use(express.static(frontendDistPath, { index: false }));
 
-  app.get("/{*splat}", (req, res) => {
-    try {
-      const filePath = path.join(frontendDistPath, "index.html");
-      fs.readFile(filePath, "utf8", (err, html) => {
-        if (err) {
-          logger.error({ err }, "Failed to read index.html");
-          return res.status(500).send("Internal Server Error");
-        }
-        const clerkKey = process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY || process.env.PUBLIC_CLERK_PUBLISHABLE_KEY || "";
-        const script = `<script>window.VITE_CLERK_PUBLISHABLE_KEY = ${JSON.stringify(clerkKey)};</script>`;
-        const modifiedHtml = html.replace("</head>", `${script}</head>`);
-        res.send(modifiedHtml);
-      });
-    } catch (err) {
-      logger.error({ err }, "Error serving index.html");
-      res.status(500).send("Internal Server Error");
-    }
-  });
+const routeFileMap: Record<string, string> = {
+  "/": "index.html",
+  "/about": "about.html",
+  "/help": "help.html",
+  "/privacy-policy": "privacy-policy.html",
+  "/terms": "terms.html",
+  "/disclaimer": "disclaimer.html",
+  "/cookie-policy": "cookie-policy.html",
+  "/data-usage": "data-usage.html",
+  "/license": "license.html",
+  "/tools": "tools.html",
+  "/tools/emi-calculator": "emi-calculator.html",
+  "/tools/loan-calculator": "loan-calculator.html",
+  "/tools/ai-assistant": "ai-assistant.html",
+  "/blogs": "blogs.html",
+  "/blogs/5-ways-to-pay-off-loans-faster": "blogs/5-ways-to-pay-off-loans-faster.html",
+  "/blogs/snowball-vs-avalanche-debt-payoff": "blogs/snowball-vs-avalanche-debt-payoff.html",
+  "/blogs/understanding-emi-calculations": "blogs/understanding-emi-calculations.html",
+  "/sign-in": "sign-in.html",
+  "/sign-up": "sign-up.html",
+};
+
+app.get("/{*splat}", (req, res) => {
+  try {
+    let cleanPath = req.path.replace(/\/$/, "");
+    if (cleanPath === "") cleanPath = "/";
+
+    const filename = routeFileMap[cleanPath] || "index.html";
+    const filePath = path.join(frontendDistPath, filename);
+
+    fs.readFile(filePath, "utf8", (err, html) => {
+      if (err) {
+        // Fallback to index.html if the specific prerendered file isn't found
+        const fallbackPath = path.join(frontendDistPath, "index.html");
+        fs.readFile(fallbackPath, "utf8", (fallbackErr, fallbackHtml) => {
+          if (fallbackErr) {
+            logger.error({ err: fallbackErr }, "Failed to read index.html fallback");
+            return res.status(500).send("Internal Server Error");
+          }
+          sendHtmlWithKeys(fallbackHtml, res);
+        });
+        return;
+      }
+      sendHtmlWithKeys(html, res);
+    });
+  } catch (err) {
+    logger.error({ err }, "Error serving index.html");
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+function sendHtmlWithKeys(html: string, res: any) {
+  const clerkKey = process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY || process.env.PUBLIC_CLERK_PUBLISHABLE_KEY || "";
+  const clerkProxy = process.env.VITE_CLERK_PROXY_URL || "/api/__clerk";
+  const script = `<script>
+    window.VITE_CLERK_PUBLISHABLE_KEY = ${JSON.stringify(clerkKey)};
+    window.VITE_CLERK_PROXY_URL = ${JSON.stringify(clerkProxy)};
+  </script>`;
+  const modifiedHtml = html.replace("</head>", `${script}</head>`);
+  res.send(modifiedHtml);
+}
 }
 
 export default app;

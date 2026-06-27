@@ -28,12 +28,28 @@ import { Layout } from "@/components/layout";
 import { LandingPage } from "@/pages/landing";
 import { ProfileProvider } from "@/lib/profile";
 import { PreferencesProvider } from "@/lib/preferences";
+import { PublicLayout } from "@/components/PublicLayout";
 
 // Authenticated and secondary pages are code-split into their own chunks so the
 // public landing route (`/`) ships only the marketing UI, auth screens, and
 // minimal shared shell — not the entire signed-in app.
 const Dashboard = lazy(() =>
   import("@/pages/dashboard").then((m) => ({ default: m.Dashboard })),
+);
+const ToolsPage = lazy(() =>
+  import("@/pages/tools").then((m) => ({ default: m.ToolsPage })),
+);
+const EmiCalculatorPage = lazy(() =>
+  import("@/pages/emi-calculator").then((m) => ({ default: m.EmiCalculatorPage })),
+);
+const LoanCalculatorPage = lazy(() =>
+  import("@/pages/loan-calculator").then((m) => ({ default: m.LoanCalculatorPage })),
+);
+const AiAssistantPage = lazy(() =>
+  import("@/pages/ai-assistant").then((m) => ({ default: m.AiAssistantPage })),
+);
+const BlogsPage = lazy(() =>
+  import("@/pages/blogs").then((m) => ({ default: m.BlogsPage })),
 );
 const LoansList = lazy(() =>
   import("@/pages/loans").then((m) => ({ default: m.LoansList })),
@@ -117,7 +133,10 @@ if (!isLocal && isReplit) {
   }
 }
 
-const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+let clerkProxyUrl = (window as any).VITE_CLERK_PROXY_URL || import.meta.env.VITE_CLERK_PROXY_URL;
+if (isLocal) {
+  clerkProxyUrl = undefined;
+}
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function stripBase(path: string): string {
@@ -350,7 +369,9 @@ function PublicRoute({ component: Component }: { component: React.ComponentType 
         </Layout>
       </Show>
       <Show when="signed-out">
-        <Component />
+        <PublicLayout>
+          <Component />
+        </PublicLayout>
       </Show>
     </>
   );
@@ -427,6 +448,12 @@ function ClerkProviderWithRoutes() {
           <Route path="/cookie-policy" component={() => <PublicRoute component={CookiePolicyPage} />} />
           <Route path="/data-usage" component={() => <PublicRoute component={DataUsagePage} />} />
           <Route path="/license" component={() => <PublicRoute component={LicensePage} />} />
+          
+          <Route path="/tools" component={() => <PublicRoute component={ToolsPage} />} />
+          <Route path="/tools/emi-calculator" component={() => <PublicRoute component={EmiCalculatorPage} />} />
+          <Route path="/tools/loan-calculator" component={() => <PublicRoute component={LoanCalculatorPage} />} />
+          <Route path="/tools/ai-assistant" component={() => <PublicRoute component={AiAssistantPage} />} />
+          <Route path="/blogs/*?" component={() => <PublicRoute component={BlogsPage} />} />
           
           <Route component={NotFound} />
         </Switch>

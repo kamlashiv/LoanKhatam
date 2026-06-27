@@ -20,7 +20,7 @@
 // falls back to the standard SPA shell).
 import { build } from "vite";
 import react from "@vitejs/plugin-react";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
 import fs from "node:fs";
 
@@ -100,7 +100,8 @@ async function main() {
     },
   });
 
-  const mod = await import(path.resolve(ssrDir, "entry-prerender.js"));
+  const ssrPath = pathToFileURL(path.resolve(ssrDir, "entry-prerender.js")).href;
+  const mod = await import(ssrPath);
   const { ROUTES, renderRoute } = mod;
 
   if (!Array.isArray(ROUTES) || ROUTES.length === 0) {
@@ -119,7 +120,12 @@ async function main() {
           console.warn(`[prerender] Empty render for ${route.path}; shell only.`);
         }
       }
-      fs.writeFileSync(path.join(distDir, route.file), html);
+      const destPath = path.join(distDir, route.file);
+      const destDir = path.dirname(destPath);
+      if (!fs.existsSync(destDir)) {
+        fs.mkdirSync(destDir, { recursive: true });
+      }
+      fs.writeFileSync(destPath, html);
       console.log(`[prerender] Wrote ${route.file} (${route.path})`);
     } catch (err) {
       console.warn(

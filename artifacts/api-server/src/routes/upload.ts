@@ -3,11 +3,30 @@ import multer from "multer";
 import path from "path";
 import crypto from "crypto";
 
+import fs from "fs";
+
 const router = Router();
+
+const getUploadsDir = () => {
+  let uploadsDir = path.join(process.cwd(), "uploads");
+  try {
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    fs.accessSync(uploadsDir, fs.constants.W_OK);
+    return uploadsDir;
+  } catch (e) {
+    uploadsDir = path.join(__dirname, "../uploads");
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    return uploadsDir;
+  }
+};
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(process.cwd(), "uploads"));
+    cb(null, getUploadsDir());
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = crypto.randomBytes(8).toString("hex");

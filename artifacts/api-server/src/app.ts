@@ -124,9 +124,16 @@ app.use(
 
 app.use("/api", router);
 
-const uploadsDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+let uploadsDir = path.join(process.cwd(), "uploads");
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (e) {
+  uploadsDir = path.join(__dirname, "../uploads");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
 }
 app.use("/uploads", express.static(uploadsDir));
 

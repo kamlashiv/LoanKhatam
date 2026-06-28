@@ -32,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Calculator, Plus, Receipt, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, Calculator, Plus, Receipt, Sparkles, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatRupees, formatDate, cleanFloat } from "@/lib/loan-utils";
 import { registerBackInterceptor } from "@/lib/mobile-back-guard";
@@ -93,12 +93,47 @@ export function LoanForm() {
   const [fixedEmiValue, setFixedEmiValue] = useState("");
   const [isSkipped, setIsSkipped] = useState(false);
   const [skippedEmis, setSkippedEmis] = useState<Array<{ date: string; amountPaid: string }>>([]);
+  const [attachments, setAttachments] = useState<Array<{ name: string; url: string }>>([]);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Failed to upload file");
+
+      const data = await res.json();
+      setAttachments((prev) => [
+        ...prev,
+        { name: file.name, url: data.fileUrl },
+      ]);
+    } catch (err) {
+      console.error(err);
+      alert("Error uploading file. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveAttachment = (idx: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  };
 
   // Snapshot of the form's pristine state used to detect unsaved edits. Starts
   // from the initial (possibly URL-prefilled) values and is reset to the loaded
   // values once an existing loan is fetched in edit mode.
   const baselineRef = useRef<string>(
-    JSON.stringify({ form, rateChanges: [] as RateChangeEntry[], isFixedEmi: false, fixedEmiValue: "", isSkipped: false, skippedEmis: [] as any[] }),
+    JSON.stringify({ form, rateChanges: [] as RateChangeEntry[], isFixedEmi: false, fixedEmiValue: "", isSkipped: false, skippedEmis: [] as any[], attachments: [] as any[] }),
   );
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
@@ -112,10 +147,29 @@ export function LoanForm() {
       const fixedVal = isFixed ? existingLoan.interestType.split(":")[1] : "";
 
       const rawDesc = existingLoan.description || "";
-      const descParts = rawDesc.split(" ||| skipped_emis:");
-      const plainDesc = descParts[0];
+      let plainDesc = rawDesc;
       let loadedSkipped: Array<{ date: string; amountPaid: string }> = [];
+      let loadedAttachments: Array<{ name: string; url: string }> = [];
+
+      const attachParts = plainDesc.split(" ||| attachments:");
+      if (attachParts.length >= 2) {
+        plainDesc = attachParts[0];
+        try {
+          const parsed = JSON.parse(attachParts[1]);
+          if (Array.isArray(parsed)) {
+            loadedAttachments = parsed.map((item: any) => ({
+              name: item.name || "Attachment",
+              url: item.url || "",
+            }));
+          }
+        } catch (e) {
+          console.error("Failed to parse attachments", e);
+        }
+      }
+
+      const descParts = plainDesc.split(" ||| skipped_emis:");
       if (descParts.length >= 2) {
+        plainDesc = descParts[0];
         try {
           const parsed = JSON.parse(descParts[1]);
           if (Array.isArray(parsed)) {
@@ -153,6 +207,7 @@ export function LoanForm() {
       setFixedEmiValue(fixedVal);
       setIsSkipped(loadedSkipped.length > 0);
       setSkippedEmis(loadedSkipped);
+      setAttachments(loadedAttachments);
       baselineRef.current = JSON.stringify({
         form: loadedForm,
         rateChanges: loadedRateChanges,
@@ -160,12 +215,13 @@ export function LoanForm() {
         fixedEmiValue: fixedVal,
         isSkipped: loadedSkipped.length > 0,
         skippedEmis: loadedSkipped,
+        attachments: loadedAttachments,
       });
     }
   }, [existingLoan, isEditing]);
 
   const isDirty =
-    JSON.stringify({ form, rateChanges, isFixedEmi, fixedEmiValue, isSkipped, skippedEmis }) !== baselineRef.current;
+    JSON.stringify({ form, rateChanges, isFixedEmi, fixedEmiValue, isSkipped, skippedEmis, attachments }) !== baselineRef.current;
 
   // On Android, warn before the hardware back button discards unsaved edits.
   // No-op on web (the interceptor is never registered).
@@ -283,9 +339,13 @@ export function LoanForm() {
       : [];
 
     const rawDesc = form.description || "";
-    const finalDescription = cleanSkipped.length > 0
-      ? `${rawDesc} ||| skipped_emis:${JSON.stringify(cleanSkipped)}`
-      : rawDesc;
+    let finalDescription = rawDesc;
+    if (cleanSkipped.length > 0) {
+      finalDescription = `${finalDescription} ||| skipped_emis:${JSON.stringify(cleanSkipped)}`;
+    }
+    if (attachments.length > 0) {
+      finalDescription = `${finalDescription} ||| attachments:${JSON.stringify(attachments)}`;
+    }
 
     const data = {
       borrowerName: form.borrowerName,
@@ -670,6 +730,42 @@ export function LoanForm() {
                     onChange={handleChange}
                     rows={3}
                   />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2 pt-2">
+                  <Label>Documents & Attachments (रसीद या दस्तावेज - Image/PDF)</Label>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={handleFileUpload}
+                        disabled={uploading}
+                        className="rounded-xl cursor-pointer"
+                      />
+                      {uploading && <Loader2 className="h-4.5 w-4.5 animate-spin text-indigo-600 shrink-0" />}
+                    </div>
+
+                    {attachments.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                        {attachments.map((attach, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-slate-50 dark:bg-slate-900/60 px-3 py-2 rounded-xl border border-border text-xs font-semibold">
+                            <span className="truncate max-w-[180px] text-slate-700 dark:text-slate-300">
+                              📎 {attach.name}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveAttachment(idx)}
+                              className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 p-1 h-7 w-7 rounded-lg"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </section>

@@ -34,7 +34,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Edit, Trash2, Plus, Calendar, Clock, Calculator, ChevronDown, TrendingUp, Landmark } from "lucide-react";
+import { ArrowLeft, Edit, Trash2, Plus, Calendar, Clock, Calculator, ChevronDown, TrendingUp, Landmark, Loader2 } from "lucide-react";
 import { formatRupees, formatDate, getLoanStatusConfig, cleanFloat } from "@/lib/loan-utils";
 import { useToast } from "@/hooks/use-toast";
 import { AmortizationSection } from "@/components/amortization-section";
@@ -65,6 +65,34 @@ export function LoanDetail() {
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
   const [paymentNotes, setPaymentNotes] = useState("");
   const [prepaymentOption, setPrepaymentOption] = useState<"tenure" | "emi">("tenure");
+  const [paymentReceiptUrl, setPaymentReceiptUrl] = useState("");
+  const [receiptUploading, setReceiptUploading] = useState(false);
+
+  const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setReceiptUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Failed to upload file");
+
+      const data = await res.json();
+      setPaymentReceiptUrl(data.fileUrl);
+    } catch (err) {
+      console.error(err);
+      alert("Error uploading receipt. Please try again.");
+    } finally {
+      setReceiptUploading(false);
+    }
+  };
 
   const { user } = useUser();
   const userId = user?.id ?? null;
@@ -196,10 +224,16 @@ export function LoanDetail() {
     const amount = cleanFloat(paymentAmount);
     if (!amount || amount <= 0) return;
     const optionText = prepaymentOption === "emi" ? "[Reduce EMI]" : "[Reduce Tenure]";
-    const finalNotes = paymentNotes 
+    let finalNotes = paymentNotes 
       ? `${paymentNotes} ${optionText}`
       : optionText;
+    if (paymentReceiptUrl) {
+      finalNotes = `${finalNotes} ||| receipt:${paymentReceiptUrl}`;
+    }
     addPayment.mutate({ id, data: { amount, paymentDate, notes: finalNotes } });
+    setPaymentAmount("");
+    setPaymentNotes("");
+    setPaymentReceiptUrl("");
   };
 
   if (isLoading) {
@@ -238,6 +272,28 @@ export function LoanDetail() {
     { id: "amortization", label: "Amortization & Savings" },
   ];
 
+  const rawDesc = loan.description || "";
+  let plainDesc = rawDesc;
+  let attachments: Array<{ name: string; url: string }> = [];
+
+  const attachParts = plainDesc.split(" ||| attachments:");
+  if (attachParts.length >= 2) {
+    plainDesc = attachParts[0];
+    try {
+      const parsed = JSON.parse(attachParts[1]);
+      if (Array.isArray(parsed)) {
+        attachments = parsed;
+      }
+    } catch (e) {
+      console.error("Failed to parse attachments", e);
+    }
+  }
+
+  const descParts = plainDesc.split(" ||| skipped_emis:");
+  if (descParts.length >= 2) {
+    plainDesc = descParts[0];
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -255,8 +311,23 @@ export function LoanDetail() {
                 {statusConfig.label}
               </Badge>
             </div>
-            {loan.description && (
-              <p className="text-muted-foreground mt-0.5 text-sm">{loan.description}</p>
+            {plainDesc && (
+              <p className="text-muted-foreground mt-0.5 text-sm">{plainDesc}</p>
+            )}
+            {attachments.length > 0 && (
+              <div className="flex gap-2 flex-wrap mt-2">
+                {attachments.map((attach, idx) => (
+                  <a
+                    key={idx}
+                    href={attach.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-950 text-indigo-600 dark:text-indigo-400 text-xs font-bold px-3 py-1.5 rounded-xl hover:bg-indigo-100/60 transition-colors"
+                  >
+                    📎 {attach.name}
+                  </a>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -518,6 +589,24 @@ export function LoanDetail() {
                     rows={2}
                   />
                 </div>
+                <div className="space-y-1.5 pt-2">
+                  <Label>Receipt or Screenshot (रसीद या स्क्रीनशॉट जोड़ें - Image/PDF)</Label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleReceiptUpload}
+                      disabled={receiptUploading}
+                      className="rounded-xl cursor-pointer"
+                    />
+                    {receiptUploading && <Loader2 className="h-4.5 w-4.5 animate-spin text-indigo-600 shrink-0" />}
+                  </div>
+                  {paymentReceiptUrl && (
+                    <p className="text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 px-3 py-1 rounded-lg border border-emerald-100 dark:border-emerald-950/30 inline-flex items-center gap-1.5 mt-1">
+                      ✔ Uploaded successfully
+                    </p>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <Button type="submit" size="sm" disabled={addPayment.isPending}>
                     {addPayment.isPending ? "Saving..." : "Save Payment"}
@@ -538,25 +627,47 @@ export function LoanDetail() {
                     <div>
                       <p className="font-semibold text-emerald-700">{formatRupees(payment.amount)}</p>
                       <p className="text-sm text-muted-foreground">{formatDate(payment.paymentDate)}</p>
-                      {payment.notes && (
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                          {payment.notes.includes("[Reduce EMI]") && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-850 dark:bg-indigo-950/40 dark:text-indigo-400">
-                              Reduce EMI
-                            </span>
-                          )}
-                          {payment.notes.includes("[Reduce Tenure]") && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-850 dark:bg-emerald-950/40 dark:text-emerald-400">
-                              Reduce Tenure
-                            </span>
-                          )}
-                          {payment.notes.replace(/\[Reduce (EMI|Tenure)\]/g, "").trim() && (
-                            <span className="text-xs text-muted-foreground italic">
-                              {payment.notes.replace(/\[Reduce (EMI|Tenure)\]/g, "").trim()}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {payment.notes && (() => {
+                        const rawNotes = payment.notes || "";
+                        let plainNotes = rawNotes;
+                        let receiptUrl = "";
+
+                        const receiptParts = plainNotes.split(" ||| receipt:");
+                        if (receiptParts.length >= 2) {
+                          plainNotes = receiptParts[0];
+                          receiptUrl = receiptParts[1];
+                        }
+
+                        return (
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            {plainNotes.includes("[Reduce EMI]") && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-850 dark:bg-indigo-950/40 dark:text-indigo-400">
+                                Reduce EMI
+                              </span>
+                            )}
+                            {plainNotes.includes("[Reduce Tenure]") && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-850 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                Reduce Tenure
+                              </span>
+                            )}
+                            {plainNotes.replace(/\[Reduce (EMI|Tenure)\]/g, "").trim() && (
+                              <span className="text-xs text-muted-foreground italic">
+                                {plainNotes.replace(/\[Reduce (EMI|Tenure)\]/g, "").trim()}
+                              </span>
+                            )}
+                            {receiptUrl && (
+                              <a
+                                href={receiptUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 hover:bg-amber-200 transition-colors"
+                              >
+                                📄 View Receipt
+                              </a>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>

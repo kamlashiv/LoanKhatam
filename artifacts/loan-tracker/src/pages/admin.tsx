@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Shield, Mail, Phone, Calendar, LogOut, Loader2, ArrowLeft, Percent } from "lucide-react";
+import { Shield, Mail, Phone, Calendar, LogOut, Loader2, ArrowLeft, Percent, PackageOpen, Plus, Trash2, CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
 
 interface ClerkUser {
@@ -22,7 +22,16 @@ export function AdminPage() {
     return sessionStorage.getItem("superadmin_logged_in") === "true";
   });
   const [users, setUsers] = useState<ClerkUser[]>([]);
+  
+  // Package configurations
   const [discountEnabled, setDiscountEnabled] = useState(true);
+  const [planTitle, setPlanTitle] = useState("Upgrade to Premium");
+  const [regularPrice, setRegularPrice] = useState(1000);
+  const [offerPrice, setOfferPrice] = useState(99);
+  const [promoText, setPromoText] = useState("Special Offer: Buy 1 Year, Get 1 Year Extra FREE!");
+  const [features, setFeatures] = useState<string[]>([]);
+  const [newFeatureText, setNewFeatureText] = useState("");
+
   const [configSaving, setConfigSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -68,6 +77,11 @@ export function AdminPage() {
       if (res.ok) {
         const data = await res.json();
         setDiscountEnabled(data.discountEnabled !== false);
+        setPlanTitle(data.planTitle || "Upgrade to Premium");
+        setRegularPrice(data.regularPrice ?? 1000);
+        setOfferPrice(data.offerPrice ?? 99);
+        setPromoText(data.promoText || "Special Offer: Buy 1 Year, Get 1 Year Extra FREE!");
+        setFeatures(data.features || []);
       }
     } catch (e) {
       console.error("Failed to fetch admin config:", e);
@@ -110,6 +124,50 @@ export function AdminPage() {
     }
   };
 
+  const handleSavePackageDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const u = sessionStorage.getItem("superadmin_u") || "";
+    const p = sessionStorage.getItem("superadmin_p") || "";
+    const credentials = btoa(`${u}:${p}`);
+    setConfigSaving(true);
+    try {
+      const res = await fetch("/api/admin/config", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${credentials}`,
+        },
+        body: JSON.stringify({
+          planTitle,
+          regularPrice: Number(regularPrice),
+          offerPrice: Number(offerPrice),
+          promoText,
+          features,
+        }),
+      });
+      if (res.ok) {
+        alert("Package details saved successfully!");
+      } else {
+        alert("Failed to save package details");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error saving package details");
+    } finally {
+      setConfigSaving(false);
+    }
+  };
+
+  const handleAddFeature = () => {
+    if (!newFeatureText.trim()) return;
+    setFeatures((prev) => [...prev, newFeatureText.trim()]);
+    setNewFeatureText("");
+  };
+
+  const handleRemoveFeature = (idx: number) => {
+    setFeatures((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const handleLogout = () => {
     sessionStorage.clear();
     setIsLoggedIn(false);
@@ -132,7 +190,7 @@ export function AdminPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">Username (Email)</Label>
               <Input
                 id="username"
                 type="text"
@@ -199,7 +257,7 @@ export function AdminPage() {
               <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping" />
               <h1 className="text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight">Superadmin Dashboard</h1>
             </div>
-            <p className="text-xs text-muted-foreground">Authorized access only — displaying all registered users from Clerk</p>
+            <p className="text-xs text-muted-foreground">Authorized access only — manage users and upgrade packages</p>
           </div>
           <div className="flex gap-3">
             <Button asChild variant="outline" size="sm" className="rounded-xl font-bold">
@@ -216,52 +274,184 @@ export function AdminPage() {
           </div>
         </div>
 
-        {/* Stats and Authority Panel */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* User Stats Card */}
-          <Card className="p-6 rounded-[2rem] border border-border shadow-sm bg-white dark:bg-slate-900">
-            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Total Users</span>
-            <span className="text-3xl font-black text-slate-800 dark:text-slate-100 mt-2 block">{users.length}</span>
-          </Card>
+        {/* Dashboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          {/* Left Column: Stats & Simple Controls */}
+          <div className="space-y-6">
+            {/* User Stats Card */}
+            <Card className="p-6 rounded-[2rem] border border-border shadow-sm bg-white dark:bg-slate-900">
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Total Users</span>
+              <span className="text-3xl font-black text-slate-800 dark:text-slate-100 mt-2 block">{users.length}</span>
+            </Card>
 
-          {/* Discount Offer Authority Toggle */}
-          <Card className="p-6 rounded-[2rem] border border-border shadow-sm bg-white dark:bg-slate-900 md:col-span-2 space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="space-y-1.5">
-                <h2 className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                  <Percent className="h-4.5 w-4.5 text-indigo-600" /> Discount offer Active? (डिस्काउंट पैनल चालू रखें?)
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Toggle whether the premium upgrade features show the special ₹99 promo discount or regular pricing (₹1,000).
-                </p>
+            {/* Discount Offer Authority Toggle */}
+            <Card className="p-6 rounded-[2rem] border border-border shadow-sm bg-white dark:bg-slate-900 space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                    <Percent className="h-4.5 w-4.5 text-indigo-600" /> Discount offer Active?
+                  </h2>
+                  <p className="text-[10px] text-muted-foreground">
+                    Toggle display of ₹{offerPrice} promo discount vs. regular ₹{regularPrice} price.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {configSaving && <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={discountEnabled}
+                      onChange={(e) => handleToggleDiscount(e.target.checked)}
+                      disabled={configSaving}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+                  </label>
+                </div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                {configSaving && <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />}
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={discountEnabled}
-                    onChange={(e) => handleToggleDiscount(e.target.checked)}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Current Settings:</span>
+                {discountEnabled ? (
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg">
+                    ₹{offerPrice} Offer Enabled
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-slate-600 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
+                    ₹{regularPrice} Full Price Active
+                  </span>
+                )}
+              </div>
+            </Card>
+          </div>
+
+          {/* Right Column: Premium Package Launch Editor */}
+          <div className="lg:col-span-2">
+            <Card className="p-6 rounded-[2rem] border border-border shadow-sm bg-white dark:bg-slate-900 space-y-6">
+              <div className="flex items-center gap-2 border-b border-border pb-4">
+                <div className="h-9 w-9 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center">
+                  <PackageOpen className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">Premium Upgrade Package Config (पैकेज लॉन्च सेटिंग)</h2>
+                  <p className="text-[11px] text-muted-foreground">Modify checkout regular/offer prices, tagline, and plan features</p>
+                </div>
+              </div>
+
+              <form onSubmit={handleSavePackageDetails} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="planTitle">Plan Title</Label>
+                    <Input
+                      id="planTitle"
+                      type="text"
+                      value={planTitle}
+                      onChange={(e) => setPlanTitle(e.target.value)}
+                      required
+                      className="rounded-xl"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="promoText">Promo Text (ऑफ़र टैगलाइन)</Label>
+                    <Input
+                      id="promoText"
+                      type="text"
+                      value={promoText}
+                      onChange={(e) => setPromoText(e.target.value)}
+                      required
+                      className="rounded-xl"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="regularPrice">Regular Price (₹)</Label>
+                    <Input
+                      id="regularPrice"
+                      type="number"
+                      value={regularPrice}
+                      onChange={(e) => setRegularPrice(Number(e.target.value))}
+                      required
+                      min="1"
+                      className="rounded-xl"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="offerPrice">Offer Price (₹)</Label>
+                    <Input
+                      id="offerPrice"
+                      type="number"
+                      value={offerPrice}
+                      onChange={(e) => setOfferPrice(Number(e.target.value))}
+                      required
+                      min="1"
+                      className="rounded-xl"
+                    />
+                  </div>
+                </div>
+
+                {/* Dynamic Features Editor */}
+                <div className="space-y-2 pt-2">
+                  <Label>Premium Features List (ऑफ़र सुविधाएँ)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      placeholder="Add a new feature, e.g. Ad-free Experience"
+                      value={newFeatureText}
+                      onChange={(e) => setNewFeatureText(e.target.value)}
+                      className="rounded-xl"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleAddFeature}
+                      className="rounded-xl font-bold bg-indigo-600 text-white gap-1 px-4"
+                    >
+                      <Plus className="h-4 w-4" /> Add
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1 pt-2">
+                    {features.map((feature, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between bg-slate-50 dark:bg-slate-950 p-2.5 rounded-lg border border-border text-xs font-semibold"
+                      >
+                        <span className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                          {feature}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveFeature(idx)}
+                          className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 p-1.5 h-8 w-8 rounded-lg"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-border">
+                  <Button
+                    type="submit"
                     disabled={configSaving}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
-            </div>
-            <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-400 dark:text-slate-500">Current Settings:</span>
-              {discountEnabled ? (
-                <span className="text-xs font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200/40 dark:border-emerald-800/30">
-                  ₹99 Offer Enabled
-                </span>
-              ) : (
-                <span className="text-xs font-bold text-slate-600 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200/40 dark:border-slate-700/30">
-                  ₹1,000 Full Price Active
-                </span>
-              )}
-            </div>
-          </Card>
+                    className="w-full sm:w-auto rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white px-6 h-11"
+                  >
+                    {configSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                      </>
+                    ) : (
+                      "Save Package Settings"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
         </div>
 
         {/* Users Table Card */}

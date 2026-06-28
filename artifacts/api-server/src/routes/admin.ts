@@ -6,16 +6,29 @@ import path from "path";
 const router = Router();
 const CONFIG_PATH = path.join(__dirname, "../../admin_config.json");
 
+const DEFAULT_CONFIG = {
+  discountEnabled: true,
+  planTitle: "Upgrade to Premium",
+  regularPrice: 1000,
+  offerPrice: 99,
+  promoText: "Special Offer: Buy 1 Year, Get 1 Year Extra FREE!",
+  features: [
+    "AI Financial Assistant — Ask custom strategy questions",
+    "Splitwise Group Split — Split expenses seamlessly with friends",
+    "EMI vs SIP Planner — Smart arbitrage calculation"
+  ]
+};
+
 function readConfig() {
   try {
     if (fs.existsSync(CONFIG_PATH)) {
       const content = fs.readFileSync(CONFIG_PATH, "utf-8");
-      return JSON.parse(content);
+      return { ...DEFAULT_CONFIG, ...JSON.parse(content) };
     }
   } catch (e) {
     console.error("Failed to read admin config file, using defaults:", e);
   }
-  return { discountEnabled: true };
+  return DEFAULT_CONFIG;
 }
 
 function writeConfig(data: any) {
@@ -69,14 +82,20 @@ router.get("/admin/config", (req, res) => {
 });
 
 router.post("/admin/config", authorizeAdmin, (req, res) => {
-  const { discountEnabled } = req.body;
-  if (typeof discountEnabled !== "boolean") {
-    return res.status(400).json({ error: "Invalid discountEnabled value" });
-  }
+  const { discountEnabled, planTitle, regularPrice, offerPrice, promoText, features } = req.body;
+  
+  const current = readConfig();
+  const updated = {
+    discountEnabled: typeof discountEnabled === "boolean" ? discountEnabled : current.discountEnabled,
+    planTitle: typeof planTitle === "string" ? planTitle : current.planTitle,
+    regularPrice: typeof regularPrice === "number" ? regularPrice : current.regularPrice,
+    offerPrice: typeof offerPrice === "number" ? offerPrice : current.offerPrice,
+    promoText: typeof promoText === "string" ? promoText : current.promoText,
+    features: Array.isArray(features) ? features : current.features,
+  };
 
-  const config = { discountEnabled };
-  writeConfig(config);
-  return res.json({ success: true, config });
+  writeConfig(updated);
+  return res.json({ success: true, config: updated });
 });
 
 router.get("/admin/users", authorizeAdmin, async (req, res) => {

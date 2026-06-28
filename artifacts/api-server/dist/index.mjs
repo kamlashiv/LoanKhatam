@@ -97849,16 +97849,28 @@ import fs2 from "fs";
 import path3 from "path";
 var router13 = (0, import_express24.Router)();
 var CONFIG_PATH = path3.join(__dirname, "../../admin_config.json");
+var DEFAULT_CONFIG2 = {
+  discountEnabled: true,
+  planTitle: "Upgrade to Premium",
+  regularPrice: 1e3,
+  offerPrice: 99,
+  promoText: "Special Offer: Buy 1 Year, Get 1 Year Extra FREE!",
+  features: [
+    "AI Financial Assistant \u2014 Ask custom strategy questions",
+    "Splitwise Group Split \u2014 Split expenses seamlessly with friends",
+    "EMI vs SIP Planner \u2014 Smart arbitrage calculation"
+  ]
+};
 function readConfig() {
   try {
     if (fs2.existsSync(CONFIG_PATH)) {
       const content = fs2.readFileSync(CONFIG_PATH, "utf-8");
-      return JSON.parse(content);
+      return { ...DEFAULT_CONFIG2, ...JSON.parse(content) };
     }
   } catch (e) {
     console.error("Failed to read admin config file, using defaults:", e);
   }
-  return { discountEnabled: true };
+  return DEFAULT_CONFIG2;
 }
 function writeConfig(data) {
   try {
@@ -97901,13 +97913,18 @@ router13.get("/admin/config", (req, res) => {
   return res.json(config2);
 });
 router13.post("/admin/config", authorizeAdmin, (req, res) => {
-  const { discountEnabled } = req.body;
-  if (typeof discountEnabled !== "boolean") {
-    return res.status(400).json({ error: "Invalid discountEnabled value" });
-  }
-  const config2 = { discountEnabled };
-  writeConfig(config2);
-  return res.json({ success: true, config: config2 });
+  const { discountEnabled, planTitle, regularPrice, offerPrice, promoText, features } = req.body;
+  const current = readConfig();
+  const updated = {
+    discountEnabled: typeof discountEnabled === "boolean" ? discountEnabled : current.discountEnabled,
+    planTitle: typeof planTitle === "string" ? planTitle : current.planTitle,
+    regularPrice: typeof regularPrice === "number" ? regularPrice : current.regularPrice,
+    offerPrice: typeof offerPrice === "number" ? offerPrice : current.offerPrice,
+    promoText: typeof promoText === "string" ? promoText : current.promoText,
+    features: Array.isArray(features) ? features : current.features
+  };
+  writeConfig(updated);
+  return res.json({ success: true, config: updated });
 });
 router13.get("/admin/users", authorizeAdmin, async (req, res) => {
   try {

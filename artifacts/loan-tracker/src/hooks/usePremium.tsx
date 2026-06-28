@@ -14,6 +14,11 @@ interface PremiumContextProps {
   setShowPaywall: (show: boolean) => void;
   lockFeature: () => void;
   discountEnabled: boolean;
+  planTitle: string;
+  regularPrice: number;
+  offerPrice: number;
+  promoText: string;
+  features: string[];
 }
 
 const PremiumContext = createContext<PremiumContextProps | undefined>(undefined);
@@ -27,6 +32,15 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
   const [showPaywall, setShowPaywall] = useState(false);
   const [activationCode, setActivationCode] = useState("");
   const [discountEnabled, setDiscountEnabled] = useState(true);
+  const [planTitle, setPlanTitle] = useState("Upgrade to Premium");
+  const [regularPrice, setRegularPrice] = useState(1000);
+  const [offerPrice, setOfferPrice] = useState(99);
+  const [promoText, setPromoText] = useState("Special Offer: Buy 1 Year, Get 1 Year Extra FREE!");
+  const [features, setFeatures] = useState<string[]>([
+    "AI Financial Assistant — Ask custom strategy questions",
+    "Splitwise Group Split — Split expenses seamlessly with friends",
+    "EMI vs SIP Planner — Smart arbitrage calculation"
+  ]);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -35,6 +49,15 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
         if (res.ok) {
           const data = await res.json();
           setDiscountEnabled(data.discountEnabled !== false);
+          setPlanTitle(data.planTitle || "Upgrade to Premium");
+          setRegularPrice(data.regularPrice ?? 1000);
+          setOfferPrice(data.offerPrice ?? 99);
+          setPromoText(data.promoText || "Special Offer: Buy 1 Year, Get 1 Year Extra FREE!");
+          setFeatures(data.features || [
+            "AI Financial Assistant — Ask custom strategy questions",
+            "Splitwise Group Split — Split expenses seamlessly with friends",
+            "EMI vs SIP Planner — Smart arbitrage calculation"
+          ]);
         }
       } catch (e) {
         console.error("Failed to fetch paywall config:", e);
@@ -78,6 +101,11 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
         setShowPaywall,
         lockFeature,
         discountEnabled,
+        planTitle,
+        regularPrice,
+        offerPrice,
+        promoText,
+        features,
       }}
     >
       {children}
@@ -91,7 +119,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
               <Crown className="h-7 w-7" />
             </div>
             <DialogTitle className="text-2xl font-black tracking-tight text-foreground">
-              Upgrade to Premium
+              {planTitle}
             </DialogTitle>
             <DialogDescription className="text-sm font-medium text-slate-500 dark:text-slate-400">
               Unlock advanced features to manage your debts and investments.
@@ -107,7 +135,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
             )}
             {discountEnabled ? (
               <span className="text-slate-400 dark:text-slate-500 text-xs font-bold line-through">
-                Regular Price: ₹1,000 / Yr
+                Regular Price: ₹{regularPrice} / Yr
               </span>
             ) : (
               <span className="text-slate-400 dark:text-slate-500 text-xs font-bold">
@@ -115,35 +143,23 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
               </span>
             )}
             <div className="text-4xl font-black text-amber-600 dark:text-amber-400 tracking-tight leading-none pt-1">
-              {discountEnabled ? "₹99" : "₹1,000"}
+              ₹{discountEnabled ? offerPrice : regularPrice}
             </div>
             <span className="text-[11px] font-bold text-amber-500 dark:text-amber-400 block pt-0.5 animate-pulse">
-              {discountEnabled
-                ? "Special Offer: Buy 1 Year, Get 1 Year Extra FREE!"
-                : "Full Premium Plan — 1 Year Access"}
+              {discountEnabled ? promoText : "Full Premium Plan — 1 Year Access"}
             </span>
           </div>
 
           {/* Benefits list */}
           <div className="space-y-3 my-4">
-            <div className="flex gap-3 items-start text-sm">
-              <CheckCircle2 className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                <strong>AI Financial Assistant</strong> — Ask custom strategy questions
-              </span>
-            </div>
-            <div className="flex gap-3 items-start text-sm">
-              <CheckCircle2 className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                <strong>Splitwise Group Split</strong> — Split expenses seamlessly with friends
-              </span>
-            </div>
-            <div className="flex gap-3 items-start text-sm">
-              <CheckCircle2 className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                <strong>EMI vs SIP Planner</strong> — Smart arbitrage calculation
-              </span>
-            </div>
+            {features.map((feature, idx) => (
+              <div key={idx} className="flex gap-3 items-start text-sm">
+                <CheckCircle2 className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  {feature}
+                </span>
+              </div>
+            ))}
           </div>
 
           {/* Payment simulation (UPI QR Code) */}

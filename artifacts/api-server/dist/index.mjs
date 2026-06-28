@@ -98149,7 +98149,20 @@ if (process.env.NODE_ENV === "production") {
   sendHtmlWithKeys = sendHtmlWithKeys2;
   const __filename2 = fileURLToPath2(import.meta.url);
   const __dirname3 = path5.dirname(__filename2);
-  const frontendDistPath = path5.resolve(__dirname3, "../../loan-tracker/dist/public");
+  const getFrontendDistPath = () => {
+    const paths = [
+      path5.resolve(__dirname3, "../../loan-tracker/dist/public"),
+      path5.join(process.cwd(), "artifacts/loan-tracker/dist/public"),
+      path5.join(process.cwd(), "loan-tracker/dist/public")
+    ];
+    for (const p of paths) {
+      if (fs4.existsSync(p)) {
+        return p;
+      }
+    }
+    return path5.resolve(__dirname3, "../../loan-tracker/dist/public");
+  };
+  const frontendDistPath = getFrontendDistPath();
   app.use(import_express28.default.static(frontendDistPath, { index: false }));
   const routeFileMap = {
     "/": "index.html",

@@ -140,8 +140,22 @@ app.use("/uploads", express.static(uploadsDir));
 if (process.env.NODE_ENV === "production") {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const frontendDistPath = path.resolve(__dirname, "../../loan-tracker/dist/public");
 
+  const getFrontendDistPath = () => {
+    const paths = [
+      path.resolve(__dirname, "../../loan-tracker/dist/public"),
+      path.join(process.cwd(), "artifacts/loan-tracker/dist/public"),
+      path.join(process.cwd(), "loan-tracker/dist/public")
+    ];
+    for (const p of paths) {
+      if (fs.existsSync(p)) {
+        return p;
+      }
+    }
+    return path.resolve(__dirname, "../../loan-tracker/dist/public");
+  };
+
+  const frontendDistPath = getFrontendDistPath();
   app.use(express.static(frontendDistPath, { index: false }));
 
 const routeFileMap: Record<string, string> = {

@@ -25,6 +25,7 @@ interface Props {
   dueDate: string;
   result: BankStyleResult;
   rateChanges?: RateChange[];
+  skippedEmis?: Array<{ date: string; amountPaid: number }>;
   onAddPayment?: (amount: number, paymentDate: string, notes?: string) => Promise<any> | void;
   onEditPayment?: (paymentId: number, amount: number, paymentDate: string, notes?: string) => Promise<any> | void;
   onDeletePayment?: (paymentId: number) => void;
@@ -48,6 +49,7 @@ export function BankAmortizationTable({
   dueDate,
   result,
   rateChanges,
+  skippedEmis = [],
   onAddPayment,
   onEditPayment,
   onDeletePayment,
@@ -64,6 +66,7 @@ export function BankAmortizationTable({
   const [editAmount, setEditAmount] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editNotes, setEditNotes] = useState("");
+  const [prepaymentOption, setPrepaymentOption] = useState<"tenure" | "emi">("tenure");
   const [isSaving, setIsSaving] = useState(false);
 
   const { rows, initialEMI, tenureMonths } = result;
@@ -77,7 +80,9 @@ export function BankAmortizationTable({
     });
     setEditAmount(Math.abs(row.prepAdjDisb).toString());
     setEditDate(row.fromDate);
-    setEditNotes(row.notes || "");
+    const isTenure = row.notes?.includes("[Reduce Tenure]");
+    setPrepaymentOption(isTenure ? "tenure" : "emi");
+    setEditNotes((row.notes || "").replace(/\[Reduce (EMI|Tenure)\]/g, "").trim());
   };
 
   const handleStartAdd = (row: any) => {
@@ -87,6 +92,7 @@ export function BankAmortizationTable({
     });
     setEditAmount("");
     setEditDate(row.fromDate);
+    setPrepaymentOption("tenure");
     setEditNotes("");
   };
 
@@ -97,10 +103,15 @@ export function BankAmortizationTable({
     if (isNaN(amount) || amount <= 0) return;
     setIsSaving(true);
     try {
+      const optionText = prepaymentOption === "emi" ? "[Reduce EMI]" : "[Reduce Tenure]";
+      const finalNotes = editNotes
+        ? `${editNotes.replace(/\[Reduce (EMI|Tenure)\]/g, "").trim()} ${optionText}`
+        : optionText;
+
       if (activeModal.type === "edit" && activeModal.id && onEditPayment) {
-        await onEditPayment(activeModal.id, amount, editDate, editNotes || undefined);
+        await onEditPayment(activeModal.id, amount, editDate, finalNotes);
       } else if (activeModal.type === "add" && onAddPayment) {
-        await onAddPayment(amount, editDate, editNotes || undefined);
+        await onAddPayment(amount, editDate, finalNotes);
       }
       setActiveModal(null);
     } catch (err) {
@@ -241,6 +252,7 @@ export function BankAmortizationTable({
               {displayedRows.map((row, idx) => {
                 const isPrepayment = row.rowType === "prepayment";
                 const isRateChange = row.rowType === "rate_change";
+                const skippedEntry = skippedEmis?.find((se) => se.date >= row.fromDate && se.date <= row.toDate);
                 const rowCls = isPrepayment
                   ? "bg-amber-500/10 border-b border-amber-500/20 text-amber-700 dark:text-amber-300"
                   : isRateChange
@@ -268,6 +280,11 @@ export function BankAmortizationTable({
                           {row.isCurrent && (
                             <Badge className="ml-1 bg-primary/10 text-primary border-primary/20 border text-[10px] py-0 px-1">
                               Today
+                            </Badge>
+                          )}
+                          {skippedEntry && (
+                            <Badge className="ml-1 bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800 border text-[10px] py-0 px-1.5 font-bold animate-pulse">
+                              Skipped (किस्त छूटी है)
                             </Badge>
                           )}
                         </span>
@@ -390,6 +407,38 @@ export function BankAmortizationTable({
                   value={editDate}
                   onChange={(e) => setEditDate(e.target.value)}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Prepayment Effect (पूर्व-भुगतान का प्रभाव)</Label>
+                <div className="flex flex-col sm:flex-row gap-4 pt-1">
+                  <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                    <input
+                      type="radio"
+                      name="prepaymentOptionEdit"
+                      value="tenure"
+                      checked={prepaymentOption === "tenure"}
+                      onChange={() => setPrepaymentOption("tenure")}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                    />
+                    <span>Reduce Tenure (कार्यकाल/महीने कम करें)</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                    <input
+                      type="radio"
+                      name="prepaymentOptionEdit"
+                      value="emi"
+                      checked={prepaymentOption === "emi"}
+                      onChange={() => setPrepaymentOption("emi")}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                    />
+                    <span>Reduce EMI (मासिक EMI कम करें)</span>
+                  </label>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {prepaymentOption === "tenure" 
+                    ? "EMI remains the same, but the loan will end sooner (saves more interest)."
+                    : "The loan duration remains the same, but your monthly EMI will decrease."}
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="edit-notes">Note (optional)</Label>

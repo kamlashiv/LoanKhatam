@@ -13,6 +13,7 @@ interface PremiumContextProps {
   showPaywall: boolean;
   setShowPaywall: (show: boolean) => void;
   lockFeature: () => void;
+  discountEnabled: boolean;
 }
 
 const PremiumContext = createContext<PremiumContextProps | undefined>(undefined);
@@ -25,6 +26,22 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
   });
   const [showPaywall, setShowPaywall] = useState(false);
   const [activationCode, setActivationCode] = useState("");
+  const [discountEnabled, setDiscountEnabled] = useState(true);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch("/api/admin/config");
+        if (res.ok) {
+          const data = await res.json();
+          setDiscountEnabled(data.discountEnabled !== false);
+        }
+      } catch (e) {
+        console.error("Failed to fetch paywall config:", e);
+      }
+    };
+    fetchConfig();
+  }, [showPaywall]);
 
   const unlockPremium = (code: string): boolean => {
     const cleaned = code.trim().toUpperCase();
@@ -60,6 +77,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
         showPaywall,
         setShowPaywall,
         lockFeature,
+        discountEnabled,
       }}
     >
       {children}
@@ -82,17 +100,27 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
 
           {/* Pricing Box */}
           <div className="bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/20 rounded-2xl p-5 text-center my-2 space-y-1 relative">
-            <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-md shadow-sm tracking-wider">
-              90% OFF
-            </div>
-            <span className="text-slate-400 dark:text-slate-500 text-xs font-bold line-through">
-              Regular Price: ₹1,000 / Yr
-            </span>
+            {discountEnabled && (
+              <div className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-md shadow-sm tracking-wider">
+                90% OFF
+              </div>
+            )}
+            {discountEnabled ? (
+              <span className="text-slate-400 dark:text-slate-500 text-xs font-bold line-through">
+                Regular Price: ₹1,000 / Yr
+              </span>
+            ) : (
+              <span className="text-slate-400 dark:text-slate-500 text-xs font-bold">
+                Premium Plan Pricing
+              </span>
+            )}
             <div className="text-4xl font-black text-amber-600 dark:text-amber-400 tracking-tight leading-none pt-1">
-              ₹99
+              {discountEnabled ? "₹99" : "₹1,000"}
             </div>
             <span className="text-[11px] font-bold text-amber-500 dark:text-amber-400 block pt-0.5 animate-pulse">
-              Special Offer: Buy 1 Year, Get 1 Year Extra FREE!
+              {discountEnabled
+                ? "Special Offer: Buy 1 Year, Get 1 Year Extra FREE!"
+                : "Full Premium Plan — 1 Year Access"}
             </span>
           </div>
 

@@ -76,6 +76,9 @@ const LoanDetail = lazy(() =>
 const LoanForm = lazy(() =>
   import("@/pages/loan-form").then((m) => ({ default: m.LoanForm })),
 );
+const AdminPage = lazy(() =>
+  import("@/pages/admin").then((m) => ({ default: m.AdminPage })),
+);
 const AllAmortization = lazy(() =>
   import("@/pages/all-amortization").then((m) => ({
     default: m.AllAmortization,
@@ -374,7 +377,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 }
 
 function PremiumProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isPremium, setShowPaywall } = usePremium();
+  const { isPremium, setShowPaywall, discountEnabled } = usePremium();
   return (
     <>
       <Show when="signed-in">
@@ -395,7 +398,7 @@ function PremiumProtectedRoute({ component: Component }: { component: React.Comp
                 </p>
               </div>
               <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl px-6 py-3 text-sm font-bold text-amber-600 dark:text-amber-400">
-                Limited Time Offer: ₹99 Only (Regular Price: ₹1,000)
+                {discountEnabled ? "Limited Time Offer: ₹99 Only (Regular Price: ₹1,000)" : "1 Year Plan: ₹1,000"}
               </div>
               <Button 
                 onClick={() => setShowPaywall(true)}
@@ -480,6 +483,7 @@ function ClerkProviderWithRoutes() {
         <Suspense fallback={<RouteFallback />}>
         <Switch>
           <Route path="/" component={HomeRedirect} />
+          <Route path="/admin" component={AdminPage} />
           <Route path="/sign-in/*?" component={SignInPage} />
           <Route path="/sign-up/*?" component={SignUpPage} />
           

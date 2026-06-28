@@ -138,7 +138,7 @@ function StayOnTopCard() {
 }
 
 function PremiumUpgradeCard() {
-  const { isPremium, setShowPaywall } = usePremium();
+  const { isPremium, setShowPaywall, discountEnabled } = usePremium();
   if (isPremium) {
     return (
       <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-center gap-3 dark:border-amber-500/20">
@@ -151,9 +151,11 @@ function PremiumUpgradeCard() {
   }
   return (
     <div className="rounded-3xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-950 dark:bg-amber-950/20 space-y-3 relative overflow-hidden">
-      <div className="absolute top-2.5 right-2.5 bg-rose-500 text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm">
-        90% OFF
-      </div>
+      {discountEnabled && (
+        <div className="absolute top-2.5 right-2.5 bg-rose-500 text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow-sm">
+          90% OFF
+        </div>
+      )}
       <div className="flex items-center gap-2">
         <Crown className="h-4.5 w-4.5 text-amber-500 shrink-0" />
         <h4 className="font-extrabold text-xs text-amber-800 dark:text-amber-400 leading-none">
@@ -161,7 +163,11 @@ function PremiumUpgradeCard() {
         </h4>
       </div>
       <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
-        Get <strong>1 Year + 1 Year Extra FREE</strong> for just <strong>₹99</strong> <span className="line-through text-slate-400 font-normal">₹1,000</span>
+        {discountEnabled ? (
+          <>Get <strong>1 Year + 1 Year Extra FREE</strong> for just <strong>₹99</strong> <span className="line-through text-slate-400 font-normal">₹1,000</span></>
+        ) : (
+          <>Get unlimited access to advanced strategy and planning tools for <strong>₹1,000</strong></>
+        )}
       </p>
       <Button
         onClick={() => setShowPaywall(true)}

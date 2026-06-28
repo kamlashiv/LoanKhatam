@@ -89,12 +89,16 @@ export function LoanForm() {
   });
 
   const [rateChanges, setRateChanges] = useState<RateChangeEntry[]>([]);
+  const [isFixedEmi, setIsFixedEmi] = useState(false);
+  const [fixedEmiValue, setFixedEmiValue] = useState("");
+  const [isSkipped, setIsSkipped] = useState(false);
+  const [skippedEmis, setSkippedEmis] = useState<Array<{ date: string; amountPaid: string }>>([]);
 
   // Snapshot of the form's pristine state used to detect unsaved edits. Starts
   // from the initial (possibly URL-prefilled) values and is reset to the loaded
   // values once an existing loan is fetched in edit mode.
   const baselineRef = useRef<string>(
-    JSON.stringify({ form, rateChanges: [] as RateChangeEntry[] }),
+    JSON.stringify({ form, rateChanges: [] as RateChangeEntry[], isFixedEmi: false, fixedEmiValue: "", isSkipped: false, skippedEmis: [] as any[] }),
   );
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
@@ -104,16 +108,37 @@ export function LoanForm() {
 
   useEffect(() => {
     if (existingLoan && isEditing) {
+      const isFixed = existingLoan.interestType?.startsWith("fixed_emi:") || false;
+      const fixedVal = isFixed ? existingLoan.interestType.split(":")[1] : "";
+
+      const rawDesc = existingLoan.description || "";
+      const descParts = rawDesc.split(" ||| skipped_emis:");
+      const plainDesc = descParts[0];
+      let loadedSkipped: Array<{ date: string; amountPaid: string }> = [];
+      if (descParts.length >= 2) {
+        try {
+          const parsed = JSON.parse(descParts[1]);
+          if (Array.isArray(parsed)) {
+            loadedSkipped = parsed.map((item: any) => ({
+              date: item.date || "",
+              amountPaid: (item.amountPaid ?? 0).toString(),
+            }));
+          }
+        } catch (e) {
+          console.error("Failed to parse skipped EMIs", e);
+        }
+      }
+
       const loadedForm = {
         borrowerName: existingLoan.borrowerName,
         principalAmount: existingLoan.principalAmount.toString(),
         interestRate: existingLoan.interestRate.toString(),
-        interestType: existingLoan.interestType || "standard_emi",
+        interestType: isFixed ? "standard_emi" : (existingLoan.interestType || "standard_emi"),
         tenureMonths: existingLoan.tenureMonths?.toString() ?? "",
         startDate: existingLoan.startDate,
         dueDate: existingLoan.dueDate,
         bank: existingLoan.bank ?? "",
-        description: existingLoan.description ?? "",
+        description: plainDesc,
       };
       const loadedRateChanges =
         existingLoan.rateChanges && existingLoan.rateChanges.length > 0
@@ -124,15 +149,23 @@ export function LoanForm() {
           : [];
       setForm(loadedForm);
       setRateChanges(loadedRateChanges);
+      setIsFixedEmi(isFixed);
+      setFixedEmiValue(fixedVal);
+      setIsSkipped(loadedSkipped.length > 0);
+      setSkippedEmis(loadedSkipped);
       baselineRef.current = JSON.stringify({
         form: loadedForm,
         rateChanges: loadedRateChanges,
+        isFixedEmi: isFixed,
+        fixedEmiValue: fixedVal,
+        isSkipped: loadedSkipped.length > 0,
+        skippedEmis: loadedSkipped,
       });
     }
   }, [existingLoan, isEditing]);
 
   const isDirty =
-    JSON.stringify({ form, rateChanges }) !== baselineRef.current;
+    JSON.stringify({ form, rateChanges, isFixedEmi, fixedEmiValue, isSkipped, skippedEmis }) !== baselineRef.current;
 
   // On Android, warn before the hardware back button discards unsaved edits.
   // No-op on web (the interceptor is never registered).
@@ -236,16 +269,34 @@ export function LoanForm() {
       }))
       .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
 
+    const finalInterestType = isFixedEmi && fixedEmiValue
+      ? `fixed_emi:${cleanFloat(fixedEmiValue)}`
+      : form.interestType;
+
+    const cleanSkipped = isSkipped
+      ? skippedEmis
+          .filter((se) => se.date)
+          .map((se) => ({
+            date: se.date,
+            amountPaid: cleanFloat(se.amountPaid || "0"),
+          }))
+      : [];
+
+    const rawDesc = form.description || "";
+    const finalDescription = cleanSkipped.length > 0
+      ? `${rawDesc} ||| skipped_emis:${JSON.stringify(cleanSkipped)}`
+      : rawDesc;
+
     const data = {
       borrowerName: form.borrowerName,
       principalAmount: cleanFloat(form.principalAmount),
       interestRate: cleanFloat(form.interestRate),
-      interestType: form.interestType,
+      interestType: finalInterestType,
       tenureMonths: form.tenureMonths ? parseInt(form.tenureMonths) : undefined,
       startDate: form.startDate || undefined,
       dueDate: form.dueDate || undefined,
       bank: form.bank || undefined,
-      description: form.description || undefined,
+      description: finalDescription || undefined,
       rateChanges: validRateChanges,
     };
 
@@ -407,6 +458,143 @@ export function LoanForm() {
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="space-y-4 sm:col-span-2 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-border">
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="isFixedEmi"
+                      type="checkbox"
+                      checked={isFixedEmi}
+                      onChange={(e) => setIsFixedEmi(e.target.checked)}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 rounded"
+                    />
+                    <Label htmlFor="isFixedEmi" className="cursor-pointer font-bold">
+                      Fix EMI Amount (EMI फ़िक्स करें)
+                    </Label>
+                  </div>
+                  {isFixedEmi && (
+                    <div className="space-y-1.5 pt-2 max-w-xs animate-in slide-in-from-top-1 duration-200">
+                      <Label htmlFor="fixedEmiValue">Fixed EMI Amount (₹)</Label>
+                      <Input
+                        id="fixedEmiValue"
+                        type="number"
+                        placeholder="e.g. 15000"
+                        min="1"
+                        value={fixedEmiValue}
+                        onChange={(e) => setFixedEmiValue(e.target.value)}
+                        required={isFixedEmi}
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        This custom monthly EMI will be fixed in the amortization schedule.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Skipped EMI Section */}
+                <div className={`space-y-4 sm:col-span-2 p-4 rounded-xl border ${isSkipped ? 'bg-rose-50/40 dark:bg-rose-950/10 border-rose-200 dark:border-rose-950/30' : 'bg-emerald-50/30 dark:bg-emerald-950/5 border-emerald-200 dark:border-emerald-950/20'}`}>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">EMI Skipped / Missed Status (किस्त की स्थिति)</Label>
+                    {isSkipped ? (
+                      <span className="text-[11px] font-bold text-rose-600 bg-rose-100 px-2 py-0.5 rounded">Skipped (किस्त छूटी है)</span>
+                    ) : (
+                      <span className="text-[11px] font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded">On Time (समय पर भुगतान)</span>
+                    )}
+                  </div>
+
+                  <div className="flex gap-4 pt-1">
+                    <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                      <input
+                        type="radio"
+                        name="isSkipped"
+                        value="no"
+                        checked={!isSkipped}
+                        onChange={() => {
+                          setIsSkipped(false);
+                          setSkippedEmis([]);
+                        }}
+                        className="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                      />
+                      <span className="text-emerald-700 dark:text-emerald-400 font-semibold">No (कोई किस्त नहीं छूटी)</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                      <input
+                        type="radio"
+                        name="isSkipped"
+                        value="yes"
+                        checked={isSkipped}
+                        onChange={() => {
+                          setIsSkipped(true);
+                          if (skippedEmis.length === 0) {
+                            setSkippedEmis([{ date: new Date().toISOString().split("T")[0], amountPaid: "0" }]);
+                          }
+                        }}
+                        className="h-4 w-4 text-rose-600 border-gray-300 focus:ring-rose-500"
+                      />
+                      <span className="text-rose-700 dark:text-rose-400 font-semibold">Yes (किस्त छूटी है)</span>
+                    </label>
+                  </div>
+
+                  {isSkipped && (
+                    <div className="space-y-3 pt-2 border-t border-rose-100 dark:border-rose-950/20">
+                      <div className="space-y-2">
+                        {skippedEmis.map((se, idx) => (
+                          <div key={idx} className="flex flex-col sm:flex-row gap-3 items-end sm:items-center bg-white dark:bg-slate-900 p-3 rounded-lg border border-border shadow-sm">
+                            <div className="space-y-1.5 flex-1 w-full">
+                              <Label className="text-xs">When Skipped (कब छूटी)</Label>
+                              <Input
+                                type="date"
+                                value={se.date}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setSkippedEmis(prev => prev.map((item, i) => i === idx ? { ...item, date: val } : item));
+                                }}
+                                required
+                              />
+                            </div>
+                            <div className="space-y-1.5 flex-1 w-full">
+                              <Label className="text-xs">How Much Money Paid (कितना पैसा दिया)</Label>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                min="0"
+                                value={se.amountPaid}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setSkippedEmis(prev => prev.map((item, i) => i === idx ? { ...item, amountPaid: val } : item));
+                                }}
+                                required
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSkippedEmis(prev => prev.filter((_, i) => i !== idx));
+                              }}
+                              className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 p-2 h-9 w-9 rounded-lg mt-1"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSkippedEmis(prev => [...prev, { date: new Date().toISOString().split("T")[0], amountPaid: "0" }]);
+                        }}
+                        className="w-full sm:w-auto text-xs font-bold gap-1 rounded-xl"
+                      >
+                        <Plus className="h-3 w-3" /> Add Skip Month (किस्त छूटने का विवरण जोड़ें)
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="principalAmount">Principal Amount (₹)</Label>

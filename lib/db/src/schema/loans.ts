@@ -14,6 +14,7 @@ import { z } from "zod/v4";
 export const rateChangeSchema = z.object({
   effectiveDate: z.string(),
   newRate: z.number().min(0),
+  effect: z.enum(["tenure", "emi"]).optional(),
 });
 
 export type RateChange = z.infer<typeof rateChangeSchema>;

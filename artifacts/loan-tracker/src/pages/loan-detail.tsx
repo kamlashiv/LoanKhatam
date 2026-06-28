@@ -64,6 +64,7 @@ export function LoanDetail() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
   const [paymentNotes, setPaymentNotes] = useState("");
+  const [prepaymentOption, setPrepaymentOption] = useState<"tenure" | "emi">("tenure");
 
   const { user } = useUser();
   const userId = user?.id ?? null;
@@ -149,12 +150,12 @@ export function LoanDetail() {
     },
   });
 
-  const handleAddRateChange = async (effectiveDate: string, newRate: number) => {
+  const handleAddRateChange = async (effectiveDate: string, newRate: number, effect?: "tenure" | "emi") => {
     if (!loan) return;
     const currentRateChanges = loan.rateChanges ?? [];
     const updatedRateChanges = [
       ...currentRateChanges,
-      { effectiveDate, newRate }
+      { effectiveDate, newRate, effect }
     ].sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
 
     await updateLoan.mutateAsync({
@@ -194,7 +195,11 @@ export function LoanDetail() {
     e.preventDefault();
     const amount = cleanFloat(paymentAmount);
     if (!amount || amount <= 0) return;
-    addPayment.mutate({ id, data: { amount, paymentDate, notes: paymentNotes || undefined } });
+    const optionText = prepaymentOption === "emi" ? "[Reduce EMI]" : "[Reduce Tenure]";
+    const finalNotes = paymentNotes 
+      ? `${paymentNotes} ${optionText}`
+      : optionText;
+    addPayment.mutate({ id, data: { amount, paymentDate, notes: finalNotes } });
   };
 
   if (isLoading) {
@@ -471,6 +476,38 @@ export function LoanDetail() {
                     />
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Prepayment Effect (पूर्व-भुगतान का प्रभाव)</Label>
+                  <div className="flex flex-col sm:flex-row gap-4 pt-1">
+                    <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                      <input
+                        type="radio"
+                        name="prepaymentOption"
+                        value="tenure"
+                        checked={prepaymentOption === "tenure"}
+                        onChange={() => setPrepaymentOption("tenure")}
+                        className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                      />
+                      <span>Reduce Tenure (कार्यकाल/महीने कम करें)</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                      <input
+                        type="radio"
+                        name="prepaymentOption"
+                        value="emi"
+                        checked={prepaymentOption === "emi"}
+                        onChange={() => setPrepaymentOption("emi")}
+                        className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                      />
+                      <span>Reduce EMI (मासिक EMI कम करें)</span>
+                    </label>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {prepaymentOption === "tenure" 
+                      ? "EMI remains the same, but the loan will end sooner (saves more interest)."
+                      : "The loan duration remains the same, but your monthly EMI will decrease."}
+                  </p>
+                </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="notes">Note (optional)</Label>
                   <Textarea
@@ -502,7 +539,23 @@ export function LoanDetail() {
                       <p className="font-semibold text-emerald-700">{formatRupees(payment.amount)}</p>
                       <p className="text-sm text-muted-foreground">{formatDate(payment.paymentDate)}</p>
                       {payment.notes && (
-                        <p className="text-xs text-muted-foreground mt-0.5 italic">{payment.notes}</p>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          {payment.notes.includes("[Reduce EMI]") && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-850 dark:bg-indigo-950/40 dark:text-indigo-400">
+                              Reduce EMI
+                            </span>
+                          )}
+                          {payment.notes.includes("[Reduce Tenure]") && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-850 dark:bg-emerald-950/40 dark:text-emerald-400">
+                              Reduce Tenure
+                            </span>
+                          )}
+                          {payment.notes.replace(/\[Reduce (EMI|Tenure)\]/g, "").trim() && (
+                            <span className="text-xs text-muted-foreground italic">
+                              {payment.notes.replace(/\[Reduce (EMI|Tenure)\]/g, "").trim()}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                     <AlertDialog>
@@ -560,6 +613,8 @@ export function LoanDetail() {
           remainingAmount={loan.remainingAmount}
           payments={Array.isArray(payments) ? payments.map((p) => ({ id: p.id, paymentDate: p.paymentDate, amount: p.amount, notes: p.notes })) : []}
           rateChanges={loan.rateChanges ?? []}
+          interestType={loan.interestType}
+          description={loan.description}
           onAddPayment={handleAddPaymentDirect}
           onEditPayment={handleUpdatePayment}
           onDeletePayment={(paymentId) => deletePayment.mutate({ id, paymentId })}

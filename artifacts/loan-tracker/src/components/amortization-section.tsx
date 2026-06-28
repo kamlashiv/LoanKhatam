@@ -46,10 +46,12 @@ interface Props {
   remainingAmount: number;
   payments?: Payment[];
   rateChanges?: RateChange[];
+  interestType?: string;
+  description?: string | null;
   onAddPayment?: (amount: number, paymentDate: string, notes?: string) => Promise<any> | void;
   onEditPayment?: (paymentId: number, amount: number, paymentDate: string, notes?: string) => Promise<any> | void;
   onDeletePayment?: (paymentId: number) => void;
-  onAddRateChange?: (effectiveDate: string, newRate: number) => Promise<any> | void;
+  onAddRateChange?: (effectiveDate: string, newRate: number, effect?: "tenure" | "emi") => Promise<any> | void;
   onDeleteRateChange?: (index: number) => Promise<any> | void;
 }
 
@@ -73,6 +75,8 @@ export function AmortizationSection({
   remainingAmount,
   payments = [],
   rateChanges = [],
+  interestType,
+  description,
   onAddPayment,
   onEditPayment,
   onDeletePayment,
@@ -91,9 +95,19 @@ export function AmortizationSection({
         interestRate,
         effStart,
         effDue,
-        rateChanges
+        rateChanges,
+        interestType
       ),
-    [principalAmount, interestRate, effStart, effDue, rateChanges]
+    [
+      principalAmount,
+      interestRate,
+      effStart,
+      effDue,
+      totalPaid,
+      remainingAmount,
+      rateChanges,
+      interestType,
+    ]
   );
 
   const savings = useMemo(
@@ -119,8 +133,8 @@ export function AmortizationSection({
   );
 
   const bankResult = useMemo(
-    () => calculateBankStyleSchedule(principalAmount, interestRate, effStart, effDue, payments, rateChanges),
-    [principalAmount, interestRate, effStart, effDue, payments, rateChanges]
+    () => calculateBankStyleSchedule(principalAmount, interestRate, effStart, effDue, payments, rateChanges, interestType),
+    [principalAmount, interestRate, effStart, effDue, payments, rateChanges, interestType]
   );
 
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
@@ -145,16 +159,36 @@ export function AmortizationSection({
 
   const [newRateDate, setNewRateDate] = useState<string>(() => todayStr);
   const [newRatePercent, setNewRatePercent] = useState<string>("");
+  const [newRateEffect, setNewRateEffect] = useState<"tenure" | "emi">("tenure");
 
   const handleAddRateRevision = () => {
     const rateVal = parseFloat(newRatePercent);
     if (!isNaN(rateVal) && newRateDate && onAddRateChange) {
-      onAddRateChange(newRateDate, rateVal);
+      onAddRateChange(newRateDate, rateVal, newRateEffect);
       setNewRatePercent("");
     }
   };
 
   const elapsedMonths = useMemo(() => monthsBetween(effStart, todayStr), [effStart, todayStr]);
+
+  const parsedSkippedEmis = useMemo(() => {
+    const rawDesc = description || "";
+    const descParts = rawDesc.split(" ||| skipped_emis:");
+    if (descParts.length >= 2) {
+      try {
+        const parsed = JSON.parse(descParts[1]);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item: any) => ({
+            date: item.date || "",
+            amountPaid: parseFloat(item.amountPaid ?? 0),
+          }));
+        }
+      } catch (e) {
+        console.error("Failed to parse skipped EMIs in progress card", e);
+      }
+    }
+    return [] as Array<{ date: string; amountPaid: number }>;
+  }, [description]);
 
   const loanProgress = useMemo(() => {
     let expectedCumulativePaid = 0;
@@ -162,7 +196,9 @@ export function AmortizationSection({
       expectedCumulativePaid += amort.schedule[i].emi;
     }
     const defaultAmount = Math.max(0, expectedCumulativePaid - totalPaid);
-    const defaultedMonths = defaultAmount > 10 ? Math.ceil(defaultAmount / (amort.emi || 1)) : 0;
+    const defaultedMonths = parsedSkippedEmis.length > 0
+      ? parsedSkippedEmis.length
+      : (defaultAmount > 10 ? Math.ceil(defaultAmount / (amort.emi || 1)) : 0);
 
     const totalPrepayments = bankResult.rows
       .filter((r) => r.rowType === "prepayment")
@@ -173,7 +209,7 @@ export function AmortizationSection({
       defaultAmount,
       totalPrepayments,
     };
-  }, [elapsedMonths, amort.schedule, totalPaid, bankResult.rows, amort.emi]);
+  }, [elapsedMonths, amort.schedule, totalPaid, bankResult.rows, amort.emi, parsedSkippedEmis]);
 
   const filteredBankResult = useMemo(() => {
     if (!filterFrom && !filterTo) return bankResult;
@@ -401,22 +437,55 @@ export function AmortizationSection({
           </div>
 
           {/* Payment Status & Defaults */}
-          <div className="space-y-2 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-border shadow-sm sm:col-span-2 lg:col-span-1">
+          <div className="space-y-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-border shadow-sm sm:col-span-2 lg:col-span-1">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Payment Standing (भुगतान स्थिति)</span>
-            <div className="pt-1">
-              {loanProgress.defaultedMonths > 0 ? (
-                <div className="text-lg font-black text-rose-600 dark:text-rose-400">
-                  🔴 Missed {loanProgress.defaultedMonths} EMIs (₹{formatRupees(loanProgress.defaultAmount)} Behind)
-                </div>
+            
+            <div className="space-y-2">
+              {parsedSkippedEmis.length > 0 ? (
+                <>
+                  <div className="text-sm font-bold text-rose-600 dark:text-rose-400">
+                    ❌ EMI Skipped: Yes (हाँ, किस्त छूटी है)
+                  </div>
+                  <div className="space-y-1.5 mt-1 max-h-[120px] overflow-y-auto pr-1">
+                    {parsedSkippedEmis.map((se, idx) => (
+                      <div key={idx} className="text-[11px] font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/20 px-2.5 py-1.5 rounded-lg border border-rose-100 dark:border-rose-950/30 flex justify-between">
+                        <span>🗓️ {formatDate(se.date)}</span>
+                        <span>Paid: {formatRupees(se.amountPaid)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : loanProgress.defaultedMonths > 0 ? (
+                <>
+                  <div className="text-sm font-bold text-rose-600 dark:text-rose-400">
+                    ❌ EMI Skipped: Yes (हाँ, किस्त छूटी है)
+                  </div>
+                  <div className="text-xs font-semibold text-rose-500">
+                    Missed {loanProgress.defaultedMonths} EMIs (₹{loanProgress.defaultAmount.toLocaleString("en-IN")} behind)
+                  </div>
+                </>
               ) : (
-                <div className="text-lg font-black text-emerald-600 dark:text-emerald-400">
-                  🟢 On Track (सभी भुगतान समय पर)
-                </div>
+                <>
+                  <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                    ✅ EMI Skipped: No (कोई किस्त नहीं छूटी)
+                  </div>
+                  <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                    🟢 Paid On Time: Yes (सभी EMI समय पर जमा की हैं)
+                  </div>
+                </>
               )}
             </div>
-            <div className="flex justify-between items-center text-[11px] font-semibold text-slate-400 dark:text-slate-500 pt-1">
-              <span>Extra Prepayments Paid:</span>
-              <span className="text-emerald-600 font-bold">{formatRupees(loanProgress.totalPrepayments)}</span>
+
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-2 space-y-1">
+              <div className="flex justify-between items-center text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                <span>Extra Paid (अतिरिक्त भुगतान):</span>
+                <span className="text-emerald-600 font-bold">{formatRupees(loanProgress.totalPrepayments)}</span>
+              </div>
+              {loanProgress.totalPrepayments > 0 && (
+                <p className="text-[10px] text-emerald-600/80 font-medium">
+                  You paid {formatRupees(loanProgress.totalPrepayments)} extra to save interest!
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -440,8 +509,19 @@ export function AmortizationSection({
                 {rateChanges.map((rc, idx) => (
                   <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-border text-sm">
                     <div className="min-w-0">
-                      <span className="font-bold text-slate-800 dark:text-slate-100">{rc.newRate}% p.a.</span>
-                      <span className="text-slate-400 dark:text-slate-500 text-xs font-semibold block">Effective: {formatDate(rc.effectiveDate)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-800 dark:text-slate-100">{rc.newRate}% p.a.</span>
+                        {rc.effect === "tenure" ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-850 dark:bg-emerald-950/40 dark:text-emerald-400">
+                            Reduce Tenure
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-850 dark:bg-indigo-950/40 dark:text-indigo-400">
+                            Reduce EMI
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-slate-400 dark:text-slate-500 text-xs font-semibold block mt-0.5">Effective: {formatDate(rc.effectiveDate)}</span>
                     </div>
                     {onDeleteRateChange && (
                       <Button
@@ -490,6 +570,38 @@ export function AmortizationSection({
                     className="rounded-xl h-9"
                   />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Revision Effect (बदलाव का प्रभाव)</Label>
+                <div className="flex flex-col sm:flex-row gap-4 pt-1">
+                  <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                    <input
+                      type="radio"
+                      name="newRateEffect"
+                      value="tenure"
+                      checked={newRateEffect === "tenure"}
+                      onChange={() => setNewRateEffect("tenure")}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                    />
+                    <span>Reduce Tenure (कार्यकाल कम करें - EMI वही रहेगी)</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                    <input
+                      type="radio"
+                      name="newRateEffect"
+                      value="emi"
+                      checked={newRateEffect === "emi"}
+                      onChange={() => setNewRateEffect("emi")}
+                      className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                    />
+                    <span>Reduce EMI (मासिक EMI कम करें)</span>
+                  </label>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {newRateEffect === "tenure" 
+                    ? "EMI remains the same, but the lower rate will pay off the principal faster (saves more interest)."
+                    : "The remaining duration stays the same, but your monthly EMI will decrease."}
+                </p>
               </div>
               <Button
                 size="sm"
@@ -569,6 +681,7 @@ export function AmortizationSection({
           dueDate={effDue}
           result={filteredBankResult}
           rateChanges={rateChanges}
+          skippedEmis={parsedSkippedEmis}
           onAddPayment={onAddPayment}
           onEditPayment={onEditPayment}
           onDeletePayment={onDeletePayment}

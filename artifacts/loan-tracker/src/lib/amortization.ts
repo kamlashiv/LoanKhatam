@@ -28,6 +28,7 @@ export interface InterestSavings {
 export interface RateChange {
   effectiveDate: string;
   newRate: number;
+  effect?: "tenure" | "emi";
 }
 
 export interface BankStyleRow {
@@ -123,7 +124,8 @@ export function calculateAmortization(
   annualRate: number,
   startDate: string,
   dueDate: string,
-  rateChanges: RateChange[] = []
+  rateChanges: RateChange[] = [],
+  interestType?: string
 ): AmortizationResult {
   const tenureMonths = monthsBetween(startDate, dueDate);
   if (tenureMonths <= 0 || principal <= 0) {
@@ -137,7 +139,16 @@ export function calculateAmortization(
     .filter((rc) => rc.effectiveDate > startDate && rc.effectiveDate < dueDate)
     .sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
 
-  const initialEMI = calcEMI(principal, annualRate, tenureMonths);
+  let initialEMI = 0;
+  if (interestType?.startsWith("fixed_emi:")) {
+    const customVal = parseFloat(interestType.split(":")[1]);
+    if (!isNaN(customVal) && customVal > 0) {
+      initialEMI = r2(customVal);
+    }
+  }
+  if (initialEMI <= 0) {
+    initialEMI = calcEMI(principal, annualRate, tenureMonths);
+  }
 
   const schedule: AmortizationRow[] = [];
   let balance = principal;
@@ -295,7 +306,8 @@ export function calculateBankStyleSchedule(
   startDate: string,
   dueDate: string,
   payments: Array<{ id?: number; paymentDate: string; amount: number; notes?: string | null }>,
-  rateChanges: RateChange[] = []
+  rateChanges: RateChange[] = [],
+  interestType?: string
 ): BankStyleResult {
   const tenureMonths = monthsBetween(startDate, dueDate);
   if (tenureMonths <= 0 || principal <= 0) {
@@ -303,7 +315,16 @@ export function calculateBankStyleSchedule(
   }
 
   const today = new Date().toISOString().split("T")[0];
-  const initialEMI = r2(calcEMI(principal, annualRate, tenureMonths));
+  let initialEMI = 0;
+  if (interestType?.startsWith("fixed_emi:")) {
+    const customVal = parseFloat(interestType.split(":")[1]);
+    if (!isNaN(customVal) && customVal > 0) {
+      initialEMI = r2(customVal);
+    }
+  }
+  if (initialEMI <= 0) {
+    initialEMI = r2(calcEMI(principal, annualRate, tenureMonths));
+  }
 
   const sortedPayments = [...payments].sort((a, b) =>
     a.paymentDate.localeCompare(b.paymentDate)
@@ -336,16 +357,20 @@ export function calculateBankStyleSchedule(
     // Apply all rate changes whose effectiveDate <= periodStart (they have
     // already taken effect by the beginning of this period).  Multiple events
     // between the previous periodStart and this one are applied in order.
+    let rateChangedInThisMonth = false;
+    let rateChangeEffect: "tenure" | "emi" = "emi";
     while (
       rateChangeIdx < sortedRateChanges.length &&
       sortedRateChanges[rateChangeIdx].effectiveDate <= periodStart
     ) {
       const rc = sortedRateChanges[rateChangeIdx];
       activeRate = rc.newRate;
+      rateChangedInThisMonth = true;
+      rateChangeEffect = rc.effect || "emi";
       const isRcPast = rc.effectiveDate < today;
       const isRcCurrent = rc.effectiveDate === today;
       const moLeft = tenureMonths - month + 1;
-      const newEMI = moLeft > 0 ? r2(calcEMI(balance, activeRate, moLeft)) : 0;
+      const tempEMI = rateChangeEffect === "tenure" ? currentEMI : (moLeft > 0 ? r2(calcEMI(balance, activeRate, moLeft)) : 0);
       rows.push({
         rowType: "rate_change",
         tranType: "Rate Change",
@@ -354,7 +379,7 @@ export function calculateBankStyleSchedule(
         openingPrincipal: r2(balance),
         prepAdjDisb: 0,
         roi: activeRate,
-        emi: newEMI,
+        emi: tempEMI,
         months: 0,
         emiRcble: 0,
         intComp: 0,
@@ -366,8 +391,12 @@ export function calculateBankStyleSchedule(
       rateChangeIdx++;
     }
 
-    const remainingMonthsIncludingThis = tenureMonths - month + 1;
-    currentEMI = r2(calcEMI(balance, activeRate, remainingMonthsIncludingThis));
+    if (rateChangedInThisMonth) {
+      if (rateChangeEffect !== "tenure") {
+        const remainingMonthsIncludingThis = tenureMonths - month + 1;
+        currentEMI = r2(calcEMI(balance, activeRate, remainingMonthsIncludingThis));
+      }
+    }
 
     while (
       paymentIdx < sortedPayments.length &&
@@ -396,8 +425,11 @@ export function calculateBankStyleSchedule(
         isCurrent,
       });
       balance = Math.max(0, pmtClosing);
-      const moLeft = tenureMonths - month + 1;
-      currentEMI = r2(calcEMI(balance, activeRate, moLeft));
+      const isReduceTenure = pmt.notes?.includes("[Reduce Tenure]");
+      if (!isReduceTenure) {
+        const moLeft = tenureMonths - month + 1;
+        currentEMI = r2(calcEMI(balance, activeRate, moLeft));
+      }
       paymentIdx++;
     }
 

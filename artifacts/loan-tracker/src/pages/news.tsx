@@ -22,6 +22,8 @@ interface Article {
   pubDate: string;
   description: string;
   source: string;
+  category?: string;
+  priority?: number;
 }
 
 export function NewsPage() {
@@ -137,13 +139,10 @@ export function NewsPage() {
     }
   };
 
-  // Filter logic (by search query or source)
+  // Filter logic (by category)
   const filteredArticles = articles.filter((article) => {
     if (filter === "All") return true;
-    if (filter === "Economic Times") return article.source === "Economic Times";
-    if (filter === "Moneycontrol") return article.source === "Moneycontrol";
-    if (filter === "RBI / Banks") return article.source.includes("RBI") || article.source.includes("SBI") || article.source === "Banking Sector";
-    return true;
+    return article.category === filter;
   });
 
   const formatDate = (dateStr: string) => {
@@ -257,14 +256,20 @@ export function NewsPage() {
       {/* Filters and Actions */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50 dark:bg-slate-900/60 p-4 rounded-3xl border border-slate-200/50 dark:border-slate-800/50">
         <div className="flex flex-wrap gap-2">
-          {["All", "Economic Times", "Moneycontrol", "RBI / Banks"].map((item) => (
+          {[
+            { id: "All", label: "All News (सभी खबरें)" },
+            { id: "Loans & Interest Rates", label: "Loans & EMIs" },
+            { id: "Savings & Tax", label: "Savings & Tax" },
+            { id: "Banking & Cards", label: "Banking & Cards" },
+            { id: "Market & Economy", label: "Share Market" }
+          ].map((item) => (
             <Button
-              key={item}
-              variant={filter === item ? "default" : "outline"}
-              onClick={() => setFilter(item)}
-              className="rounded-2xl font-bold text-xs h-9"
+              key={item.id}
+              variant={filter === item.id ? "default" : "outline"}
+              onClick={() => setFilter(item.id)}
+              className="rounded-2xl font-bold text-xs h-9 cursor-pointer"
             >
-              {item}
+              {item.label}
             </Button>
           ))}
         </div>
@@ -303,9 +308,14 @@ export function NewsPage() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="flex items-center gap-1.5 text-[10px] font-extrabold text-slate-450 uppercase tracking-wide">
-                    <Calendar className="h-3.5 w-3.5 text-rose-500 animate-pulse" />
+                    <Calendar className="h-3.5 w-3.5 text-rose-500" />
                     {formatDate(article.pubDate)}
                   </span>
+                  {article.priority && article.priority >= 4 && (
+                    <Badge className="bg-rose-500 hover:bg-rose-600 text-white font-black text-[9px] uppercase px-2 py-0.5 rounded-lg flex items-center gap-0.5 animate-pulse border-none">
+                      <Flame className="h-3 w-3 shrink-0" /> Important
+                    </Badge>
+                  )}
                 </div>
                 <CardTitle className="text-[15px] font-extrabold text-slate-800 dark:text-slate-100 line-clamp-2 leading-snug group-hover:text-rose-500 transition-colors">
                   {article.title}

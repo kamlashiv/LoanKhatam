@@ -98051,27 +98051,64 @@ function cleanText(str2) {
   if (!str2) return "";
   return str2.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
 }
+function getCategoryAndPriority(title, description) {
+  const text2 = (title + " " + description).toLowerCase();
+  let category = "Market & Economy";
+  let priority = 1;
+  if (text2.includes("repo rate") || text2.includes("repo") || text2.includes("rbi") || text2.includes("interest rate") || text2.includes("lending rate") || text2.includes("mclr") || text2.includes("emi") || text2.includes("loan")) {
+    category = "Loans & Interest Rates";
+    if (text2.includes("repo rate") || text2.includes("rbi") || text2.includes("interest rate") || text2.includes("emi")) {
+      priority = 5;
+    } else {
+      priority = 4;
+    }
+  } else if (text2.includes("tax") || text2.includes("gst") || text2.includes("80c") || text2.includes("saving") || text2.includes("deposit") || text2.includes("fixed deposit") || text2.includes("sip") || text2.includes("mutual fund") || text2.includes("gold") || text2.includes("epf") || text2.includes("pf")) {
+    category = "Savings & Tax";
+    if (text2.includes("tax") || text2.includes("gst") || text2.includes("fixed deposit")) {
+      priority = 4;
+    } else {
+      priority = 3;
+    }
+  } else if (text2.includes("bank") || text2.includes("sbi") || text2.includes("hdfc") || text2.includes("icici") || text2.includes("axis") || text2.includes("payment") || text2.includes("upi") || text2.includes("wallet") || text2.includes("card")) {
+    category = "Banking & Cards";
+    if (text2.includes("upi") || text2.includes("payment") || text2.includes("sbi") || text2.includes("hdfc")) {
+      priority = 3;
+    } else {
+      priority = 2;
+    }
+  } else if (text2.includes("stock") || text2.includes("share") || text2.includes("nifty") || text2.includes("sensex") || text2.includes("market") || text2.includes("inflation") || text2.includes("gdp")) {
+    category = "Market & Economy";
+    priority = 2;
+  }
+  return { category, priority };
+}
 var fallbackArticles = [
   {
     title: "RBI Keeps Repo Rate Stable: What This Means for Your Home & Personal Loan EMIs",
     link: "https://www.rbi.org.in",
     pubDate: (/* @__PURE__ */ new Date()).toUTCString(),
     description: "The Reserve Bank of India has maintained the repo rate, meaning interest rates on personal and home loans will remain stable in the upcoming months.",
-    source: "RBI Updates"
+    source: "RBI Updates",
+    category: "Loans & Interest Rates",
+    priority: 5
   },
   {
     title: "SBI Interest Rates Update: SBI Announces Revised Interest Rates for Personal and Gold Loans",
     link: "https://sbi.co.in",
     pubDate: (/* @__PURE__ */ new Date()).toUTCString(),
     description: "State Bank of India (SBI) has updated its lending rates. Check out the latest MCLR and interest rates for personal loans and collateral-free lending.",
-    source: "SBI News"
+    source: "SBI News",
+    category: "Loans & Interest Rates",
+    priority: 4
   },
   {
     title: "Income Tax India: Simple Strategies to Manage Debt and Save Tax Under Section 80C & Section 24",
     link: "https://www.incometax.gov.in",
     pubDate: (/* @__PURE__ */ new Date()).toUTCString(),
     description: "Understanding tax deductions on loans in India. Learn how paying interest on home loans can save tax under Section 24 and Section 80C of the IT Act.",
-    source: "Income Tax Dept"
+    source: "Income Tax Dept",
+    category: "Savings & Tax",
+    priority: 4
   }
 ];
 newsRouter.get("/", async (req, res) => {
@@ -98113,12 +98150,15 @@ newsRouter.get("/", async (req, res) => {
           const pubDate = pubDateRaw.trim();
           const description = cleanText(descriptionRaw);
           if (title && link) {
+            const { category, priority } = getCategoryAndPriority(title, description);
             allArticles.push({
               title,
               link,
               pubDate,
               description: description.slice(0, 180) + (description.length > 180 ? "..." : ""),
-              source: feed.source
+              source: feed.source,
+              category,
+              priority
             });
           }
         }
@@ -98131,6 +98171,9 @@ newsRouter.get("/", async (req, res) => {
       return;
     }
     allArticles.sort((a, b) => {
+      if (b.priority !== a.priority) {
+        return b.priority - a.priority;
+      }
       const dateA = new Date(a.pubDate).getTime();
       const dateB = new Date(b.pubDate).getTime();
       if (!isNaN(dateA) && !isNaN(dateB)) {
@@ -98138,7 +98181,7 @@ newsRouter.get("/", async (req, res) => {
       }
       return 0;
     });
-    res.json(allArticles.slice(0, 25));
+    res.json(allArticles.slice(0, 30));
   } catch (error40) {
     console.error("News endpoint error:", error40);
     res.json(fallbackArticles);

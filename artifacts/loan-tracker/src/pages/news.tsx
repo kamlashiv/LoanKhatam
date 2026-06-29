@@ -10,8 +10,11 @@ import {
   RefreshCw,
   Share2,
   Check,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface Article {
   title: string;
@@ -27,6 +30,17 @@ export function NewsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+
+  // Live Stock Market Data State
+  const [stockData, setStockData] = useState([
+    { symbol: "NIFTY 50", price: "24,120.50", change: "+0.45%", isUp: true },
+    { symbol: "SENSEX", price: "79,230.10", change: "+0.52%", isUp: true },
+    { symbol: "BANK NIFTY", price: "52,180.40", change: "-0.15%", isUp: false },
+    { symbol: "HDFC BANK", price: "1,680.20", change: "+0.80%", isUp: true },
+    { symbol: "ICICI BANK", price: "1,180.50", change: "+1.20%", isUp: true },
+    { symbol: "SBI", price: "840.40", change: "-0.35%", isUp: false },
+    { symbol: "AXIS BANK", price: "1,245.10", change: "+0.65%", isUp: true },
+  ]);
 
   const fetchNews = async () => {
     setLoading(true);
@@ -46,6 +60,71 @@ export function NewsPage() {
   useEffect(() => {
     fetchNews();
   }, []);
+
+  // Update stock prices dynamically to simulate live feeds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStockData((prev) =>
+        prev.map((stock) => {
+          const currentPrice = parseFloat(stock.price.replace(/,/g, ""));
+          const deltaPercent = (Math.random() * 0.16 - 0.08); // -0.08% to +0.08%
+          const newPrice = currentPrice * (1 + deltaPercent / 100);
+          
+          const sign = stock.change.startsWith("-") ? -1 : 1;
+          const currentChangeVal = parseFloat(stock.change.replace(/[+\-%]/g, ""));
+          const newChangeVal = currentChangeVal * sign + deltaPercent;
+          const isUp = newChangeVal >= 0;
+          
+          return {
+            ...stock,
+            price: newPrice.toLocaleString("en-IN", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }),
+            change: (isUp ? "+" : "") + newChangeVal.toFixed(2) + "%",
+            isUp,
+          };
+        })
+      );
+    }, 4500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getArticleVisual = (source: string, title: string) => {
+    const cleanTitle = title.toLowerCase();
+    let gradient = "from-rose-500 to-orange-500";
+    let emoji = "📰";
+    
+    if (cleanTitle.includes("credit card") || cleanTitle.includes("card")) {
+      gradient = "from-cyan-500 to-blue-600";
+      emoji = "💳";
+    } else if (cleanTitle.includes("rate") || cleanTitle.includes("rbi") || cleanTitle.includes("repo") || cleanTitle.includes("reserve bank")) {
+      gradient = "from-indigo-500 to-purple-600";
+      emoji = "🏦";
+    } else if (cleanTitle.includes("tax") || cleanTitle.includes("gst") || cleanTitle.includes("budget")) {
+      gradient = "from-rose-500 to-pink-600";
+      emoji = "📊";
+    } else if (cleanTitle.includes("sip") || cleanTitle.includes("market") || cleanTitle.includes("mutual fund") || cleanTitle.includes("stock") || cleanTitle.includes("share")) {
+      gradient = "from-emerald-500 to-teal-600";
+      emoji = "📈";
+    } else if (source === "Moneycontrol") {
+      gradient = "from-amber-500 to-emerald-600";
+      emoji = "💰";
+    } else if (source === "Economic Times") {
+      gradient = "from-violet-500 to-fuchsia-600";
+      emoji = "🏢";
+    }
+    
+    return (
+      <div className={`h-36 w-full bg-gradient-to-tr ${gradient} relative flex items-center justify-center overflow-hidden transition-transform duration-500`}>
+        <div className="absolute inset-0 bg-white/[0.06] [mask-image:linear-gradient(0deg,white,transparent)]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/20 to-transparent" />
+        <span className="text-6xl drop-shadow-2xl filter transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+          {emoji}
+        </span>
+      </div>
+    );
+  };
 
   const handleShare = async (article: Article) => {
     const text = `🔥 ${article.title}\n\nRead more at:\n${article.link}\n\nShared via LoanKhatam`;
@@ -103,6 +182,82 @@ export function NewsPage() {
         </p>
       </div>
 
+      {/* Live Stock Market Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+            Live Market Overview (शेयर बाजार झलक)
+          </h2>
+          <span className="text-[10px] font-bold text-muted-foreground bg-slate-150 dark:bg-slate-850 px-2 py-0.5 rounded-lg">
+            Auto-Updates Live
+          </span>
+        </div>
+
+        {/* Stock Indices Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {stockData.slice(0, 4).map((stock) => (
+            <Card
+              key={stock.symbol}
+              className="p-4 rounded-[2rem] border border-slate-200/50 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm relative overflow-hidden group hover:shadow-md transition-all duration-300"
+            >
+              <div className="flex justify-between items-start">
+                <div className="min-w-0">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block truncate">
+                    {stock.symbol}
+                  </span>
+                  <h4 className="text-base font-black text-slate-800 dark:text-slate-100 mt-1 font-mono tracking-tight">
+                    {stock.price}
+                  </h4>
+                </div>
+                <span
+                  className={cn(
+                    "text-[10px] font-black px-2 py-0.5 rounded-lg flex items-center gap-0.5 shrink-0 font-mono",
+                    stock.isUp
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                  )}
+                >
+                  {stock.isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  {stock.change}
+                </span>
+              </div>
+              
+              {/* Animated Live Sparkline */}
+              <div className="h-7 mt-3 opacity-60 group-hover:opacity-100 transition-opacity duration-300">
+                <svg className="w-full h-full" viewBox="0 0 100 20" preserveAspectRatio="none">
+                  <path
+                    d={stock.isUp
+                      ? "M0,16 Q20,10 40,14 T80,4 T100,8"
+                      : "M0,4 Q20,14 40,8 T80,16 T100,12"
+                    }
+                    fill="none"
+                    stroke={stock.isUp ? "#10b981" : "#f43f5e"}
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Horizontal Scrolling Stock Ticker */}
+        <div className="w-full bg-slate-900 text-white py-2.5 rounded-2xl overflow-hidden relative shadow-inner border border-slate-800">
+          <div className="flex whitespace-nowrap animate-marquee gap-8 text-[11px] font-bold">
+            {[...stockData, ...stockData].map((stock, i) => (
+              <span key={i} className="inline-flex items-center gap-2 font-mono">
+                <span className="text-slate-400">{stock.symbol}</span>
+                <span className="font-extrabold">{stock.price}</span>
+                <span className={stock.isUp ? "text-emerald-400" : "text-rose-450"}>
+                  {stock.isUp ? "▲" : "▼"} {stock.change}
+                </span>
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Filters and Actions */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50 dark:bg-slate-900/60 p-4 rounded-3xl border border-slate-200/50 dark:border-slate-800/50">
         <div className="flex flex-wrap gap-2">
@@ -148,6 +303,7 @@ export function NewsPage() {
               key={idx}
               className="flex flex-col justify-between hover:shadow-xl transition-all duration-300 border border-slate-200 dark:border-slate-800 rounded-[2rem] bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm group overflow-hidden"
             >
+              {getArticleVisual(article.source, article.title)}
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between mb-3">
                   <Badge

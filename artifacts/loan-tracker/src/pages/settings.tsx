@@ -23,6 +23,7 @@ import {
   ExternalLink,
   Trash2,
   Share2,
+  UserPlus,
 } from "lucide-react";
 import {
   useListLoans,
@@ -138,6 +139,7 @@ const SECTIONS = [
   { id: "calculator", title: "Calculator Defaults", icon: Calculator, keywords: "interest rate tenure emi default autosave calculation planner" },
   { id: "notifications", title: "Notifications", icon: Bell, keywords: "email push reminder emi due date weekly monthly summary alert prepayment" },
   { id: "social", title: "Social Accounts", icon: Share2, keywords: "social media whatsapp facebook instagram twitter x linkedin telegram youtube share connect handle profile link account" },
+  { id: "invite", title: "Invite & Share", icon: UserPlus, keywords: "invite share link whatsapp email telegram friends family customer referral promotion" },
   { id: "account", title: "Account & Security", icon: ShieldCheck, keywords: "profile password email phone delete account sessions security two factor passkey name" },
   { id: "data", title: "Data Management", icon: Database, keywords: "export import backup json csv download restore data loans" },
   { id: "feedback", title: "Feedback", icon: MessageSquare, keywords: "feedback rating feature request bug review suggestion" },
@@ -606,6 +608,70 @@ export function SettingsPage() {
               Saved to your account. These are your own handles for quick sharing —
               the app doesn't post on your behalf.
             </p>
+          </SectionCard>
+
+          {/* Invite & Share */}
+          <SectionCard
+            id="invite"
+            title="Invite & Share"
+            description="Invite friends, family, or business partners to Loan Khatam."
+            icon={UserPlus}
+            visible={isVisible("invite")}
+          >
+            <div className="space-y-4 pt-2">
+              <p className="text-sm font-medium text-slate-650 dark:text-slate-400">
+                Share this link with your friends to help them track their loans, payments, and simple interest (desi byaj) easily:
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <div className="relative flex-1 w-full">
+                  <input
+                    readOnly
+                    type="text"
+                    value="https://loankhatam.schand.store/invite"
+                    className="w-full h-11 px-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-200 text-sm font-semibold focus:outline-none"
+                  />
+                </div>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText("https://loankhatam.schand.store/invite");
+                      toast({
+                        title: "Link Copied!",
+                        description: "Invite link copied to clipboard.",
+                      });
+                    } catch (err) {
+                      console.error(err);
+                    }
+                  }}
+                  variant="outline"
+                  className="w-full sm:w-auto h-11 rounded-xl font-bold text-xs px-5 border-slate-200 dark:border-slate-800"
+                >
+                  Copy Link
+                </Button>
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Button
+                  onClick={() => {
+                    const text = encodeURIComponent("Hey! Use Loan Khatam to manage your personal loans, payments, and interest calculations easily. Check it out here: https://loankhatam.schand.store/invite");
+                    window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
+                  }}
+                  className="flex-1 min-w-[140px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-11 gap-2"
+                >
+                  Share on WhatsApp
+                </Button>
+                <Button
+                  onClick={() => {
+                    const text = encodeURIComponent("Hey! Use Loan Khatam to manage your personal loans, payments, and interest calculations easily. Check it out here:");
+                    window.open(`https://t.me/share/url?url=https://loankhatam.schand.store/invite&text=${text}`, "_blank");
+                  }}
+                  className="flex-1 min-w-[140px] rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs h-11 gap-2"
+                >
+                  Share on Telegram
+                </Button>
+              </div>
+            </div>
           </SectionCard>
 
           {/* Account & Security */}

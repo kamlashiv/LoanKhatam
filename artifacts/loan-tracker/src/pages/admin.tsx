@@ -357,10 +357,10 @@ export function AdminPage() {
               <div className="flex items-center justify-between gap-4">
                 <div className="space-y-1">
                   <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                    <Shield className="h-4.5 w-4.5 text-indigo-600" /> Premium Plan Active?
+                    <Shield className="h-4.5 w-4.5 text-indigo-600" /> Show Plan Upgrade Option? (प्लान अपग्रेड विकल्प दिखाएं?)
                   </h2>
                   <p className="text-[10px] text-muted-foreground">
-                    If OFF, all premium features are unlocked for free and paywalls are completely hidden.
+                    Toggle displaying the Premium Upgrade prompts to users. If OFF, upgrade options are hidden and all features are unlocked.
                   </p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
@@ -381,11 +381,11 @@ export function AdminPage() {
                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Current Settings:</span>
                 {showPremiumPlan ? (
                   <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 dark:bg-indigo-950/40 px-2 py-0.5 rounded-lg">
-                    Premium Active
+                    Upgrade Options Visible (प्लान दिखेगा)
                   </span>
                 ) : (
                   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg">
-                    Free / Unlocked Mode
+                    Upgrade Options Hidden (प्लान छिपा हुआ है)
                   </span>
                 )}
               </div>

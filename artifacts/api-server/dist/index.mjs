@@ -20641,11 +20641,11 @@ var require_router = __commonJS({
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var methods = METHODS.map((method) => method.toLowerCase());
-    module.exports = Router16;
+    module.exports = Router17;
     module.exports.Route = Route;
-    function Router16(options) {
-      if (!(this instanceof Router16)) {
-        return new Router16(options);
+    function Router17(options) {
+      if (!(this instanceof Router17)) {
+        return new Router17(options);
       }
       const opts = options || {};
       function router16(req, res, next) {
@@ -20659,9 +20659,9 @@ var require_router = __commonJS({
       router16.stack = [];
       return router16;
     }
-    Router16.prototype = function() {
+    Router17.prototype = function() {
     };
-    Router16.prototype.param = function param(name, fn) {
+    Router17.prototype.param = function param(name, fn) {
       if (!name) {
         throw new TypeError("argument name is required");
       }
@@ -20681,7 +20681,7 @@ var require_router = __commonJS({
       params.push(fn);
       return this;
     };
-    Router16.prototype.handle = function handle(req, res, callback) {
+    Router17.prototype.handle = function handle(req, res, callback) {
       if (!callback) {
         throw new TypeError("argument callback is required");
       }
@@ -20808,7 +20808,7 @@ var require_router = __commonJS({
         }
       }
     };
-    Router16.prototype.use = function use(handler) {
+    Router17.prototype.use = function use(handler) {
       let offset = 0;
       let path6 = "/";
       if (typeof handler !== "function") {
@@ -20841,7 +20841,7 @@ var require_router = __commonJS({
       }
       return this;
     };
-    Router16.prototype.route = function route(path6) {
+    Router17.prototype.route = function route(path6) {
       const route2 = new Route(path6);
       const layer = new Layer(path6, {
         sensitive: this.caseSensitive,
@@ -20856,7 +20856,7 @@ var require_router = __commonJS({
       return route2;
     };
     methods.concat("all").forEach(function(method) {
-      Router16.prototype[method] = function(path6) {
+      Router17.prototype[method] = function(path6) {
         const route = this.route(path6);
         route[method].apply(route, slice.call(arguments, 1));
         return this;
@@ -21039,7 +21039,7 @@ var require_application = __commonJS({
     var compileTrust = require_utils3().compileTrust;
     var resolve = __require("node:path").resolve;
     var once = require_once();
-    var Router16 = require_router();
+    var Router17 = require_router();
     var slice = Array.prototype.slice;
     var flatten = Array.prototype.flat;
     var app2 = exports = module.exports = {};
@@ -21055,7 +21055,7 @@ var require_application = __commonJS({
         enumerable: true,
         get: function getrouter() {
           if (router16 === null) {
-            router16 = new Router16({
+            router16 = new Router17({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
@@ -23712,7 +23712,7 @@ var require_express = __commonJS({
     var EventEmitter2 = __require("node:events").EventEmitter;
     var mixin = require_merge_descriptors();
     var proto = require_application();
-    var Router16 = require_router();
+    var Router17 = require_router();
     var req = require_request();
     var res = require_response();
     exports = module.exports = createApplication;
@@ -23734,8 +23734,8 @@ var require_express = __commonJS({
     exports.application = proto;
     exports.request = req;
     exports.response = res;
-    exports.Route = Router16.Route;
-    exports.Router = Router16;
+    exports.Route = Router17.Route;
+    exports.Router = Router17;
     exports.json = bodyParser.json;
     exports.raw = bodyParser.raw;
     exports.static = require_serve_static();
@@ -53536,7 +53536,7 @@ process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || "dummy-openai-key";
 process.env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "dummy-anthropic-key";
 
 // src/app.ts
-var import_express28 = __toESM(require_express2(), 1);
+var import_express29 = __toESM(require_express2(), 1);
 var import_cors = __toESM(require_lib3(), 1);
 var import_pino_http = __toESM(require_logger(), 1);
 
@@ -63539,7 +63539,7 @@ function clerkProxyMiddleware() {
 }
 
 // src/routes/index.ts
-var import_express27 = __toESM(require_express2(), 1);
+var import_express28 = __toESM(require_express2(), 1);
 
 // src/routes/health.ts
 var import_express = __toESM(require_express2(), 1);
@@ -97851,6 +97851,7 @@ var router13 = (0, import_express24.Router)();
 var CONFIG_PATH = path3.join(__dirname, "../../admin_config.json");
 var DEFAULT_CONFIG2 = {
   discountEnabled: true,
+  showPremiumPlan: true,
   planTitle: "Upgrade to Premium",
   regularPrice: 1e3,
   offerPrice: 99,
@@ -97913,10 +97914,11 @@ router13.get("/admin/config", (req, res) => {
   return res.json(config2);
 });
 router13.post("/admin/config", authorizeAdmin, (req, res) => {
-  const { discountEnabled, planTitle, regularPrice, offerPrice, promoText, features } = req.body;
+  const { discountEnabled, showPremiumPlan, planTitle, regularPrice, offerPrice, promoText, features } = req.body;
   const current = readConfig();
   const updated = {
     discountEnabled: typeof discountEnabled === "boolean" ? discountEnabled : current.discountEnabled,
+    showPremiumPlan: typeof showPremiumPlan === "boolean" ? showPremiumPlan : current.showPremiumPlan,
     planTitle: typeof planTitle === "string" ? planTitle : current.planTitle,
     regularPrice: typeof regularPrice === "number" ? regularPrice : current.regularPrice,
     offerPrice: typeof offerPrice === "number" ? offerPrice : current.offerPrice,
@@ -98005,8 +98007,110 @@ router14.post("/upload", upload2.single("file"), (req, res) => {
 });
 var upload_default = router14;
 
+// src/routes/news.ts
+var import_express27 = __toESM(require_express2(), 1);
+var newsRouter = (0, import_express27.Router)();
+function cleanText(str2) {
+  if (!str2) return "";
+  return str2.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1").replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
+}
+var fallbackArticles = [
+  {
+    title: "RBI Keeps Repo Rate Stable: What This Means for Your Home & Personal Loan EMIs",
+    link: "https://www.rbi.org.in",
+    pubDate: (/* @__PURE__ */ new Date()).toUTCString(),
+    description: "The Reserve Bank of India has maintained the repo rate, meaning interest rates on personal and home loans will remain stable in the upcoming months.",
+    source: "RBI Updates"
+  },
+  {
+    title: "SBI Interest Rates Update: SBI Announces Revised Interest Rates for Personal and Gold Loans",
+    link: "https://sbi.co.in",
+    pubDate: (/* @__PURE__ */ new Date()).toUTCString(),
+    description: "State Bank of India (SBI) has updated its lending rates. Check out the latest MCLR and interest rates for personal loans and collateral-free lending.",
+    source: "SBI News"
+  },
+  {
+    title: "Income Tax India: Simple Strategies to Manage Debt and Save Tax Under Section 80C & Section 24",
+    link: "https://www.incometax.gov.in",
+    pubDate: (/* @__PURE__ */ new Date()).toUTCString(),
+    description: "Understanding tax deductions on loans in India. Learn how paying interest on home loans can save tax under Section 24 and Section 80C of the IT Act.",
+    source: "Income Tax Dept"
+  }
+];
+newsRouter.get("/", async (req, res) => {
+  try {
+    const urls = [
+      {
+        url: "https://economictimes.indiatimes.com/industry/banking/finance/banking/rssfeeds/13358259.cms",
+        source: "Banking Sector"
+      },
+      {
+        url: "https://economictimes.indiatimes.com/wealth/personal-finance/rssfeeds/8375551.cms",
+        source: "Economic Times"
+      },
+      {
+        url: "https://www.moneycontrol.com/rss/personalfinance.xml",
+        source: "Moneycontrol"
+      }
+    ];
+    const allArticles = [];
+    for (const feed of urls) {
+      try {
+        const response = await fetch(feed.url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          }
+        });
+        if (!response.ok) continue;
+        const xml = await response.text();
+        const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+        let match2;
+        while ((match2 = itemRegex.exec(xml)) !== null) {
+          const itemContent = match2[1];
+          const titleRaw = itemContent.match(/<title>([\s\S]*?)<\/title>/)?.[1] || "";
+          const linkRaw = itemContent.match(/<link>([\s\S]*?)<\/link>/)?.[1] || "";
+          const pubDateRaw = itemContent.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1] || "";
+          const descriptionRaw = itemContent.match(/<description>([\s\S]*?)<\/description>/)?.[1] || "";
+          const title = cleanText(titleRaw);
+          const link = linkRaw.trim();
+          const pubDate = pubDateRaw.trim();
+          const description = cleanText(descriptionRaw);
+          if (title && link) {
+            allArticles.push({
+              title,
+              link,
+              pubDate,
+              description: description.slice(0, 180) + (description.length > 180 ? "..." : ""),
+              source: feed.source
+            });
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to fetch/parse ${feed.source}:`, err);
+      }
+    }
+    if (allArticles.length === 0) {
+      res.json(fallbackArticles);
+      return;
+    }
+    allArticles.sort((a, b) => {
+      const dateA = new Date(a.pubDate).getTime();
+      const dateB = new Date(b.pubDate).getTime();
+      if (!isNaN(dateA) && !isNaN(dateB)) {
+        return dateB - dateA;
+      }
+      return 0;
+    });
+    res.json(allArticles.slice(0, 25));
+  } catch (error40) {
+    console.error("News endpoint error:", error40);
+    res.json(fallbackArticles);
+  }
+});
+var news_default = newsRouter;
+
 // src/routes/index.ts
-var router15 = (0, import_express27.Router)();
+var router15 = (0, import_express28.Router)();
 router15.use(health_default);
 router15.use("/loans", loans_default);
 router15.use("/credit-cards", credit_cards_default);
@@ -98021,13 +98125,14 @@ router15.use("/feedback", feedback_default);
 router15.use("/groups", groups_default);
 router15.use(admin_default);
 router15.use(upload_default);
+router15.use("/news", news_default);
 var routes_default = router15;
 
 // src/app.ts
 import path5 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 import fs4 from "fs";
-var app = (0, import_express28.default)();
+var app = (0, import_express29.default)();
 app.use(
   (0, import_pino_http.default)({
     logger: logger2,
@@ -98090,8 +98195,8 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.use(import_express28.default.json({ limit: "25mb" }));
-app.use(import_express28.default.urlencoded({ extended: true, limit: "25mb" }));
+app.use(import_express29.default.json({ limit: "25mb" }));
+app.use(import_express29.default.urlencoded({ extended: true, limit: "25mb" }));
 app.use(
   clerkMiddleware((req) => {
     const host = getClerkProxyHost(req) ?? "";
@@ -98120,7 +98225,7 @@ try {
     fs4.mkdirSync(uploadsDir, { recursive: true });
   }
 }
-app.use("/uploads", import_express28.default.static(uploadsDir));
+app.use("/uploads", import_express29.default.static(uploadsDir));
 if (process.env.NODE_ENV === "production") {
   let sendHtmlWithKeys2 = function(html, res) {
     const clerkKey = process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY || process.env.PUBLIC_CLERK_PUBLISHABLE_KEY || "";
@@ -98163,11 +98268,13 @@ if (process.env.NODE_ENV === "production") {
     return path5.resolve(__dirname3, "../../loan-tracker/dist/public");
   };
   const frontendDistPath = getFrontendDistPath();
-  app.use(import_express28.default.static(frontendDistPath, { index: false }));
+  app.use(import_express29.default.static(frontendDistPath, { index: false }));
   const routeFileMap = {
     "/": "index.html",
     "/about": "about.html",
     "/help": "help.html",
+    "/invite": "invite.html",
+    "/news": "news.html",
     "/privacy-policy": "privacy-policy.html",
     "/terms": "terms.html",
     "/disclaimer": "disclaimer.html",

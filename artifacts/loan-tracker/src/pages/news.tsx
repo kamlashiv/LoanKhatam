@@ -92,36 +92,32 @@ export function NewsPage() {
 
   const getArticleVisual = (source: string, title: string) => {
     const cleanTitle = title.toLowerCase();
-    let gradient = "from-rose-500 to-orange-500";
-    let emoji = "📰";
+    let imageUrl = "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=550&auto=format&fit=crop&q=80"; // Default news
     
     if (cleanTitle.includes("credit card") || cleanTitle.includes("card")) {
-      gradient = "from-cyan-500 to-blue-600";
-      emoji = "💳";
-    } else if (cleanTitle.includes("rate") || cleanTitle.includes("rbi") || cleanTitle.includes("repo") || cleanTitle.includes("reserve bank")) {
-      gradient = "from-indigo-500 to-purple-600";
-      emoji = "🏦";
-    } else if (cleanTitle.includes("tax") || cleanTitle.includes("gst") || cleanTitle.includes("budget")) {
-      gradient = "from-rose-500 to-pink-600";
-      emoji = "📊";
-    } else if (cleanTitle.includes("sip") || cleanTitle.includes("market") || cleanTitle.includes("mutual fund") || cleanTitle.includes("stock") || cleanTitle.includes("share")) {
-      gradient = "from-emerald-500 to-teal-600";
-      emoji = "📈";
-    } else if (source === "Moneycontrol") {
-      gradient = "from-amber-500 to-emerald-600";
-      emoji = "💰";
-    } else if (source === "Economic Times") {
-      gradient = "from-violet-500 to-fuchsia-600";
-      emoji = "🏢";
+      imageUrl = "https://images.unsplash.com/photo-1589758438368-0ad531db3366?w=550&auto=format&fit=crop&q=80"; // Credit card
+    } else if (cleanTitle.includes("rate") || cleanTitle.includes("rbi") || cleanTitle.includes("repo") || cleanTitle.includes("reserve bank") || cleanTitle.includes("bank")) {
+      imageUrl = "https://images.unsplash.com/photo-1601597111158-2fceff270190?w=550&auto=format&fit=crop&q=80"; // Banking
+    } else if (cleanTitle.includes("tax") || cleanTitle.includes("gst") || cleanTitle.includes("budget") || cleanTitle.includes("finance")) {
+      imageUrl = "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=550&auto=format&fit=crop&q=80"; // Finance/tax
+    } else if (cleanTitle.includes("sip") || cleanTitle.includes("market") || cleanTitle.includes("mutual fund") || cleanTitle.includes("stock") || cleanTitle.includes("share") || cleanTitle.includes("nifty") || cleanTitle.includes("sensex")) {
+      imageUrl = "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=550&auto=format&fit=crop&q=80"; // Stock charts
     }
     
     return (
-      <div className={`h-36 w-full bg-gradient-to-tr ${gradient} relative flex items-center justify-center overflow-hidden transition-transform duration-500`}>
-        <div className="absolute inset-0 bg-white/[0.06] [mask-image:linear-gradient(0deg,white,transparent)]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-slate-900/20 to-transparent" />
-        <span className="text-6xl drop-shadow-2xl filter transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-          {emoji}
-        </span>
+      <div className="h-40 w-full relative overflow-hidden shrink-0">
+        <img 
+          src={imageUrl} 
+          alt={title}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/10 to-transparent" />
+        <div className="absolute top-3.5 left-3.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-2.5 py-0.5 rounded-lg border border-slate-200/20 shadow-sm">
+          <span className="text-[10px] font-black uppercase tracking-wider text-rose-500 dark:text-rose-400">
+            {source}
+          </span>
+        </div>
       </div>
     );
   };
@@ -305,19 +301,13 @@ export function NewsPage() {
             >
               {getArticleVisual(article.source, article.title)}
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between mb-3">
-                  <Badge
-                    variant="outline"
-                    className="font-bold text-[10px] uppercase border-rose-500/20 bg-rose-500/5 text-rose-600 dark:text-rose-400 rounded-lg px-2.5 py-0.5"
-                  >
-                    {article.source}
-                  </Badge>
-                  <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400">
-                    <Calendar className="h-3 w-3" />
+                <div className="flex items-center justify-between mb-2">
+                  <span className="flex items-center gap-1.5 text-[10px] font-extrabold text-slate-450 uppercase tracking-wide">
+                    <Calendar className="h-3.5 w-3.5 text-rose-500 animate-pulse" />
                     {formatDate(article.pubDate)}
                   </span>
                 </div>
-                <CardTitle className="text-lg font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug group-hover:text-rose-500 transition-colors">
+                <CardTitle className="text-[15px] font-extrabold text-slate-800 dark:text-slate-100 line-clamp-2 leading-snug group-hover:text-rose-500 transition-colors">
                   {article.title}
                 </CardTitle>
               </CardHeader>

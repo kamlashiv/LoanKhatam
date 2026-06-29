@@ -57,7 +57,6 @@ const navItems = [
   { href: "/group-split", label: "groupSplit", icon: List },
   { href: "/tools", label: "planningTools", icon: Calculator },
   { href: "/news", label: "liveNews", icon: Newspaper },
-  { href: "/invite", label: "inviteFriends", icon: Share2 },
   { href: "/amortization", label: "amortization", icon: BarChart3 },
   { href: "/settings", label: "settings", icon: Settings },
 ];

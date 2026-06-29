@@ -344,7 +344,7 @@ export function GroupSplitPage() {
               </SelectTrigger>
               <SelectContent className="rounded-2xl">
                 {groupsLoading ? (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="loading" disabled>
                     Loading groups...
                   </SelectItem>
                 ) : (

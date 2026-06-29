@@ -65,6 +65,12 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
             <Link href="/blogs" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">
               Blogs
             </Link>
+            <Link href="/news" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">
+              News
+            </Link>
+            <Link href="/invite" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">
+              Invite & Share
+            </Link>
             <Link href="/about" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer">
               About
             </Link>
@@ -112,6 +118,12 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                   <Link href="/blogs" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-1">
                     Blogs
+                  </Link>
+                  <Link href="/news" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-1">
+                    News
+                  </Link>
+                  <Link href="/invite" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-1">
+                    Invite & Share
                   </Link>
                   <Link href="/about" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-1">
                     About
@@ -161,6 +173,8 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm font-semibold text-slate-400 dark:text-slate-500">
             <Link href="/about" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">About</Link>
             <Link href="/help" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Help & Support</Link>
+            <Link href="/news" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">News</Link>
+            <Link href="/invite" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Invite</Link>
             <Link href="/privacy-policy" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Terms of Service</Link>
             <Link href="/disclaimer" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">Disclaimer</Link>

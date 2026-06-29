@@ -80,6 +80,8 @@ export const translations = {
     emiVsSip: "EMI vs. SIP Calculator",
     emiVsSipDesc: "Compare if you should prepay your loan or invest the extra money in mutual fund SIPs.",
     expectedSipReturn: "Expected SIP Return (% p.a.)",
+    inviteFriends: "Invite & Share",
+    liveNews: "Live News",
   },
   hi: {
     dashboard: "डैशबोर्ड",
@@ -158,6 +160,8 @@ export const translations = {
     emiVsSip: "EMI बनाम SIP कैलकुलेटर",
     emiVsSipDesc: "तुलना करें कि आपको अपना लोन पहले चुकाना चाहिए या बचे हुए पैसे को म्यूचुअल फंड SIP में निवेश करना चाहिए।",
     expectedSipReturn: "अनुमानित SIP रिटर्न (% सालाना)",
+    inviteFriends: "इनवाइट और शेयर",
+    liveNews: "लाइव समाचार (News)",
   },
 } as const;
 

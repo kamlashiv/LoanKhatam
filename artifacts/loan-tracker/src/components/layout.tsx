@@ -8,6 +8,7 @@ import { useGetDashboardSummary } from "@workspace/api-client-react";
 import {
   Wallet, LayoutDashboard, List, LogOut, Plus, Menu, BarChart3, Target, Flame,
   Sun, Moon, Sparkles, UserCircle, Settings, Share2, CreditCard, Calculator, Crown,
+  Newspaper,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -55,6 +56,8 @@ const navItems = [
   { href: "/strategy", label: "financialStrategy", icon: Sparkles },
   { href: "/group-split", label: "groupSplit", icon: List },
   { href: "/tools", label: "planningTools", icon: Calculator },
+  { href: "/news", label: "liveNews", icon: Newspaper },
+  { href: "/invite", label: "inviteFriends", icon: Share2 },
   { href: "/amortization", label: "amortization", icon: BarChart3 },
   { href: "/settings", label: "settings", icon: Settings },
 ];

@@ -13,6 +13,7 @@ import feedbackRouter from "./feedback";
 import groupsRouter from "./groups";
 import adminRouter from "./admin";
 import uploadRouter from "./upload";
+import newsRouter from "./news";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use("/feedback", feedbackRouter);
 router.use("/groups", groupsRouter);
 router.use(adminRouter);
 router.use(uploadRouter);
+router.use("/news", newsRouter);
 
 export default router;

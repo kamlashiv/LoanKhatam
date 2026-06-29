@@ -30,6 +30,7 @@ import { AiAssistantPage } from "@/pages/ai-assistant";
 import { LoanClosureChecklistPage } from "@/pages/loan-closure-checklist";
 import { BlogsPage } from "@/pages/blogs";
 import { InvitePage } from "@/pages/invite";
+import { NewsPage } from "@/pages/news";
 
 const DESC =
   "Loan Khatam is a free personal loan and udhaar tracker — record money you lend to friends and family, track repayments and EMIs, and watch outstanding balances settle. Amounts shown in ₹.";
@@ -86,6 +87,15 @@ export const ROUTES: RouteMeta[] = [
       "Invite friends, family, and customers to LoanKhatam to easily track personal loans, udhaar, repayments and EMIs.",
     indexable: true,
     component: InvitePage,
+  },
+  {
+    path: "/news",
+    file: "news.html",
+    title: "Financial & Loan News — Loan Khatam",
+    description:
+      "Stay updated with the latest personal loan interest rates, home loan calculations, RBI announcements, and tax saving strategies in India.",
+    indexable: true,
+    component: NewsPage,
   },
   {
     path: "/privacy-policy",

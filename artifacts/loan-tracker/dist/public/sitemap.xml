@@ -111,6 +111,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://loankhatam.schand.store/news</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://loankhatam.schand.store/blogs/5-ways-to-pay-off-loans-faster</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

@@ -40,6 +40,10 @@ from = "/invite"
 to = "/invite.html"
 
 [[services.production.rewrites]]
+from = "/news"
+to = "/news.html"
+
+[[services.production.rewrites]]
 from = "/privacy-policy"
 to = "/privacy-policy.html"
 

@@ -67,7 +67,7 @@ export function NewsPage() {
     if (filter === "All") return true;
     if (filter === "Economic Times") return article.source === "Economic Times";
     if (filter === "Moneycontrol") return article.source === "Moneycontrol";
-    if (filter === "RBI / Banks") return article.source.includes("RBI") || article.source.includes("SBI");
+    if (filter === "RBI / Banks") return article.source.includes("RBI") || article.source.includes("SBI") || article.source === "Banking Sector";
     return true;
   });
 

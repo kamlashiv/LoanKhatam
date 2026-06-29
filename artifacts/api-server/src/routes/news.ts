@@ -42,6 +42,10 @@ newsRouter.get("/", async (req, res) => {
   try {
     const urls = [
       {
+        url: "https://economictimes.indiatimes.com/industry/banking/finance/banking/rssfeeds/13358259.cms",
+        source: "Banking Sector"
+      },
+      {
         url: "https://economictimes.indiatimes.com/wealth/personal-finance/rssfeeds/8375551.cms",
         source: "Economic Times"
       },

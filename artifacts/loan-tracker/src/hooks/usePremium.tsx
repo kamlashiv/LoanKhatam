@@ -19,6 +19,7 @@ interface PremiumContextProps {
   offerPrice: number;
   promoText: string;
   features: string[];
+  showPremiumPlan: boolean;
 }
 
 const PremiumContext = createContext<PremiumContextProps | undefined>(undefined);
@@ -26,12 +27,13 @@ const PremiumContext = createContext<PremiumContextProps | undefined>(undefined)
 export function PremiumProvider({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [isPremium, setIsPremium] = useState<boolean>(() => {
+  const [isPremiumState, setIsPremiumState] = useState<boolean>(() => {
     return localStorage.getItem("is_premium") === "true";
   });
   const [showPaywall, setShowPaywall] = useState(false);
   const [activationCode, setActivationCode] = useState("");
   const [discountEnabled, setDiscountEnabled] = useState(true);
+  const [showPremiumPlan, setShowPremiumPlan] = useState(true);
   const [planTitle, setPlanTitle] = useState("Upgrade to Premium");
   const [regularPrice, setRegularPrice] = useState(1000);
   const [offerPrice, setOfferPrice] = useState(99);
@@ -42,6 +44,8 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
     "EMI vs SIP Planner — Smart arbitrage calculation"
   ]);
 
+  const isPremium = !showPremiumPlan || isPremiumState;
+
   useEffect(() => {
     const fetchConfig = async () => {
       try {
@@ -49,6 +53,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
         if (res.ok) {
           const data = await res.json();
           setDiscountEnabled(data.discountEnabled !== false);
+          setShowPremiumPlan(data.showPremiumPlan !== false);
           setPlanTitle(data.planTitle || "Upgrade to Premium");
           setRegularPrice(data.regularPrice ?? 1000);
           setOfferPrice(data.offerPrice ?? 99);
@@ -70,7 +75,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
     const cleaned = code.trim().toUpperCase();
     if (cleaned === "PREMIUM100" || cleaned === "LOAN100" || cleaned === "VIP100") {
       localStorage.setItem("is_premium", "true");
-      setIsPremium(true);
+      setIsPremiumState(true);
       setShowPaywall(false);
       toast({
         title: "👑 Premium Unlocked!",
@@ -106,6 +111,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
         offerPrice,
         promoText,
         features,
+        showPremiumPlan,
       }}
     >
       {children}

@@ -141,7 +141,8 @@ function StayOnTopCard() {
 }
 
 function PremiumUpgradeCard() {
-  const { isPremium, setShowPaywall, discountEnabled } = usePremium();
+  const { isPremium, setShowPaywall, discountEnabled, showPremiumPlan } = usePremium();
+  if (!showPremiumPlan) return null;
   if (isPremium) {
     return (
       <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-center gap-3 dark:border-amber-500/20">

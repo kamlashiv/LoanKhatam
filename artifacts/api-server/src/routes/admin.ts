@@ -8,6 +8,7 @@ const CONFIG_PATH = path.join(__dirname, "../../admin_config.json");
 
 const DEFAULT_CONFIG = {
   discountEnabled: true,
+  showPremiumPlan: true,
   planTitle: "Upgrade to Premium",
   regularPrice: 1000,
   offerPrice: 99,
@@ -82,11 +83,12 @@ router.get("/admin/config", (req, res) => {
 });
 
 router.post("/admin/config", authorizeAdmin, (req, res) => {
-  const { discountEnabled, planTitle, regularPrice, offerPrice, promoText, features } = req.body;
+  const { discountEnabled, showPremiumPlan, planTitle, regularPrice, offerPrice, promoText, features } = req.body;
   
   const current = readConfig();
   const updated = {
     discountEnabled: typeof discountEnabled === "boolean" ? discountEnabled : current.discountEnabled,
+    showPremiumPlan: typeof showPremiumPlan === "boolean" ? showPremiumPlan : current.showPremiumPlan,
     planTitle: typeof planTitle === "string" ? planTitle : current.planTitle,
     regularPrice: typeof regularPrice === "number" ? regularPrice : current.regularPrice,
     offerPrice: typeof offerPrice === "number" ? offerPrice : current.offerPrice,

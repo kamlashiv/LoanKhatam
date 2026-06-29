@@ -25,6 +25,7 @@ export function AdminPage() {
   
   // Package configurations
   const [discountEnabled, setDiscountEnabled] = useState(true);
+  const [showPremiumPlan, setShowPremiumPlan] = useState(true);
   const [planTitle, setPlanTitle] = useState("Upgrade to Premium");
   const [regularPrice, setRegularPrice] = useState(1000);
   const [offerPrice, setOfferPrice] = useState(99);
@@ -77,6 +78,7 @@ export function AdminPage() {
       if (res.ok) {
         const data = await res.json();
         setDiscountEnabled(data.discountEnabled !== false);
+        setShowPremiumPlan(data.showPremiumPlan !== false);
         setPlanTitle(data.planTitle || "Upgrade to Premium");
         setRegularPrice(data.regularPrice ?? 1000);
         setOfferPrice(data.offerPrice ?? 99);
@@ -113,6 +115,33 @@ export function AdminPage() {
       });
       if (res.ok) {
         setDiscountEnabled(checked);
+      } else {
+        alert("Failed to update config");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error saving config");
+    } finally {
+      setConfigSaving(false);
+    }
+  };
+
+  const handleTogglePremiumPlan = async (checked: boolean) => {
+    const u = sessionStorage.getItem("superadmin_u") || "";
+    const p = sessionStorage.getItem("superadmin_p") || "";
+    const credentials = btoa(`${u}:${p}`);
+    setConfigSaving(true);
+    try {
+      const res = await fetch("/api/admin/config", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${credentials}`,
+        },
+        body: JSON.stringify({ showPremiumPlan: checked }),
+      });
+      if (res.ok) {
+        setShowPremiumPlan(checked);
       } else {
         alert("Failed to update config");
       }
@@ -318,6 +347,45 @@ export function AdminPage() {
                 ) : (
                   <span className="text-[10px] font-bold text-slate-600 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
                     ₹{regularPrice} Full Price Active
+                  </span>
+                )}
+              </div>
+            </Card>
+
+            {/* Show/Hide Premium Plan Toggle */}
+            <Card className="p-6 rounded-[2rem] border border-border shadow-sm bg-white dark:bg-slate-900 space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                    <Shield className="h-4.5 w-4.5 text-indigo-600" /> Premium Plan Active?
+                  </h2>
+                  <p className="text-[10px] text-muted-foreground">
+                    If OFF, all premium features are unlocked for free and paywalls are completely hidden.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {configSaving && <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />}
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showPremiumPlan}
+                      onChange={(e) => handleTogglePremiumPlan(e.target.checked)}
+                      disabled={configSaving}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+                  </label>
+                </div>
+              </div>
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Current Settings:</span>
+                {showPremiumPlan ? (
+                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-100 dark:bg-indigo-950/40 px-2 py-0.5 rounded-lg">
+                    Premium Active
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg">
+                    Free / Unlocked Mode
                   </span>
                 )}
               </div>

@@ -97849,6 +97849,7 @@ import fs2 from "fs";
 import path3 from "path";
 var router13 = (0, import_express24.Router)();
 var CONFIG_PATH = path3.join(__dirname, "../../admin_config.json");
+var AUTH_PATH = path3.join(__dirname, "../../admin_auth.json");
 var DEFAULT_CONFIG2 = {
   discountEnabled: true,
   showPremiumPlan: true,
@@ -97862,6 +97863,30 @@ var DEFAULT_CONFIG2 = {
     "EMI vs SIP Planner \u2014 Smart arbitrage calculation"
   ]
 };
+function readAuth() {
+  try {
+    if (fs2.existsSync(AUTH_PATH)) {
+      const content = fs2.readFileSync(AUTH_PATH, "utf-8");
+      const auth = JSON.parse(content);
+      if (auth.username && auth.password) {
+        return auth;
+      }
+    }
+  } catch (e) {
+    console.error("Failed to read admin auth file, using env/default:", e);
+  }
+  return {
+    username: process.env.ADMIN_USERNAME || "loankhatam.app@gmail.com",
+    password: process.env.ADMIN_PASSWORD || "LoanKhatamAdmin2026!"
+  };
+}
+function writeAuth(username, password) {
+  try {
+    fs2.writeFileSync(AUTH_PATH, JSON.stringify({ username, password }, null, 2), "utf-8");
+  } catch (e) {
+    console.error("Failed to write admin auth file:", e);
+  }
+}
 function readConfig() {
   try {
     if (fs2.existsSync(CONFIG_PATH)) {
@@ -97902,13 +97927,25 @@ var authorizeAdmin = (req, res, next) => {
   }
   const username = credentials.slice(0, firstColon);
   const password = credentials.slice(firstColon + 1);
-  const expectedUsername = process.env.ADMIN_USERNAME || "loankhatam.app@gmail.com";
-  const expectedPassword = process.env.ADMIN_PASSWORD || "LoanKhatamAdmin2026!";
+  const auth = readAuth();
+  const expectedUsername = auth.username;
+  const expectedPassword = auth.password;
   if (username !== expectedUsername || password !== expectedPassword) {
     return res.status(401).json({ error: "Unauthorized: Invalid username or password" });
   }
   next();
 };
+router13.post("/admin/credentials", authorizeAdmin, (req, res) => {
+  const { newUsername, newPassword } = req.body;
+  if (!newUsername || !newPassword) {
+    return res.status(400).json({ error: "New username and password are required" });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: "New password must be at least 6 characters long" });
+  }
+  writeAuth(newUsername, newPassword);
+  return res.json({ success: true });
+});
 router13.get("/admin/config", (req, res) => {
   const config2 = readConfig();
   return res.json(config2);

@@ -37,6 +37,68 @@ export function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [newAdminUsername, setNewAdminUsername] = useState("");
+  const [newAdminPassword, setNewAdminPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [authSaving, setAuthSaving] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [authSuccess, setAuthSuccess] = useState("");
+
+  const handleUpdateCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAdminUsername || !newAdminPassword) {
+      setAuthError("All fields are required");
+      return;
+    }
+    if (newAdminPassword !== confirmPassword) {
+      setAuthError("Passwords do not match");
+      return;
+    }
+    if (newAdminPassword.length < 6) {
+      setAuthError("Password must be at least 6 characters long");
+      return;
+    }
+
+    setAuthSaving(true);
+    setAuthError("");
+    setAuthSuccess("");
+
+    try {
+      const u = sessionStorage.getItem("superadmin_u") || "";
+      const p = sessionStorage.getItem("superadmin_p") || "";
+      const credentials = btoa(`${u}:${p}`);
+
+      const res = await fetch("/api/admin/credentials", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${credentials}`,
+        },
+        body: JSON.stringify({
+          newUsername: newAdminUsername,
+          newPassword: newAdminPassword,
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to update credentials");
+      }
+
+      sessionStorage.setItem("superadmin_u", newAdminUsername);
+      sessionStorage.setItem("superadmin_p", newAdminPassword);
+      
+      setAuthSuccess("Credentials updated successfully!");
+      setNewAdminUsername("");
+      setNewAdminPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      setAuthError(err.message || "Failed to update credentials");
+    } finally {
+      setAuthSaving(false);
+    }
+  };
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) return;
@@ -389,6 +451,90 @@ export function AdminPage() {
                   </span>
                 )}
               </div>
+            </Card>
+
+            {/* Change Admin Credentials Card */}
+            <Card className="p-6 rounded-[2rem] border border-border shadow-sm bg-white dark:bg-slate-900 space-y-4">
+              <div className="space-y-1">
+                <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                  <Shield className="h-4.5 w-4.5 text-rose-500" /> Change Admin Credentials (एडमिन लॉग-इन बदलें)
+                </h2>
+                <p className="text-[10px] text-muted-foreground">
+                  Update the superadmin email/username and password.
+                </p>
+              </div>
+
+              <form onSubmit={handleUpdateCredentials} className="space-y-3 pt-2">
+                {authError && (
+                  <div className="p-2 text-xs rounded-xl bg-red-100 dark:bg-red-950/40 text-red-650 font-bold">
+                    {authError}
+                  </div>
+                )}
+                {authSuccess && (
+                  <div className="p-2 text-xs rounded-xl bg-emerald-100 dark:bg-emerald-950/40 text-emerald-650 font-bold">
+                    {authSuccess}
+                  </div>
+                )}
+                
+                <div className="space-y-1.5">
+                  <Label htmlFor="newUsername" className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                    New Admin Username / Email
+                  </Label>
+                  <Input
+                    id="newUsername"
+                    type="email"
+                    required
+                    placeholder="admin@email.com"
+                    value={newAdminUsername}
+                    onChange={(e) => setNewAdminUsername(e.target.value)}
+                    className="rounded-xl h-10 text-xs border-slate-200 dark:border-slate-800"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="newPassword" className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                    New Admin Password
+                  </Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    required
+                    placeholder="At least 6 characters"
+                    value={newAdminPassword}
+                    onChange={(e) => setNewAdminPassword(e.target.value)}
+                    className="rounded-xl h-10 text-xs border-slate-200 dark:border-slate-800"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="confirmPassword" className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
+                    Confirm New Password
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    required
+                    placeholder="Repeat password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="rounded-xl h-10 text-xs border-slate-200 dark:border-slate-800"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={authSaving}
+                  className="w-full mt-2 rounded-xl font-bold bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 text-white dark:text-slate-900 text-xs h-10 cursor-pointer"
+                >
+                  {authSaving ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Saving...
+                    </>
+                  ) : (
+                    "Update Credentials"
+                  )}
+                </Button>
+              </form>
             </Card>
           </div>
 

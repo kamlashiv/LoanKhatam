@@ -8,7 +8,7 @@ import {
   Plus, AlertCircle, CheckCircle2, Clock,
   Upload, FileText, X, Loader2, CheckCircle, AlertTriangle,
   HandCoins, Wallet, Activity, ArrowUpRight, ArrowDownRight,
-  PieChart, List, BellRing, RefreshCw,
+  PieChart, List, BellRing, RefreshCw, Newspaper,
 } from "lucide-react";
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { formatRupees, formatDate, relativeTime } from "@/lib/loan-utils";
@@ -288,6 +288,25 @@ export function Dashboard() {
   const derived = useDerivedLoans();
   const [showImport, setShowImport] = useState(false);
   const { t } = useTranslation();
+  const [latestNews, setLatestNews] = useState<any[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLatestNews = async () => {
+      try {
+        const res = await fetch("/api/news");
+        if (res.ok) {
+          const data = await res.json();
+          setLatestNews(data.slice(0, 3));
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard news:", err);
+      } finally {
+        setNewsLoading(false);
+      }
+    };
+    fetchLatestNews();
+  }, []);
 
   const [, forceTick] = useState(0);
   useEffect(() => {
@@ -680,6 +699,93 @@ export function Dashboard() {
                     Import from file
                   </Button>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Live Banking News Card — matches recent loans layout */}
+        <div className="flex flex-col rounded-[2rem] border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 bento-shadow md:col-span-2">
+          <div className="mb-5 flex items-center justify-between">
+            <h3 className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
+              <Newspaper className="h-5 w-5 text-indigo-600 dark:text-indigo-400" /> Live Banking Updates
+            </h3>
+            <Link href="/news" className="text-sm font-bold text-indigo-600 hover:underline">
+              View All
+            </Link>
+          </div>
+
+          <div className="flex-1 space-y-3.5">
+            {newsLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-3.5">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-3.5 w-32" />
+                      <Skeleton className="h-2.5 w-24" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-5 w-12" />
+                </div>
+              ))
+            ) : latestNews.length > 0 ? (
+              latestNews.map((article, idx) => {
+                let avatarColor = "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300";
+                let initials = "ET";
+                let tagText = "Market";
+                let tagColor = "bg-slate-100 dark:bg-slate-850 text-slate-600 dark:text-slate-400";
+
+                if (article.source === "Banking Sector") {
+                  avatarColor = "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300";
+                  initials = "BS";
+                  tagText = "RBI/Banks";
+                  tagColor = "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400";
+                } else if (article.source === "Moneycontrol") {
+                  avatarColor = "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300";
+                  initials = "MC";
+                  tagText = "Rates";
+                  tagColor = "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400";
+                } else if (article.title.toUpperCase().includes("TAX") || article.title.toUpperCase().includes("INCOME")) {
+                  tagText = "Tax";
+                  tagColor = "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400";
+                }
+
+                return (
+                  <a
+                    key={idx}
+                    href={article.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block transition-all hover:translate-x-1"
+                  >
+                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-3.5 hover:bg-slate-100 dark:hover:bg-slate-800">
+                      <div className="flex min-w-0 items-center gap-3.5">
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-black text-xs ${avatarColor}`}>
+                          {initials}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="truncate text-xs font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                            {article.title}
+                          </div>
+                          <div className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-1">
+                            {relativeTime(article.pubDate)} • {article.source}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2 pl-2">
+                        <span className={`rounded-lg px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${tagColor}`}>
+                          {tagText}
+                        </span>
+                        <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 hover:text-indigo-600 transition-colors" />
+                      </div>
+                    </div>
+                  </a>
+                );
+              })
+            ) : (
+              <div className="text-center py-6 text-xs text-muted-foreground">
+                No active banking updates available right now.
               </div>
             )}
           </div>

@@ -202,6 +202,16 @@ export function NewsPage() {
           ))}
         </div>
       )}
+
+      {/* Copyright & Fair Use Disclaimer */}
+      <div className="rounded-3xl border border-slate-200/50 dark:border-slate-850 bg-slate-50/50 dark:bg-slate-900/40 p-6 text-center max-w-3xl mx-auto space-y-2">
+        <p className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+          Fair Use & News Aggregator Disclaimer (कॉपीराइट अस्वीकरण)
+        </p>
+        <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 leading-relaxed">
+          Loan Khatam aggregates financial headlines and short summaries from public RSS feeds for informational and educational purposes. We do not host full articles. All copyrights, trademarks, logos, and content belong entirely to their respective original publishers (Economic Times, Moneycontrol, etc.). We redirect readers directly to the official websites of the publishers for full articles.
+        </p>
+      </div>
     </div>
   );
 }

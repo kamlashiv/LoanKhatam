@@ -88,7 +88,7 @@ export function NewsPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-10">
+    <div className="max-w-[1300px] mx-auto px-4 py-8 space-y-10">
       {/* Header Section */}
       <div className="text-center space-y-4">
         <div className="inline-flex items-center gap-2 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-full px-4 py-1.5 text-sm font-bold">

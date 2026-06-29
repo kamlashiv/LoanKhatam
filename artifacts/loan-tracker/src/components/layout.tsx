@@ -37,14 +37,36 @@ function ThemeToggle({ className }: { className?: string }) {
 function LanguageToggle({ className }: { className?: string }) {
   const { lang, setLanguage } = useTranslation();
   return (
-    <Button
-      variant="ghost"
-      onClick={() => setLanguage(lang === "en" ? "hi" : "en")}
-      title={lang === "en" ? "Switch to Hindi" : "Switch to English"}
-      className={cn("text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 font-extrabold text-xs px-2 h-9 w-9 rounded-xl border border-slate-200/50 dark:border-slate-800", className)}
-    >
-      {lang === "en" ? "हिं" : "EN"}
-    </Button>
+    <div className={cn("flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-xl border border-slate-200/50 dark:border-slate-800 shrink-0", className)}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setLanguage("en")}
+        title="Switch to English"
+        className={cn(
+          "h-7 px-2.5 text-[10px] font-black rounded-lg transition-all cursor-pointer",
+          lang === "en"
+            ? "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm"
+            : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-250"
+        )}
+      >
+        EN
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setLanguage("hi")}
+        title="Switch to Hindi"
+        className={cn(
+          "h-7 px-2.5 text-[10px] font-black rounded-lg transition-all cursor-pointer",
+          lang === "hi"
+            ? "bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-sm"
+            : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-250"
+        )}
+      >
+        हिं
+      </Button>
+    </div>
   );
 }
 

@@ -162,6 +162,7 @@ const routeFileMap: Record<string, string> = {
   "/": "index.html",
   "/about": "about.html",
   "/help": "help.html",
+  "/invite": "invite.html",
   "/privacy-policy": "privacy-policy.html",
   "/terms": "terms.html",
   "/disclaimer": "disclaimer.html",

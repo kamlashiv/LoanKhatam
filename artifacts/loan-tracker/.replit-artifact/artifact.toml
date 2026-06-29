@@ -36,6 +36,10 @@ from = "/help"
 to = "/help.html"
 
 [[services.production.rewrites]]
+from = "/invite"
+to = "/invite.html"
+
+[[services.production.rewrites]]
 from = "/privacy-policy"
 to = "/privacy-policy.html"
 

@@ -29,6 +29,7 @@ import { LoanCalculatorPage } from "@/pages/loan-calculator";
 import { AiAssistantPage } from "@/pages/ai-assistant";
 import { LoanClosureChecklistPage } from "@/pages/loan-closure-checklist";
 import { BlogsPage } from "@/pages/blogs";
+import { InvitePage } from "@/pages/invite";
 
 const DESC =
   "Loan Khatam is a free personal loan and udhaar tracker — record money you lend to friends and family, track repayments and EMIs, and watch outstanding balances settle. Amounts shown in ₹.";
@@ -76,6 +77,15 @@ export const ROUTES: RouteMeta[] = [
       "Answers to common Loan Khatam questions — how EMIs are calculated, how prepayments work, importing loans, data privacy, and the avalanche vs snowball payoff strategies.",
     indexable: true,
     component: HelpPage,
+  },
+  {
+    path: "/invite",
+    file: "invite.html",
+    title: "Invite & Share App — Loan Khatam",
+    description:
+      "Invite friends, family, and customers to LoanKhatam to easily track personal loans, udhaar, repayments and EMIs.",
+    indexable: true,
+    component: InvitePage,
   },
   {
     path: "/privacy-policy",

@@ -100,6 +100,9 @@ const AboutPage = lazy(() =>
 const HelpPage = lazy(() =>
   import("@/pages/help").then((m) => ({ default: m.HelpPage })),
 );
+const InvitePage = lazy(() =>
+  import("@/pages/invite").then((m) => ({ default: m.InvitePage })),
+);
 const PrivacyPolicyPage = lazy(() =>
   import("@/pages/privacy-policy").then((m) => ({
     default: m.PrivacyPolicyPage,
@@ -501,6 +504,7 @@ function ClerkProviderWithRoutes() {
           <Route path="/group-split" component={() => <PremiumProtectedRoute component={GroupSplitPage} />} />
           <Route path="/about" component={() => <PublicRoute component={AboutPage} />} />
           <Route path="/help" component={() => <PublicRoute component={HelpPage} />} />
+          <Route path="/invite" component={() => <PublicRoute component={InvitePage} />} />
           <Route path="/privacy-policy" component={() => <PublicRoute component={PrivacyPolicyPage} />} />
           <Route path="/terms" component={() => <PublicRoute component={TermsPage} />} />
           <Route path="/disclaimer" component={() => <PublicRoute component={DisclaimerPage} />} />
